@@ -1,0 +1,84 @@
+# ----------------------------
+# Python cache & build files
+# ----------------------------
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+*.spec
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Jupyter & IPython
+.ipynb_checkpoints/
+*.ipynb
+
+# C extensions
+build/
+dist/
+*.egg-info/
+*.egg
+
+# ----------------------------
+# IDE files
+# ----------------------------
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# ----------------------------
+# Project-specific output
+# ----------------------------
+
+# Logs
+logs/
+run_*.log
+
+# Output from run folder
+runs/
+
+# Plots
+plots/
+*.png
+*.svg
+*.pdf
+
+# CSV or experiment outputs
+*.csv
+results/
+output/
+outputs/
+
+# ----------------------------
+# Temporary / System files
+# ----------------------------
+.DS_Store
+Thumbs.db
+
+# Temporary Python files
+*.tmp
+*.temp
+
+# ----------------------------
+# Config / Secrets (recommended)
+# ----------------------------
+*.env
+.env.*
+secrets.json
+config.json
+
+# ----------------------------
+# Backup files
+# ----------------------------
+*~
+*.bak
+*.swp
+*.swo
