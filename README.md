@@ -166,7 +166,7 @@ This plot compares the cycle length produced by:
 A horizontal dashed line marks the theoretical upper bound:
 - cycle length <= 1.0
 - 
-![cycle_length_all_methods.png](runs/run_20251203_194633/plots/cycle_length_all_methods.png)
+![cycle_length_all_methods.png](cycle_length_all_methods.png)
 
 Observations:
 - BVN cycle length is always exactly 1.
@@ -186,7 +186,7 @@ Theoretical bounds:
 - BVN upper bound: n^2 - 2n + 2
 - Bit-plane upper bound: bits * n
 
-![permutation_count_all_methods.png](runs/run_20251203_194633/plots/permutation_count_all_methods.png)
+![permutation_count_all_methods.png](permutation_count_all_methods.png)
 
 Observations:
 - BVN stays within its known theoretical upper bound.
@@ -202,7 +202,7 @@ This plot shows the per-matrix runtime of:
 - Bit-plane maximum matching
 - Bit-plane maximal matching (WFA)
 
-![runtime_comparison.png](runs/run_20251203_194633/plots/runtime_comparison.png)
+![runtime_comparison.png](runtime_comparison.png)
 
 Observations:
 - BVN is usually the slowest method since it iteratively peels permutation matrices.
