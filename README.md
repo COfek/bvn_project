@@ -165,7 +165,7 @@ This plot compares the cycle length produced by:
 
 A horizontal dashed line marks the theoretical upper bound:
 - cycle length <= 1.0
-- 
+  
 ![cycle_length_all_methods.png](cycle_length_all_methods.png)
 
 Observations:
