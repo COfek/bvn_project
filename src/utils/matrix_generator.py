@@ -10,7 +10,7 @@ FloatMatrix = NDArray[np.float64]
 
 def random_sparse_doubly_stochastic(
     n: int,
-    density: float = 0.7,
+    density: float = 0.9,
     iters: int = 200,
     eps: float = 1e-12,
     rng: Optional[np.random.Generator] = None,

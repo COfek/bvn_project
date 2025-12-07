@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
                     "stochastic matrices and plot statistics."
     )
 
-    parser.add_argument("--n", type=int, default=6,
+    parser.add_argument("--n", type=int, default=32,
                         help="Matrix dimension n (default: 6).")
 
     parser.add_argument("--num-matrices", type=int, default=1000,
