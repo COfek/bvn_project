@@ -15,6 +15,8 @@ from .algorithms.split_tree import split_tree_decomposition
 from .utils.stats import DecompositionStats
 from .utils.logging_utils import LOGGER
 
+import os
+TESTING = os.environ.get("PYTEST_RUNNING", "0") == "1"
 
 # ------------------------------------------------------------
 # Bitplane method selector

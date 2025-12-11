@@ -75,7 +75,7 @@ Thumbs.db
 .env.*
 secrets.json
 config.json
-
+*.ini
 # ----------------------------
 # Backup files
 # ----------------------------
