@@ -63,7 +63,6 @@ def bvn_decomposition(
         List of BvnComponent entries.
     """
     work = np.array(matrix, dtype=float, copy=True)
-    n = work.shape[0]
     components: List[BvnComponent] = []
     iteration = 0
 

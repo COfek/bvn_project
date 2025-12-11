@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import List
@@ -33,7 +32,7 @@ def _smooth(xs, ys, window):
     return xs_smooth, ys_smooth
 
 
-def plot_final_cycle_length(stats: List[DecompositionStats], n: int, bits: int, out_dir: Path):
+def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path):
     """
     Plot cycle length for:
     - BVN
@@ -63,7 +62,7 @@ def plot_final_cycle_length(stats: List[DecompositionStats], n: int, bits: int, 
     xs_split, cycle_split = _smooth(xs, cycle_split, window)
 
     # Upper bounds
-    UB_bvn = 1.0
+    ub_bvn = 1.0
 
     plt.figure(figsize=(12, 7))
 
@@ -73,7 +72,7 @@ def plot_final_cycle_length(stats: List[DecompositionStats], n: int, bits: int, 
     plt.plot(xs_split, cycle_split, label="Split-Tree Cycle Length", linewidth=2)
 
     # Draw bounds
-    plt.axhline(UB_bvn, color="black", linestyle="--", label="Upper Bound = 1")
+    plt.axhline(ub_bvn, color="black", linestyle="--", label="Upper Bound = 1")
 
     plt.xlabel("Matrix Index")
     plt.ylabel("Cycle Length")
@@ -115,8 +114,8 @@ def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: i
     xs_split, perm_split = _smooth(xs, perm_split, window)
 
     # Theoretical upper bounds
-    UB_bvn = n * n - 2 * n + 2
-    UB_bitplane = bits * n
+    ub_bvn = n * n - 2 * n + 2
+    ub_bitplane = bits * n
 
     plt.figure(figsize=(12, 7))
 
@@ -126,9 +125,9 @@ def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: i
     plt.plot(xs_split, perm_split, label="Split-Tree Permutations", linewidth=2)
 
     # Draw bounds
-    plt.axhline(UB_bvn, color="orange", linestyle="--", label=f"BVN Upper Bound = {UB_bvn}")
-    plt.axhline(UB_bitplane, color="purple", linestyle="--",
-                label=f"Bitplane Upper Bound = bits * n = {UB_bitplane}")
+    plt.axhline(ub_bvn, color="orange", linestyle="--", label=f"BVN Upper Bound = {ub_bvn}")
+    plt.axhline(ub_bitplane, color="purple", linestyle="--",
+                label=f"Bitplane Upper Bound = bits * n = {ub_bitplane}")
 
     plt.xlabel("Matrix Index")
     plt.ylabel("Number of Permutations")
@@ -186,6 +185,6 @@ def plot_results(stats_list: List[DecompositionStats], n: int, bits: int, out_di
     """
     _prepare_plot_dir(out_dir)
 
-    plot_final_cycle_length(stats_list, n=n, bits=bits, out_dir=out_dir)
+    plot_final_cycle_length(stats_list, out_dir=out_dir)
     plot_final_num_permutations(stats_list, n=n, bits=bits, out_dir=out_dir)
     plot_runtime(stats_list, out_dir=out_dir)

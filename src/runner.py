@@ -100,7 +100,6 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     # Prepare unified collection slots
     num_maximum = cycle_maximum = runtime_maximum = None
     num_maximal = cycle_maximal = runtime_maximal = None
-    num_split = cycle_split = runtime_split = None
 
     method = config.bitplane_method
 

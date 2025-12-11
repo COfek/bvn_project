@@ -48,10 +48,10 @@ class PWFAWorker(threading.Thread):
 
             # Only scan if this worker has a diagonal at this step
             if step < len(self.diagonals):
-                diag = self.diagonals[step]
+                diagonal = self.diagonals[step]
                 # Scan diagonal
                 for i in range(self.n):
-                    j = diag - i
+                    j = diagonal - i
                     if 0 <= j < self.n:
                         if self.mask[i, j]:
                             potential.append((i, j))
@@ -76,11 +76,11 @@ class PWFAWorker(threading.Thread):
 
 def wfa_parallel_threaded_synchronized(mask: BoolMatrix, num_threads: int = 4) -> List[Tuple[int, int]]:
     n = mask.shape[0]
-    K = 2 * n - 1
+    k = 2 * n - 1
 
     # Partition diagonals
     diag_groups = [[] for _ in range(num_threads)]
-    for idx in range(K):
+    for idx in range(k):
         diag_groups[idx % num_threads].append(idx)
 
     max_steps = max(len(g) for g in diag_groups)
