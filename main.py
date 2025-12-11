@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Optional
 
 from src.config import ExperimentConfig
 from src.runner import run_experiment
@@ -10,8 +9,9 @@ from src.plotting import plot_results
 
 # NEW imports for run folders + logging
 from src.utils.run_utils import create_run_folder, save_config, get_log_file_path
-from src.utils.logging_utils import init_logger, RUN_LOG_FILE, print_banner, timed_section, LOGGER
+from src.utils.logging_utils import init_logger, print_banner, timed_section
 
+global RUN_LOG_FILE, LOGGER
 
 def parse_args() -> argparse.Namespace:
     """
@@ -31,8 +31,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--density", type=float, default=1.0,
                         help="Sparsity density in (0, 1] (default: 1.0).")
 
-    parser.add_argument("--sinkhorn-iters", type=int, default=200,
-                        help="Number of Sinkhorn iterations (default: 200).")
+    parser.add_argument("--Sink-horn-iters", type=int, default=200,
+                        help="Number of Sink-horn iterations (default: 200).")
 
     parser.add_argument("--bitplane-bits", type=int, default=8,
                         help="Number of bits for bit-plane scaling (default: 8).")
