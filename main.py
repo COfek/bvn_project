@@ -50,6 +50,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-csv", type=str, default=None,
                         help="Optional path to save results CSV (default: None).")
 
+    parser.add_argument("--split-sparsity-target", type=int, default=3,
+                        help="Stop splitting when nnz(X) <= this number (default: 3).")
+
+    parser.add_argument("--split-max-depth", type=int, default=8,
+                        help="Maximum recursion depth for split-tree (default: 8).")
+
+    parser.add_argument("--split-p", type=float, default=0.5,
+                        help="Probability p for random binary split (default: 0.5).")
+
     return parser.parse_args()
 
 
@@ -70,6 +79,9 @@ def build_config(args: argparse.Namespace) -> ExperimentConfig:
         random_seed=args.random_seed,
         max_workers=args.max_workers,
         output_csv=args.output_csv,
+        split_sparsity_target=args.split_sparsity_target,
+        split_max_depth=args.split_max_depth,
+        split_p=args.split_p,
     )
 
 

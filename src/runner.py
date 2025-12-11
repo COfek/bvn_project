@@ -11,6 +11,7 @@ from rich.progress import Progress, BarColumn, TimeElapsedColumn
 from .config import ExperimentConfig
 from .utils.matrix_generator import random_sparse_doubly_stochastic
 from .algorithms.bvn import bvn_decomposition
+from .algorithms.split_tree import split_tree_decomposition
 from .utils.stats import DecompositionStats
 from .utils.logging_utils import LOGGER
 
@@ -97,6 +98,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     # Prepare unified collection slots
     num_maximum = cycle_maximum = runtime_maximum = None
     num_maximal = cycle_maximal = runtime_maximal = None
+    num_split = cycle_split = runtime_split = None
 
     method = config.bitplane_method
 
@@ -125,7 +127,25 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     else:
         raise ValueError(f"Unknown bitplane_method: {method}")
 
-    # --- 4. Return unified stats ---
+    # --- 4. Split-tree decomposition ---
+    t3 = time.perf_counter()
+    from .algorithms.split_tree import split_tree_decomposition
+    components_split = split_tree_decomposition(
+        matrix,
+        sparsity_target=config.split_sparsity_target,
+        max_depth=config.split_max_depth,
+        p_schedule=config.split_p,
+    )
+    runtime_split = time.perf_counter() - t3
+
+    if components_split:
+        num_split = len(components_split)
+        cycle_split = float(sum(comp.weight for comp in components_split))
+    else:
+        num_split = 0
+        cycle_split = 0.0
+
+    # --- 5. Return unified stats ---
     return DecompositionStats(
         matrix_index=index,
 
@@ -141,6 +161,10 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         num_perm_maximal=num_maximal,
         cycle_maximal=cycle_maximal,
         runtime_maximal=runtime_maximal,
+        #Split-tree Decomposition
+        num_perm_split=num_split,
+        cycle_split=cycle_split,
+        runtime_split=runtime_split,
     )
 
 

@@ -9,7 +9,7 @@ class ExperimentConfig:
     Configuration for matrix generation, BVN decomposition, and bit-plane decomposition.
     """
 
-    n: int = 6                              # Matrix size (n × n)
+    n: int = 6                             # Matrix size (n × n)
     num_matrices: int = 1000               # Number of matrices to generate
     density: float = 1.0                   # Sparsity level (1.0 = dense)
     sinkhorn_iters: int = 1000             # Sinkhorn normalization iterations
@@ -20,5 +20,7 @@ class ExperimentConfig:
     random_seed: Optional[int] = 42        # Reproducibility seed
     max_workers: Optional[int] = None      # Max threads for parallel execution
     output_csv: Optional[str] = None       # Optional path to write results CSV
-    bitplane_method: str = "both"       # "maximum" or "maximal"
-
+    bitplane_method: str = "both"          # "maximum" or "maximal"
+    split_sparsity_target: int = 3         # Stop splitting when nnz ≤ 3
+    split_max_depth: int = 8               # Max recursion depth
+    split_p: float = 0.5                   # Probability used in binary split

@@ -9,8 +9,9 @@ BoolMatrix = NDArray[np.bool_]
 class PWFAWorker(threading.Thread):
     """
     Worker thread: scans assigned diagonals, records potential matches,
-    waits for synchronization, then proceeds to next step.
+    waits for synchronization with the main thread.
     """
+
     def __init__(
         self,
         worker_id: int,
@@ -20,7 +21,8 @@ class PWFAWorker(threading.Thread):
         col_free: NDArray[np.bool_],
         barrier: threading.Barrier,
         result_pool: List[List[Tuple[int, int]]],
-        step_ref: List[int]
+        step_ref: List[int],
+        max_steps: int,
     ):
         super().__init__()
         self.worker_id = worker_id
@@ -31,93 +33,109 @@ class PWFAWorker(threading.Thread):
         self.col_free = col_free
         self.barrier = barrier
         self.result_pool = result_pool
-        self.step_ref = step_ref  # shared mutable "current step"
+        self.step_ref = step_ref
+        self.max_steps = max_steps
 
     def run(self):
         while True:
             step = self.step_ref[0]
-            if step >= len(self.diagonals):
+
+            if step >= self.max_steps:
+                print(f"[worker {self.worker_id}] exiting at step={step}")
                 break
 
-            diag = self.diagonals[step]
             potential = []
 
-            # --- Scan diagonal for candidate matches ---
-            for i in range(self.n):
-                j = diag - i
-                if 0 <= j < self.n:
-                    if self.mask[i, j]:
-                        potential.append((i, j))
+            # Only scan if this worker has a diagonal at this step
+            if step < len(self.diagonals):
+                diag = self.diagonals[step]
+                # Scan diagonal
+                for i in range(self.n):
+                    j = diag - i
+                    if 0 <= j < self.n:
+                        if self.mask[i, j]:
+                            potential.append((i, j))
 
-            # Store results for this step
+                print(f"[worker {self.worker_id}] step={step} scanned diag={self.diagonals[step]} "
+                      f"found {len(potential)} potentials")
+            else:
+                print(f"[worker {self.worker_id}] step={step} has no diagonal assigned")
+
             self.result_pool[self.worker_id] = potential
 
-            # --- Synchronize: wait for all threads to finish scanning ---
+            # First barrier
+            print(f"[worker {self.worker_id}] waiting at barrier 1 (step={step})")
             self.barrier.wait()
+            print(f"[worker {self.worker_id}] passed barrier 1 (step={step})")
 
-            # --- Wait again: after main thread commits matches ---
+            # Second barrier
+            print(f"[worker {self.worker_id}] waiting at barrier 2 (step={step})")
             self.barrier.wait()
+            print(f"[worker {self.worker_id}] passed barrier 2 (step={step})")
 
 
 def wfa_parallel_threaded_synchronized(mask: BoolMatrix, num_threads: int = 4) -> List[Tuple[int, int]]:
-    """
-    Fully synchronized parallel WFA:
-    - Threads scan diagonals in lock-step
-    - Main thread resolves conflicts and commits matches
-    - Ensures strict synchronization and correctness
-    """
     n = mask.shape[0]
     K = 2 * n - 1
 
-    # Split diagonals among threads (round-robin partition)
+    # Partition diagonals
     diag_groups = [[] for _ in range(num_threads)]
     for idx in range(K):
         diag_groups[idx % num_threads].append(idx)
 
-    # Shared state
+    max_steps = max(len(g) for g in diag_groups)
+
     row_free = np.ones(n, dtype=bool)
     col_free = np.ones(n, dtype=bool)
     matches: List[Tuple[int, int]] = []
 
-    # Synchronization tools
     barrier = threading.Barrier(num_threads + 1)
     result_pool = [[] for _ in range(num_threads)]
-    step_refs = [0]  # mutable int for controlling thread steps
+    step_ref = [0]
 
-    # Create threads
     workers = [
-        PWFAWorker(i, diag_groups[i], mask, row_free, col_free,
-                   barrier, result_pool, step_refs)
+        PWFAWorker(
+            worker_id=i,
+            diagonals=diag_groups[i],
+            mask=mask,
+            row_free=row_free,
+            col_free=col_free,
+            barrier=barrier,
+            result_pool=result_pool,
+            step_ref=step_ref,
+            max_steps=max_steps,
+        )
         for i in range(num_threads)
     ]
 
-    # Start workers
     for w in workers:
+        print(f"[main] starting worker {w.worker_id}")
         w.start()
 
-    # --- Main arbitration loop ---
-    max_steps = max(len(g) for g in diag_groups)
-
+    # MAIN LOOP
     for step in range(max_steps):
-        step_refs[0] = step
-
-        # Wait for all workers to finish scanning
+        step_ref[0] = step
+        print(f"\n[main] === step {step} === waiting for barrier 1 ===")
         barrier.wait()
+        print(f"[main] step {step} passed barrier 1")
 
-        # --- ARBITRATION: main thread resolves conflicts ---
+        # Arbitration
         for worker_res in result_pool:
             for (i, j) in worker_res:
                 if row_free[i] and col_free[j]:
                     matches.append((i, j))
                     row_free[i] = False
                     col_free[j] = False
-                    break  # only one match per diagonal
+                    print(f"[main] committed match ({i},{j})")
+                    break
 
-        # Signal workers to continue
+        print(f"[main] step {step} waiting barrier 2")
         barrier.wait()
+        print(f"[main] step {step} passed barrier 2")
 
-    # Join workers
     for w in workers:
         w.join()
+        print(f"[main] worker {w.worker_id} joined")
 
+    print("[main] done with WFA")
     return matches

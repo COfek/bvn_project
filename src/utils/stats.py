@@ -33,3 +33,9 @@ class DecompositionStats:
     num_perm_maximal: Optional[int] = None
     cycle_maximal: Optional[float] = None
     runtime_maximal: Optional[float] = None
+
+    # Split-tree decomposition results
+    num_perm_split: Optional[int] = None
+    cycle_split: Optional[float] = None
+    runtime_split: Optional[float] = None
+

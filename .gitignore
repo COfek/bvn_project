@@ -56,6 +56,7 @@ plots/
 results/
 output/
 outputs/
+tests/
 
 # ----------------------------
 # Temporary / System files
