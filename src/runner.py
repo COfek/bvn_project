@@ -131,7 +131,6 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
 
     # --- 4. Split-tree decomposition ---
     t3 = time.perf_counter()
-    from .algorithms.split_tree import split_tree_decomposition
     components_split = split_tree_decomposition(
         matrix,
         sparsity_target=config.split_sparsity_target,
