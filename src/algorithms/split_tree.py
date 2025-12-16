@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from dataclasses import dataclass
 
-from .wfa import wavefront_matching  # use your existing WFA implementation
+from .wfa import wavefront_matching, select_matching  # use your existing WFA implementation
 
 FloatMatrix = NDArray[np.float64]
 PSchedule = Union[float, Callable[[FloatMatrix, int], float]]
@@ -230,7 +230,7 @@ def decompose_leaf_with_wfa(
         mask_sq = mask[np.ix_(rows_sq, cols_sq)]
 
         # Run your square WFA on the m×m mask
-        matches_sq = wavefront_matching(mask_sq)
+        matches_sq, match_type = select_matching(mask_sq)
         if not matches_sq:
             # No matching found on this square submatrix – stop for this leaf
             break
@@ -253,3 +253,4 @@ def decompose_leaf_with_wfa(
         components.append(SplitTreeComponent(matrix=comp_matrix, weight=lam))
 
     return components
+

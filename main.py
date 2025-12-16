@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from pathlib import Path
 
 from src.config import ExperimentConfig
-from src.runner import run_experiment
 from src.plotting import plot_results
-
-# NEW imports for run folders + logging
-from src.utils.run_utils import create_run_folder, save_config, get_log_file_path
+from src.runner import run_experiment
 from src.utils.logging_utils import init_logger, print_banner, timed_section
+
+from src.utils.run_utils import create_run_folder, save_config, get_log_file_path
 
 global RUN_LOG_FILE, LOGGER
 
@@ -151,8 +151,6 @@ def _write_stats_to_csv(stats_list, path: Path) -> None:
         Maximum bitplane stats
         Maximal (WFA) bitplane stats
     """
-    import csv
-
     with path.open("w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
 
