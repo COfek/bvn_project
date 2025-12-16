@@ -143,3 +143,19 @@ def wfa_hybrid(mask: BoolMatrix, min_factor: float = 0.7) -> List[Tuple[int, int
     if len(wfa_result) < min_factor * max_size:
         return max_result
     return wfa_result
+
+def select_matching(mask: np.ndarray):
+    """
+    Prefer a perfect matching if one exists.
+    Otherwise fall back to WFA (maximal matching).
+    """
+    n = mask.shape[0]
+
+    # Try maximum matching first
+    max_matches = maximum_matching(mask)
+
+    if len(max_matches) == n:
+        return max_matches, "perfect"
+
+    # Fall back to WFA
+    return wavefront_matching(mask), "partial"
