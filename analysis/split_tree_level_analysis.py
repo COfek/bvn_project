@@ -7,9 +7,9 @@ import numpy as np
 from numpy.typing import NDArray
 
 from src.algorithms.split_tree import (
-    FloatMatrix,
-    PSchedule,
-    SplitTreeComponent,
+    float_matrix,
+    pschedule,
+    split_tree_component,
     random_binary_split,
     verify_reconstruction,
     decompose_leaf_with_wfa,
@@ -20,7 +20,7 @@ from src.algorithms.split_tree import (
 class SplitTreeNode:
     node_id: int
     depth: int
-    matrix: FloatMatrix
+    matrix: float_matrix
     left: Optional["SplitTreeNode"] = None
     right: Optional["SplitTreeNode"] = None
 
@@ -75,10 +75,10 @@ class SplitTreeLevelAnalysisResult:
 
 
 def build_split_tree_full(
-    x: FloatMatrix,
+    x: float_matrix,
     sparsity_target: int,
     max_depth: int,
-    p_schedule: PSchedule,
+    p_schedule: pschedule,
 ) -> Optional[SplitTreeNode]:
     """
     Build the entire split-tree and store it as a binary tree (internal nodes included).
@@ -87,7 +87,7 @@ def build_split_tree_full(
     """
     next_id = [0]
 
-    def _rec(mat: FloatMatrix, depth: int) -> Optional[SplitTreeNode]:
+    def _rec(mat: float_matrix, depth: int) -> Optional[SplitTreeNode]:
         if np.count_nonzero(mat) == 0:
             return None
 
@@ -147,7 +147,7 @@ def nodes_by_level(root: Optional[SplitTreeNode]) -> Dict[int, List[SplitTreeNod
     return levels
 
 
-def _reconstruct_from_components(shape: Tuple[int, int], comps: List[SplitTreeComponent]) -> FloatMatrix:
+def _reconstruct_from_components(shape: Tuple[int, int], comps: List[split_tree_component]) -> float_matrix:
     s = np.zeros(shape, dtype=np.float64)
     for c in comps:
         s += c.matrix
@@ -155,10 +155,10 @@ def _reconstruct_from_components(shape: Tuple[int, int], comps: List[SplitTreeCo
 
 
 def analyze_split_tree_levels(
-    x: FloatMatrix,
+    x: float_matrix,
     sparsity_target: int,
     max_depth: int,
-    p_schedule: PSchedule,
+    p_schedule: pschedule,
     tol: float = 1e-12,
     include_node_details: bool = True,
 ) -> SplitTreeLevelAnalysisResult:

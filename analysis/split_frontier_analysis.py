@@ -7,8 +7,8 @@ import numpy as np
 from numpy.typing import NDArray
 
 from src.algorithms.split_tree import (
-    FloatMatrix,
-    PSchedule,
+    float_matrix,
+    pschedule,
     random_binary_split,
     verify_reconstruction,
     decompose_leaf_with_wfa,
@@ -32,7 +32,7 @@ class FrontierStepReport:
 @dataclass
 class SplitFrontierAnalysisResult:
     steps: List[FrontierStepReport]
-    final_frontier: List[FloatMatrix]
+    final_frontier: List[float_matrix]
     reconstruction_ok: bool
 
 
@@ -41,10 +41,10 @@ class SplitFrontierAnalysisResult:
 # ---------------------------------------------------------------------
 
 def analyze_split_frontier(
-    x: FloatMatrix,
+    x: float_matrix,
     sparsity_target: int,
     max_depth: int,
-    p_schedule: PSchedule,
+    p_schedule: pschedule,
     tol: float = 1e-12,
 ) -> SplitFrontierAnalysisResult:
     """
@@ -66,7 +66,7 @@ def analyze_split_frontier(
     Returns:
         A SplitFrontierAnalysisResult containing per-step statistics.
     """
-    frontier: List[FloatMatrix] = [x.copy()]
+    frontier: List[float_matrix] = [x.copy()]
     reports: List[FrontierStepReport] = []
 
     for step in range(max_depth + 1):
@@ -106,7 +106,7 @@ def analyze_split_frontier(
         # --------------------------------------------------
         # Build next frontier
         # --------------------------------------------------
-        next_frontier: List[FloatMatrix] = []
+        next_frontier: List[float_matrix] = []
         any_split = False
 
         for mat in frontier:
