@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--density", type=float, default=1.0,
                         help="Sparsity density in (0, 1] (default: 1.0).")
 
-    parser.add_argument("--Sink-horn-iters", type=int, default=200,
+    parser.add_argument("--sinkhorn-iters", type=int, default=200,
                         help="Number of Sink-horn iterations (default: 200).")
 
     parser.add_argument("--bitplane-bits", type=int, default=8,

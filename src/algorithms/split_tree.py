@@ -1,35 +1,35 @@
 from __future__ import annotations
 
-from typing import Callable, List, Tuple, Union
+from dataclasses import dataclass
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
-from dataclasses import dataclass
 
-from .wfa import wavefront_matching, select_matching  # use your existing WFA implementation
+from .wfa import select_matching  # use your existing WFA implementation
 
-FloatMatrix = NDArray[np.float64]
-PSchedule = Union[float, Callable[[FloatMatrix, int], float]]
+float_matrix = NDArray[np.float64]
+pschedule = Union[float, Callable[[float_matrix, int], float]]
 
 
 @dataclass
-class SplitTreeComponent:
-    matrix: FloatMatrix
+class split_tree_component:
+    matrix: float_matrix
     weight: float
 
 
-def random_binary_split(x: FloatMatrix, p: float) -> Tuple[FloatMatrix, FloatMatrix]:
+def random_binary_split(x: float_matrix, p: float) -> Tuple[float_matrix, float_matrix]:
     """
-    Randomly split non-zero entries of X into two matrices A and B.
+    Randomly split non-zero entries of x into two matrices a and b.
 
-    Each positive entry X[i, j] goes entirely to:
-        - A[i, j] with probability p
-        - B[i, j] with probability (1 - p)
+    Each positive entry x[i, j] goes entirely to:
+        - a[i, j] with probability p
+        - b[i, j] with probability (1 - p)
 
-    Zeros remain zero in both A and B.
+    Zeros remain zero in both a and b.
 
     This guarantees:
-        X = A + B  (exactly)
+        x = a + b  (exactly)
     """
     if not (0.0 < p < 1.0):
         raise ValueError(f"p must be in (0,1), got {p}")
@@ -52,122 +52,192 @@ def random_binary_split(x: FloatMatrix, p: float) -> Tuple[FloatMatrix, FloatMat
     return a, b
 
 
-def split_tree(
-    x: FloatMatrix,
-    sparsity_target: int,
-    max_depth: int,
-    p_schedule: PSchedule,
-    depth: int = 0,
-) -> List[FloatMatrix]:
+def pivot_split(
+    x: float_matrix,
+    *,
+    min_matching_frac: float = 0.8,
+    cv_threshold: float = 0.15,
+    tol: float = 1e-12,
+) -> Optional[Tuple[float_matrix, float_matrix]]:
     """
-    Recursively split X into a tree of matrices until each leaf is "sufficiently sparse"
-    or the maximum depth is reached.
-
-    Args:
-        x:
-            The matrix to split (FloatMatrix, e.g. doubly stochastic or general non-negative).
-        sparsity_target:
-            Stop splitting when nnz(X) <= sparsity_target.
-        max_depth:
-            Maximum recursion depth allowed.
-        p_schedule:
-            Either:
-              - a float p in (0,1), used at all levels, or
-              - a callable p_schedule(X, depth) -> float in (0,1),
-                allowing depth- or structure-dependent probabilities.
-        depth:
-            Current recursion depth (internal use).
+    Split matrix x into two matrices based on a value pivot (median),
+    while preserving matchability.
 
     Returns:
-        A list of leaf matrices [L_1, L_2, ..., L_k] such that:
-
-            X = sum_i L_i
-
-        (up to floating-point arithmetic).
+        (a, b) such that x = a + b
+        or None if splitting is deemed unhelpful or unsafe.
     """
-    # Count nonzero entries
+    values = x[x > tol]
+    if values.size == 0:
+        return None
+
+    mean = float(values.mean())
+    std = float(values.std())
+    if mean <= tol:
+        return None
+
+    cv = std / mean
+    if cv <= cv_threshold:
+        return None
+
+    pivot = float(np.median(values))
+
+    a = np.zeros_like(x)
+    b = np.zeros_like(x)
+
+    high_mask = x >= pivot
+    low_mask = (x > tol) & (x < pivot)
+
+    a[high_mask] = x[high_mask]
+    b[low_mask] = x[low_mask]
+
+    if not a.any() or not b.any():
+        return None
+
+    support = high_mask.astype(np.int8)
+    row_deg = support.sum(axis=1)
+    col_deg = support.sum(axis=0)
+
+    active_rows = int(np.sum(row_deg > 0))
+    active_cols = int(np.sum(col_deg > 0))
+    if active_rows == 0 or active_cols == 0:
+        return None
+
+    max_possible = min(active_rows, active_cols)
+    if max_possible < min_matching_frac * min(x.shape):
+        return None
+
+    return a, b
+
+
+def split_tree(
+    x: float_matrix,
+    sparsity_target: int,
+    max_depth: int,
+    p_schedule: pschedule,
+    *,
+    split_method: str,
+    cv_threshold: float,
+    min_matching_frac: float,
+    tol: float,
+    depth: int = 0,
+) -> List[float_matrix]:
+    """
+    Recursively split a nonnegative matrix into a tree of submatrices until each
+    leaf is sufficiently sparse, value-homogeneous, or the maximum depth is reached.
+    """
     nnz = int(np.count_nonzero(x))
 
-    # Stopping conditions
     if nnz == 0:
         return []
     if nnz <= sparsity_target or depth >= max_depth:
         return [x]
 
-    # Choose p for this node
-    if callable(p_schedule):
-        p = float(p_schedule(x, depth))
+    if split_method == "pivot":
+        res = pivot_split(
+            x,
+            cv_threshold=cv_threshold,
+            min_matching_frac=min_matching_frac,
+            tol=tol,
+        )
+        if res is None:
+            return [x]
+        a, b = res
+
+    elif split_method == "random":
+        if callable(p_schedule):
+            p = float(p_schedule(x, depth))
+        else:
+            p = float(p_schedule)
+
+        if not (0.0 < p < 1.0):
+            raise ValueError(f"p_schedule produced invalid p={p} at depth={depth}")
+
+        a, b = random_binary_split(x, p)
+
     else:
-        p = float(p_schedule)
+        raise ValueError(f"unknown split_method: {split_method}")
 
-    if not (0.0 < p < 1.0):
-        raise ValueError(f"p_schedule produced invalid p={p} at depth={depth}")
-
-    # Perform one binary split
-    a, b = random_binary_split(x, p)
-
-    leaves: List[FloatMatrix] = []
+    leaves: List[float_matrix] = []
 
     if np.count_nonzero(a) > 0:
-        leaves.extend(split_tree(a, sparsity_target, max_depth, p_schedule, depth + 1))
+        leaves.extend(
+            split_tree(
+                a,
+                sparsity_target,
+                max_depth,
+                p_schedule,
+                split_method=split_method,
+                cv_threshold=cv_threshold,
+                min_matching_frac=min_matching_frac,
+                tol=tol,
+                depth=depth + 1,
+            )
+        )
+
     if np.count_nonzero(b) > 0:
-        leaves.extend(split_tree(b, sparsity_target, max_depth, p_schedule, depth + 1))
+        leaves.extend(
+            split_tree(
+                b,
+                sparsity_target,
+                max_depth,
+                p_schedule,
+                split_method=split_method,
+                cv_threshold=cv_threshold,
+                min_matching_frac=min_matching_frac,
+                tol=tol,
+                depth=depth + 1,
+            )
+        )
 
     return leaves
 
 
-def verify_reconstruction(original: FloatMatrix, leaves: List[FloatMatrix], tol: float = 1e-12) -> bool:
+def verify_reconstruction(original: float_matrix, leaves: List[float_matrix], tol: float = 1e-12) -> bool:
     """
     Verify that the sum of leaf matrices reconstructs the original matrix.
 
     Returns True if:
         || original - sum(leaves) ||_max <= tol
-
-    This is useful for debugging and validating probability schedules.
     """
     if len(leaves) == 0:
         return np.allclose(original, 0, atol=tol)
 
     s = np.zeros_like(original)
-    for L in leaves:
-        s += L
+    for leaf in leaves:
+        s += leaf
 
     return np.allclose(original, s, atol=tol)
 
 
 def split_tree_decomposition(
-    x: FloatMatrix,
+    x: float_matrix,
     sparsity_target: int,
     max_depth: int,
-    p_schedule: PSchedule,
+    p_schedule: pschedule,
+    split_method: str = "random",
+    cv_threshold: float = 0.15,
+    min_matching_frac: float = 0.8,
     tol: float = 1e-12,
-) -> List[SplitTreeComponent]:
+) -> List[split_tree_component]:
     """
-    High-level wrapper that:
-      1. Runs the recursive split-tree algorithm to produce leaf matrices.
-      2. For each leaf, runs a WFA-based decomposition into weighted
-         permutation matrices (using your wavefront_matching).
-      3. Flattens all leaf decompositions into a single list of components.
-
-    The resulting components satisfy (up to numerical error):
-
-        X ≈ sum_k (component_k.matrix)
-
-    and each component_k has:
-        - matrix: lambda_k * P_k  (weighted permutation matrix)
-        - weight: lambda_k
+    High-level wrapper:
+      1) Split x into leaves using split_tree
+      2) Decompose each leaf into weighted (partial) permutation/matching matrices
+      3) Flatten into a single component list
     """
-    # 1. Split into leaves
     leaves = split_tree(
         x,
         sparsity_target=sparsity_target,
         max_depth=max_depth,
         p_schedule=p_schedule,
+        split_method=split_method,
+        cv_threshold=cv_threshold,
+        min_matching_frac=min_matching_frac,
+        tol=tol,
     )
 
-    all_components: List[SplitTreeComponent] = []
-
-    # 2. Decompose each leaf into weighted permutations using WFA
+    all_components: List[split_tree_component] = []
     for leaf in leaves:
         leaf_components = decompose_leaf_with_wfa(leaf, tol=tol)
         all_components.extend(leaf_components)
@@ -176,48 +246,33 @@ def split_tree_decomposition(
 
 
 def decompose_leaf_with_wfa(
-    leaf: FloatMatrix,
+    leaf: float_matrix,
     tol: float = 1e-12,
-) -> List[SplitTreeComponent]:
+) -> List[split_tree_component]:
     """
-    Decompose a non-negative leaf matrix into weighted permutation matrices
-    using your normal WFA (wavefront_matching) as the matching oracle.
+    Decompose a nonnegative leaf matrix into weighted matching/permutation components
+    using your WFA-based matching oracle (select_matching).
 
-    We always keep the *full n×n shape* for X, but when we construct the
-    mask for WFA we may have different numbers of active rows vs active
-    columns. Since WFA is defined for *square* switch fabrics, we:
-
-      - identify active rows and cols
-      - take m = min(#active_rows, #active_cols)
-      - restrict to the first m rows and m cols (forming an m×m mask)
-      - call wavefront_matching on that square mask
-      - map the matches back to the original coordinates
-
-    Repeatedly:
-      1. Build boolean mask of entries > tol.
-      2. Take a square active Sub-mask and run WFA to get a matching.
-      3. Take lambda = min(leaf[i, j]) over matching edges.
-      4. Subtract lambda * P from X.
-      5. Store matrix = lambda * P, weight = lambda.
-
-    Stops when all remaining entries are <= tol or no matching is possible.
+    Notes:
+      - This produces weighted matchings (not necessarily full permutations) when the
+        active support is not a perfect matching.
+      - The current implementation crops to an m×m active submask (m=min(r,c)).
+        This is consistent with your existing approach but can discard feasible edges.
     """
     x = leaf.copy()
-    components: List[SplitTreeComponent] = []
+    components: List[split_tree_component] = []
 
     while True:
         mask = x > tol
         if not mask.any():
             break
 
-        # Identify rows/cols that still have positive entries
         active_rows = np.where(mask.sum(axis=1) > 0)[0]
         active_cols = np.where(mask.sum(axis=0) > 0)[0]
 
         if len(active_rows) == 0 or len(active_cols) == 0:
             break
 
-        # --- Force the reduced mask to be square for WFA ---
         r = len(active_rows)
         c = len(active_cols)
         m = min(r, c)
@@ -226,31 +281,25 @@ def decompose_leaf_with_wfa(
 
         rows_sq = active_rows[:m]
         cols_sq = active_cols[:m]
-
         mask_sq = mask[np.ix_(rows_sq, cols_sq)]
 
-        # Run your square WFA on the m×m mask
         matches_sq, match_type = select_matching(mask_sq)
         if not matches_sq:
-            # No matching found on this square submatrix – stop for this leaf
             break
 
-        # Map matches back to full coordinates
         matches = [(rows_sq[i], cols_sq[j]) for (i, j) in matches_sq]
 
-        # Compute lambda = minimum value over the matched edges
         lam = min(float(x[i, j]) for (i, j) in matches)
+        if lam <= tol:
+            break
 
-        # Build permutation matrix P in FULL space and subtract lam*P from X
         p = np.zeros_like(x)
         for (i, j) in matches:
             p[i, j] = 1.0
             x[i, j] -= lam
-            if x[i, j] < tol:
+            if x[i, j] <= tol:
                 x[i, j] = 0.0
 
-        comp_matrix = lam * p
-        components.append(SplitTreeComponent(matrix=comp_matrix, weight=lam))
+        components.append(split_tree_component(matrix=lam * p, weight=lam))
 
     return components
-

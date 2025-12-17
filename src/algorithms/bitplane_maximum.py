@@ -73,6 +73,7 @@ def _process_single_bitplane_maximum(
 def bitplane_decomposition_maximum(
     matrix: FloatMatrix,
     bits: int = 8,
+    tol: float = 0.0,
     max_workers: int | None = None,
 ) -> List[BvnComponent]:
     """

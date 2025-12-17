@@ -135,6 +135,9 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         sparsity_target=config.split_sparsity_target,
         max_depth=config.split_max_depth,
         p_schedule=config.split_p,
+        split_method=config.split_method,
+        cv_threshold=config.split_cv_threshold,
+        min_matching_frac=config.split_min_matching_frac,
     )
     runtime_split = time.perf_counter() - t3
 
@@ -178,7 +181,7 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
     LOGGER.info(
         f"[bold yellow]Starting Experiment[/bold yellow] | "
         f"n={config.n}, matrices={config.num_matrices}, "
-        f"method={config.bitplane_method}"
+        f"method={config.bitplane_method }, split={config.split_method}, "
     )
 
     results: List[DecompositionStats] = []
