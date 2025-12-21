@@ -18,8 +18,10 @@ def parse_args() -> argparse.Namespace:
     Parse command-line arguments for the BVN experiment.
     """
     parser = argparse.ArgumentParser(
-        description="Run BVN and bit-plane decompositions on random doubly "
-                    "stochastic matrices and plot statistics."
+        description=(
+            "Run BVN, bit-plane, and split-tree decompositions on random "
+            "doubly stochastic matrices and collect statistics."
+        )
     )
 
     parser.add_argument("--n", type=int, default=32,
@@ -28,39 +30,49 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-matrices", type=int, default=1000,
                         help="Number of matrices to generate (default: 1000).")
 
-    parser.add_argument("--density", type=float, default=1.0,
-                        help="Sparsity density in (0, 1] (default: 1.0).")
+    parser.add_argument("--density", type=float, default=9,
+                        help="Matrix density in (0, 1] (default: 1.0 = dense).")
 
-    parser.add_argument("--sinkhorn-iters", type=int, default=200,
-                        help="Number of Sink-horn iterations (default: 200).")
+    parser.add_argument("--sinkhorn-iters", type=int, default=1000,
+                        help="Number of Sinkhorn normalization iterations (default: 200).")
 
     parser.add_argument("--bitplane-bits", type=int, default=8,
                         help="Number of bits for bit-plane scaling (default: 8).")
 
     parser.add_argument("--bitplane-method", type=str, default="both",
                         choices=["maximum", "maximal", "both"],
-                        help="Bitplane matching method: maximum, maximal (WFA), or both.")
+                        help="Bit-plane matching method: maximum, maximal (WFA), or both.")
 
     parser.add_argument("--random-seed", type=int, default=42,
                         help="Base random seed (default: 42).")
 
     parser.add_argument("--max-workers", type=int, default=None,
-                        help="Maximum number of worker threads (default: None = auto).")
+                        help="Maximum number of worker threads (default: auto).")
 
     parser.add_argument("--output-csv", type=str, default=None,
-                        help="Optional path to save results CSV (default: None).")
+                        help="Optional path to save results CSV.")
 
+    # --- Split-tree parameters ---
     parser.add_argument("--split-sparsity-target", type=int, default=3,
-                        help="Stop splitting when nnz(X) <= this number (default: 3).")
+                        help="Stop splitting when nnz(X) ≤ this value (default: 3).")
 
     parser.add_argument("--split-max-depth", type=int, default=8,
                         help="Maximum recursion depth for split-tree (default: 8).")
 
     parser.add_argument("--split-p", type=float, default=0.5,
-                        help="Probability p for random binary split (default: 0.5).")
+                        help="Probability used in random binary split (default: 0.5).")
+
+    parser.add_argument("--split-cv-threshold", type=float, default=0.15,
+                        help="Coefficient of variation threshold to stop splitting (default: 0.15).")
+
+    parser.add_argument("--split-min-matching-frac", type=float, default=0.8,
+                        help="Minimum fraction of matchable rows/columns to allow split (default: 0.8).")
+
+    parser.add_argument("--split-method", type=str, default="pivot",
+                        choices=["pivot", "random"],
+                        help="Split strategy for split-tree (default: pivot).")
 
     return parser.parse_args()
-
 
 def build_config(args: argparse.Namespace) -> ExperimentConfig:
     """
@@ -82,7 +94,11 @@ def build_config(args: argparse.Namespace) -> ExperimentConfig:
         split_sparsity_target=args.split_sparsity_target,
         split_max_depth=args.split_max_depth,
         split_p=args.split_p,
+        split_cv_threshold=args.split_cv_threshold,
+        split_min_matching_frac=args.split_min_matching_frac,
+        split_method=args.split_method,
     )
+
 
 
 def main() -> None:

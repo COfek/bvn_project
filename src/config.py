@@ -9,7 +9,7 @@ class ExperimentConfig:
     Configuration for matrix generation, BVN decomposition, and bit-plane decomposition.
     """
 
-    n: int = 6                             # Matrix size (n × n)
+    n: int = 32                            # Matrix size (n × n)
     num_matrices: int = 1000               # Number of matrices to generate
     density: float = 1.0                   # Sparsity level (1.0 = dense)
     sinkhorn_iters: int = 1000             # Sinkhorn normalization iterations

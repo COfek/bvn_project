@@ -9,7 +9,7 @@ import numpy as np
 from rich.progress import Progress, BarColumn, TimeElapsedColumn
 
 from .config import ExperimentConfig
-from .utils.matrix_generator import random_sparse_doubly_stochastic
+from .utils.matrix_generator import random_sparse_doubly_stochastic, split_tree_friendly_matrix
 from .algorithms.bvn import bvn_decomposition
 from .algorithms.split_tree import split_tree_decomposition
 from .utils.stats import DecompositionStats
@@ -82,14 +82,25 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     )
     rng = np.random.default_rng(rng_seed)
 
-    # --- 1. Generate matrix ---
-    matrix = random_sparse_doubly_stochastic(
+    # # --- 1. Generate matrix ---
+    # matrix = random_sparse_doubly_stochastic(
+    #     n=config.n,
+    #     density=config.density,
+    #     iters=config.sinkhorn_iters,
+    #     eps=config.sinkhorn_eps,
+    #     rng=rng,
+    # )
+
+    matrix = split_tree_friendly_matrix(
         n=config.n,
-        density=config.density,
-        iters=config.sinkhorn_iters,
-        eps=config.sinkhorn_eps,
-        rng=rng,
+        num_blocks=4,
+        tail_alpha=1.3,
+        spike_fraction=0.03,
+        sinkhorn_iters=config.sinkhorn_iters,
+        seed=rng.integers(1 << 32),
     )
+
+
 
     # --- 2. BVN decomposition ---
     t0 = time.perf_counter()

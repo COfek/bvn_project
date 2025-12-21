@@ -93,3 +93,59 @@ def is_doubly_stochastic(matrix: FloatMatrix, tol: float = 1e-9) -> bool:
         return False
 
     return True
+
+
+def split_tree_friendly_matrix(
+    n: int,
+    num_blocks: int = 4,
+    tail_alpha: float = 1.5,
+    spike_fraction: float = 0.05,
+    sinkhorn_iters: int = 500,
+    seed: int | None = None,
+):
+    """
+    Generate a doubly stochastic matrix that favors split-tree over bit-plane.
+
+    Properties:
+    - heavy-tailed weights (pareto)
+    - block / hierarchical structure
+    - few large spikes, many tiny residuals
+    """
+    assert n % num_blocks == 0
+    rng = np.random.default_rng(seed)
+    block_size = n // num_blocks
+
+    a = np.zeros((n, n))
+
+    # ----------------------------------------------------
+    # 1. block-structured heavy-tailed mass
+    # ----------------------------------------------------
+    for b in range(num_blocks):
+        i0 = b * block_size
+        i1 = (b + 1) * block_size
+
+        block = rng.pareto(tail_alpha, size=(block_size, block_size))
+        a[i0:i1, i0:i1] = block
+
+    # ----------------------------------------------------
+    # 2. inject sparse large spikes (worst for bit-plane)
+    # ----------------------------------------------------
+    num_spikes = int(spike_fraction * n * n)
+    for _ in range(num_spikes):
+        i = rng.integers(0, n)
+        j = rng.integers(0, n)
+        a[i, j] += rng.uniform(50, 200)
+
+    # ----------------------------------------------------
+    # 3. small background noise everywhere
+    # ----------------------------------------------------
+    a += 1e-6 * rng.random((n, n))
+
+    # ----------------------------------------------------
+    # 4. sinkhorn normalization
+    # ----------------------------------------------------
+    for _ in range(sinkhorn_iters):
+        a /= a.sum(axis=1, keepdims=True)
+        a /= a.sum(axis=0, keepdims=True)
+
+    return a

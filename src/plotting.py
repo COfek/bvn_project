@@ -260,6 +260,57 @@ def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Pat
     plt.savefig(out_dir / "permutation_pdf_cdf.png", dpi=220)
     plt.close()
 
+def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path):
+    """
+    Creates a scatter plot comparing mean Runtime (Y) vs mean Cycle Length (X).
+    Includes standard deviation error bars for both axes.
+    """
+    _prepare_plot_dir(out_dir)
+
+    # Define the mapping of algorithms to their attribute names in DecompositionStats
+    methods = {
+        "BVN": ("runtime_bvn", "cycle_length_bvn"),
+        "Bitplane Max": ("runtime_maximum", "cycle_maximum"),
+        "Bitplane WFA": ("runtime_maximal", "cycle_maximal"),
+        "Split-Tree": ("runtime_split", "cycle_split"),
+    }
+
+    plt.figure(figsize=(10, 7))
+    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
+
+    for (name, (rt_attr, cyc_attr)), color in zip(methods.items(), colors):
+        # Extract values and filter out Nones
+        runtimes = [getattr(s, rt_attr) for s in stats if getattr(s, rt_attr) is not None]
+        cycles = [getattr(s, cyc_attr) for s in stats if getattr(s, cyc_attr) is not None]
+
+        if not runtimes or not cycles:
+            continue
+
+        mean_rt = np.mean(runtimes)
+        std_rt = np.std(runtimes)
+        mean_cyc = np.mean(cycles)
+        std_cyc = np.std(cycles)
+
+        # Plot the point with error bars
+        plt.errorbar(
+            mean_cyc, mean_rt,
+            xerr=std_cyc, yerr=std_rt,
+            fmt='o', markersize=8, capsize=5,
+            label=name, color=color, alpha=0.8
+        )
+
+    plt.xlabel("Average Cycle Length (Lower is better, ideally 1.0)")
+    plt.ylabel("Average Runtime (Seconds)")
+    plt.title("Algorithm Efficiency: Runtime vs. Cycle Length")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.legend()
+
+    # Add a vertical line for the ideal cycle length of 1.0
+    plt.axvline(1.0, color="black", linestyle=":", alpha=0.5, label="Ideal Cycle")
+
+    plt.savefig(out_dir / "runtime_vs_cycle_efficiency.png", dpi=220)
+    plt.close()
+
 def plot_results(stats_list: List[DecompositionStats], n: int, bits: int, out_dir: Path):
     """
     Final reporting:
@@ -277,5 +328,6 @@ def plot_results(stats_list: List[DecompositionStats], n: int, bits: int, out_di
     plot_distribution_runtime(stats_list, out_dir=out_dir)
     plot_cycle_length_distributions(stats_list, out_dir)
     plot_permutation_distributions(stats_list, out_dir)
+    plot_runtime_vs_cycle_efficiency(stats_list, out_dir)
 
 
