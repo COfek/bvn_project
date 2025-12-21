@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Dict
 from pathlib import Path
+from scipy.stats import gaussian_kde  # New import for smoothing
 
 from .utils.stats import DecompositionStats
 
@@ -32,8 +33,8 @@ def _smooth(xs, ys, window):
 
 
 def _extract_metric(
-    stats: List[DecompositionStats],
-    field: str,
+        stats: List[DecompositionStats],
+        field: str,
 ) -> List[float]:
     vals = []
     for s in stats:
@@ -150,40 +151,68 @@ def plot_runtime(stats: List[DecompositionStats], out_dir: Path):
     plt.close()
 
 
+# ============================================================
+# SMOOTHED DISTRIBUTION PLOTS
+# ============================================================
+
 def _plot_pdf_cdf_on_ax(
-    ax,
-    values,
-    label: str,
-    bins: int = 50,
+        ax,
+        values,
+        label: str,
+        bins: int = 50,
 ):
     """
-    Draw PDF and CDF of `values` on a single Axes.
+    Draw SMOOTH PDF and CDF and return combined legend handles.
     """
+    values = [v for v in values if v is not None]
     values = np.asarray(values, dtype=float)
     values = values[np.isfinite(values)]
 
-    if len(values) == 0:
-        ax.text(0.5, 0.5, "No data", ha="center", va="center")
-        return
+    if len(values) < 2:
+        ax.text(0.5, 0.5, "Insufficient data", ha="center", va="center")
+        return [], []
 
-    # --- PDF ---
-    hist, bin_edges = np.histogram(values, bins=bins, density=True)
-    centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-    ax.plot(centers, hist, linewidth=2, label=f"{label} PDF")
+    # Handle constant data
+    if np.all(values == values[0]):
+        line = ax.axvline(values[0], color="tab:blue", lw=2, label=f"{label} (Constant)")
+        return [line], [f"{label} (Constant)"]
 
-    # --- CDF ---
+    # Jittering for discrete data
+    if np.all(np.mod(values, 1) == 0):
+        values = values + np.random.normal(0, 0.3, size=values.shape)
+
+    # --- 1. PDF ---
+    pdf_handle = None
+    try:
+        kde = gaussian_kde(values)
+        x_min, x_max = values.min(), values.max()
+        margin = (x_max - x_min) * 0.2
+        x_range = np.linspace(x_min - margin, x_max + margin, 500)
+        pdf_values = kde(x_range)
+        pdf_handle, = ax.plot(x_range, pdf_values, linewidth=2, label=f"{label} PDF")
+        ax.fill_between(x_range, pdf_values, alpha=0.1)
+    except:
+        pass
+
+    # --- 2. CDF ---
+    ax_cdf = ax.twinx()
     sorted_vals = np.sort(values)
-    cdf = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals)
-    ax.plot(sorted_vals, cdf, linestyle="--", linewidth=2, label=f"{label} CDF")
+    cdf_y = np.linspace(0, 1, len(sorted_vals))
+    cdf_handle, = ax_cdf.plot(sorted_vals, cdf_y, linestyle="--", linewidth=1.5,
+                              color="tab:orange", label=f"{label} CDF")
 
-    ax.grid(True, alpha=0.3)
+    ax_cdf.set_ylim(0, 1.05)
+    ax_cdf.set_ylabel("Cumulative Probability", color="tab:orange", fontsize=8)
+    ax_cdf.tick_params(axis='y', labelcolor="tab:orange", labelsize=7)
+
+    # Return handles so the calling function can build a single legend
+    handles = [pdf_handle, cdf_handle]
+    labels = [f"{label} PDF", f"{label} CDF"]
+    return handles, labels
+
 
 def plot_distribution_runtime(stats: List[DecompositionStats], out_dir: Path):
-    """
-    Runtime PDF + CDF for all methods OVERLAID.
-    """
     _prepare_plot_dir(out_dir)
-
     methods = {
         "BVN": [s.runtime_bvn for s in stats],
         "Bitplane Max": [s.runtime_maximum for s in stats],
@@ -191,24 +220,30 @@ def plot_distribution_runtime(stats: List[DecompositionStats], out_dir: Path):
         "Split-Tree": [s.runtime_split for s in stats],
     }
 
-    plt.figure(figsize=(12, 7))
-    ax = plt.gca()
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    axes = axes.flatten()
 
-    for name, values in methods.items():
-        _plot_pdf_cdf_on_ax(ax, values, label=name)
+    for ax, (name, values) in zip(axes, methods.items()):
+        # Get the handles from the helper
+        h, l = _plot_pdf_cdf_on_ax(ax, values, label=name)
 
-    ax.set_xlabel("Runtime (seconds)")
-    ax.set_ylabel("Density / CDF")
-    ax.set_title("Runtime Distribution (PDF + CDF)")
-    ax.legend()
+        ax.set_title(f"{name} Runtime Distribution")
+        ax.set_xlabel("Runtime (seconds)")
+        ax.set_ylabel("Density (PDF)")
 
-    plt.tight_layout()
-    plt.savefig(out_dir / "runtime_pdf_cdf.png", dpi=220)
+        # Build one clean legend per subplot
+        if h:
+            ax.legend(h, l, loc="upper right", fontsize=9)
+
+    plt.suptitle("Individual Runtime Distributions (Seconds)", fontsize=16)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig(out_dir / "runtime_pdf_cdf_subplots.png", dpi=220)
     plt.close()
+
 
 def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Path):
     """
-    Cycle length PDF + CDF in 2×2 subplots (one per method).
+    Cycle length PDF + CDF in 2×2 subplots with clean combined legends.
     """
     _prepare_plot_dir(out_dir)
 
@@ -223,19 +258,25 @@ def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Pa
     axes = axes.flatten()
 
     for ax, (name, values) in zip(axes, methods.items()):
-        _plot_pdf_cdf_on_ax(ax, values, label=name)
+        # Capture handles/labels from helper to avoid messed up legends
+        h, l = _plot_pdf_cdf_on_ax(ax, values, label=name)
         ax.set_title(f"{name} Cycle Length")
         ax.set_xlabel("Cycle length")
-        ax.set_ylabel("Density / CDF")
-        ax.legend()
+        ax.set_ylabel("Density (PDF)")
 
-    plt.tight_layout()
+        if h:
+            # Combine handles into a single legend on the primary axis
+            ax.legend(h, l, loc="upper left", fontsize=8)
+
+    plt.suptitle("Cycle Length Distributions (PDF + CDF)", fontsize=16)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(out_dir / "cycle_length_pdf_cdf.png", dpi=220)
     plt.close()
 
+
 def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Path):
     """
-    Permutation count PDF + CDF in 2×2 subplots (one per method).
+    Permutation count PDF + CDF in 2×2 subplots with linear CDFs to remove staircases.
     """
     _prepare_plot_dir(out_dir)
 
@@ -250,24 +291,24 @@ def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Pat
     axes = axes.flatten()
 
     for ax, (name, values) in zip(axes, methods.items()):
-        _plot_pdf_cdf_on_ax(ax, values, label=name)
+        # Helper now uses jittering and linear CDF interpolation
+        h, l = _plot_pdf_cdf_on_ax(ax, values, label=name)
         ax.set_title(f"{name} Permutations")
         ax.set_xlabel("Number of permutations")
-        ax.set_ylabel("Density / CDF")
-        ax.legend()
+        ax.set_ylabel("Density (PDF)")
 
-    plt.tight_layout()
+        if h:
+            ax.legend(h, l, loc="upper left", fontsize=8)
+
+    plt.suptitle("Permutation Count Distributions (Smoothed)", fontsize=16)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(out_dir / "permutation_pdf_cdf.png", dpi=220)
     plt.close()
 
+
 def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path):
-    """
-    Creates a scatter plot comparing mean Runtime (Y) vs mean Cycle Length (X).
-    Includes standard deviation error bars for both axes.
-    """
     _prepare_plot_dir(out_dir)
 
-    # Define the mapping of algorithms to their attribute names in DecompositionStats
     methods = {
         "BVN": ("runtime_bvn", "cycle_length_bvn"),
         "Bitplane Max": ("runtime_maximum", "cycle_maximum"),
@@ -279,7 +320,6 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
     colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
 
     for (name, (rt_attr, cyc_attr)), color in zip(methods.items(), colors):
-        # Extract values and filter out Nones
         runtimes = [getattr(s, rt_attr) for s in stats if getattr(s, rt_attr) is not None]
         cycles = [getattr(s, cyc_attr) for s in stats if getattr(s, cyc_attr) is not None]
 
@@ -291,7 +331,6 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
         mean_cyc = np.mean(cycles)
         std_cyc = np.std(cycles)
 
-        # Plot the point with error bars
         plt.errorbar(
             mean_cyc, mean_rt,
             xerr=std_cyc, yerr=std_rt,
@@ -304,30 +343,20 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
     plt.title("Algorithm Efficiency: Runtime vs. Cycle Length")
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.legend()
-
-    # Add a vertical line for the ideal cycle length of 1.0
     plt.axvline(1.0, color="black", linestyle=":", alpha=0.5, label="Ideal Cycle")
 
     plt.savefig(out_dir / "runtime_vs_cycle_efficiency.png", dpi=220)
     plt.close()
 
+
 def plot_results(stats_list: List[DecompositionStats], n: int, bits: int, out_dir: Path):
-    """
-    Final reporting:
-      - Smoothed curves vs matrix index (comparative)
-      - Distributional plots (CDF + PDF)
-    """
     _prepare_plot_dir(out_dir)
 
-    # Time-series
     plot_final_cycle_length(stats_list, out_dir=out_dir)
     plot_final_num_permutations(stats_list, n=n, bits=bits, out_dir=out_dir)
     plot_runtime(stats_list, out_dir=out_dir)
 
-    # Distributions
     plot_distribution_runtime(stats_list, out_dir=out_dir)
     plot_cycle_length_distributions(stats_list, out_dir)
     plot_permutation_distributions(stats_list, out_dir)
     plot_runtime_vs_cycle_efficiency(stats_list, out_dir)
-
-
