@@ -22,9 +22,9 @@ class ExperimentConfig:
     output_csv: Optional[str] = None       # Optional path to write results CSV
     bitplane_method: str = "both"          # "maximum" or "maximal"
     split_sparsity_target: int = 3         # Stop splitting when nnz ≤ 3
-    split_max_depth: int = 8               # Max recursion depth
+    split_max_depth: int = 2               # Max recursion depth
     split_p: float = 0.5                   # Probability used in binary split
     split_cv_threshold: float = 0.15       # Defined as the coefficient of variation (std / mean) over nonzero entries.
     split_min_matching_frac: float = 0.8   # Minimum fraction of rows/columns that must remain matchable at the current
                                            # value scale in order to allow a pivot split.
-    split_method: str = "pivot"
+    split_method: str = "random"           # "pivot" or "random"
