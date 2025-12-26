@@ -56,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split-sparsity-target", type=int, default=3,
                         help="Stop splitting when nnz(X) ≤ this value (default: 3).")
 
-    parser.add_argument("--split-max-depth", type=int, default=8,
+    parser.add_argument("--split-max-depth", type=int, default=1,
                         help="Maximum recursion depth for split-tree (default: 8).")
 
     parser.add_argument("--split-p", type=float, default=0.5,
@@ -68,9 +68,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split-min-matching-frac", type=float, default=0.8,
                         help="Minimum fraction of matchable rows/columns to allow split (default: 0.8).")
 
-    parser.add_argument("--split-method", type=str, default="pivot",
+    parser.add_argument("--split-method", type=str, default="random",
                         choices=["pivot", "random"],
-                        help="Split strategy for split-tree (default: pivot).")
+                        help="Split strategy for split-tree (default: random).")
 
     return parser.parse_args()
 
@@ -126,7 +126,7 @@ def main() -> None:
     RUN_LOG_FILE = get_log_file_path(run_dir)
     LOGGER = init_logger()   # must be called AFTER RUN_LOG_FILE is set
 
-    print_banner("BVN & Bitplane Experiment Started")
+    print_banner("BVN, Bitplane, Split tree Experiment Started")
     LOGGER.info(f"Run directory: {run_dir}")
 
     # ------------------------------

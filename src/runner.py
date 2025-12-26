@@ -11,6 +11,7 @@ from rich.progress import Progress, BarColumn, TimeElapsedColumn
 from .config import ExperimentConfig
 from .utils.matrix_generator import random_sparse_doubly_stochastic, split_tree_friendly_matrix
 from .algorithms.bvn import bvn_decomposition
+from .algorithms.radix_decomposition import decompose_radix
 from .algorithms.split_tree import split_tree_decomposition
 from .utils.stats import DecompositionStats
 from .utils.logging_utils import LOGGER
@@ -71,75 +72,58 @@ def _compute_single_bitplane(
 # ------------------------------------------------------------
 def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionStats:
     """
-    Worker: generates one matrix, applies BVN + bitplane (maximum / maximal / both),
-    and returns a unified DecompositionStats object.
+    Worker: generates one matrix, applies BVN + bitplane + radix + split-tree.
     """
-    # Seed per matrix for reproducibility
-    rng_seed = (
-        config.random_seed + index
-        if config.random_seed is not None
-        else None
-    )
+    # 1. Reproducible Matrix Generation
+    rng_seed = config.random_seed + index if config.random_seed is not None else None
     rng = np.random.default_rng(rng_seed)
 
-    # # --- 1. Generate matrix ---
-    # matrix = random_sparse_doubly_stochastic(
-    #     n=config.n,
-    #     density=config.density,
-    #     iters=config.sinkhorn_iters,
-    #     eps=config.sinkhorn_eps,
-    #     rng=rng,
-    # )
-
-    matrix = split_tree_friendly_matrix(
+    matrix = random_sparse_doubly_stochastic(
         n=config.n,
-        num_blocks=4,
-        tail_alpha=1.3,
-        spike_fraction=0.03,
-        sinkhorn_iters=config.sinkhorn_iters,
-        seed=rng.integers(1 << 32),
+        density=config.density,
+        iters=config.sinkhorn_iters,
+        eps=config.sinkhorn_eps,
+        rng=rng,
     )
 
-
-
-    # --- 2. BVN decomposition ---
+    # --- 2. BVN decomposition (Optimal Baseline) ---
     t0 = time.perf_counter()
     bvn_components = bvn_decomposition(matrix=matrix, tol=config.bvn_tol)
     runtime_bvn = time.perf_counter() - t0
     cycle_bvn = float(sum(comp.weight for comp in bvn_components))
 
-    # Prepare unified collection slots
+    # Prepare slots for Bitplane results
     num_maximum = cycle_maximum = runtime_maximum = None
     num_maximal = cycle_maximal = runtime_maximal = None
-
     method = config.bitplane_method
 
-    # --- 3. Bitplane decomposition depending on method ---
-    if method == "maximum":
+    # --- 3. Bitplane decomposition ---
+    if method in ["maximum", "both"]:
         t1 = time.perf_counter()
         num_maximum, cycle_maximum = _compute_single_bitplane(matrix, config, "maximum")
         runtime_maximum = time.perf_counter() - t1
 
-    elif method == "maximal":
+    if method in ["maximal", "both"]:
         t2 = time.perf_counter()
         num_maximal, cycle_maximal = _compute_single_bitplane(matrix, config, "maximal")
         runtime_maximal = time.perf_counter() - t2
 
-    elif method == "both":
-        # Maximum matching
-        t1 = time.perf_counter()
-        num_maximum, cycle_maximum = _compute_single_bitplane(matrix, config, "maximum")
-        runtime_maximum = time.perf_counter() - t1
+    # --- 4. NEW: Radix Decomposition (Base 8) ---
+    t_radix_start = time.perf_counter()
+    # Using base=8 to group bits into heavier, fewer planes
+    radix_components = decompose_radix(
+        matrix=matrix,
+        base=8,
+        precision_bits=config.bitplane_bits,
+        tol=config.bitplane_tol,
+        max_workers=config.max_workers
+    )
+    runtime_radix = time.perf_counter() - t_radix_start
 
-        # Maximal (WFA)
-        t2 = time.perf_counter()
-        num_maximal, cycle_maximal = _compute_single_bitplane(matrix, config, "maximal")
-        runtime_maximal = time.perf_counter() - t2
+    num_radix = len(radix_components)
+    cycle_radix = float(sum(comp.weight for comp in radix_components))
 
-    else:
-        raise ValueError(f"Unknown bitplane_method: {method}")
-
-    # --- 4. Split-tree decomposition ---
+    # --- 5. Split-tree decomposition ---
     t3 = time.perf_counter()
     components_split = split_tree_decomposition(
         matrix,
@@ -152,30 +136,24 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     )
     runtime_split = time.perf_counter() - t3
 
-    if components_split:
-        num_split = len(components_split)
-        cycle_split = float(sum(comp.weight for comp in components_split))
-    else:
-        num_split = 0
-        cycle_split = 0.0
+    num_split = len(components_split) if components_split else 0
+    cycle_split = float(sum(comp.weight for comp in components_split)) if components_split else 0.0
 
-    # --- 5. Return unified stats ---
+    # --- 6. Return unified stats ---
     return DecompositionStats(
         matrix_index=index,
-
-        # BVN results
         num_permutations_bvn=len(bvn_components),
         cycle_length_bvn=cycle_bvn,
         runtime_bvn=runtime_bvn,
-        # Maximum matching bitplane
         num_perm_maximum=num_maximum,
         cycle_maximum=cycle_maximum,
         runtime_maximum=runtime_maximum,
-        # Maximal matching (WFA) bitplane
         num_perm_maximal=num_maximal,
         cycle_maximal=cycle_maximal,
         runtime_maximal=runtime_maximal,
-        #Split-tree Decomposition
+        num_perm_radix=num_radix,
+        cycle_radix=cycle_radix,
+        runtime_radix=runtime_radix,
         num_perm_split=num_split,
         cycle_split=cycle_split,
         runtime_split=runtime_split,

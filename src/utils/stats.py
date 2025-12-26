@@ -39,3 +39,8 @@ class DecompositionStats:
     cycle_split: Optional[float] = None
     runtime_split: Optional[float] = None
 
+    # Radix decomposition results
+    num_perm_radix: Optional[int] = None
+    cycle_radix: Optional[float] = None
+    runtime_radix: Optional[float] = None
+
