@@ -5,6 +5,9 @@ import numpy as np
 from typing import List, Dict
 from pathlib import Path
 from scipy.stats import gaussian_kde
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.interpolate import griddata
+import seaborn as sns
 
 from .utils.stats import DecompositionStats
 
@@ -33,7 +36,6 @@ def _smooth(xs, ys, window):
 # ============================================================
 
 def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path):
-    _prepare_plot_dir(out_dir)
     xs = np.array([s.matrix_index for s in stats])
     window = max(5, len(stats) // 50)
 
@@ -61,7 +63,6 @@ def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path):
     plt.close()
 
 def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: int, out_dir: Path):
-    _prepare_plot_dir(out_dir)
     xs = np.array([s.matrix_index for s in stats])
     window = max(5, len(stats) // 50)
 
@@ -90,7 +91,6 @@ def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: i
     plt.close()
 
 def plot_runtime(stats: List[DecompositionStats], out_dir: Path):
-    _prepare_plot_dir(out_dir)
     xs = np.array([s.matrix_index for s in stats])
     window = max(5, len(stats) // 50)
 
@@ -158,7 +158,6 @@ def _plot_pdf_cdf_on_ax(ax, values, label: str):
     return [pdf_handle, cdf_handle], ["PDF", "CDF"]
 
 def _plot_grid(stats, out_dir, filename, title, field_map):
-    _prepare_plot_dir(out_dir)
     # Using 2x3 grid to fit all 5 methods
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
     axes = axes.flatten()
@@ -205,34 +204,204 @@ def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Pat
 # Efficiency Plot
 # ============================================================
 
+def _get_pareto_frontier(points: np.ndarray) -> np.ndarray:
+    """
+    Finds the non-dominated points (closest to 1.0 cycle and 0.0 runtime).
+    """
+    # Sort by Cycle Length primarily
+    sorted_indices = np.lexsort((points[:, 1], points[:, 0]))
+    sorted_pts = points[sorted_indices]
+
+    frontier = [sorted_pts[0]]
+    for i in range(1, len(sorted_pts)):
+        if sorted_pts[i, 1] < frontier[-1][1]:
+            frontier.append(sorted_pts[i])
+    return np.array(frontier)
+
+
 def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path):
-    _prepare_plot_dir(out_dir)
+    # Renamed to clarify Framework vs Arbiter
     methods = {
-        "BVN": ("runtime_bvn", "cycle_length_bvn", "tab:blue"),
-        "Bitplane Max": ("runtime_maximum", "cycle_maximum", "tab:orange"),
-        "Bitplane WFA": ("runtime_maximal", "cycle_maximal", "tab:green"),
-        "Split-Tree": ("runtime_split", "cycle_split", "tab:red"),
-        "Radix (Base-8)": ("runtime_radix", "cycle_radix", "tab:purple"),
+        "BVN (Standard)": ("runtime_bvn", "cycle_length_bvn", "tab:blue", "o"),
+        "Bitplane-WFA": ("runtime_maximal", "cycle_maximal", "tab:green", "D"),
+        "Radix8-WFA": ("runtime_radix", "cycle_radix", "tab:purple", "X"),
+        "SplitTree-WFA": ("runtime_split", "cycle_split", "tab:red", "P"),
     }
 
-    plt.figure(figsize=(10, 7))
-    for name, (rt_f, cyc_f, color) in methods.items():
+    plt.figure(figsize=(11, 8))
+    frontier_points = []
+
+    for name, (rt_f, cyc_f, color, marker) in methods.items():
         rts = [getattr(s, rt_f) for s in stats if getattr(s, rt_f) is not None]
         cycs = [getattr(s, cyc_f) for s in stats if getattr(s, cyc_f) is not None]
-        if rts and cycs:
-            plt.errorbar(np.mean(cycs), np.mean(rts), xerr=np.std(cycs), yerr=np.std(rts),
-                         fmt='o', markersize=8, capsize=5, label=name, color=color, alpha=0.8)
 
-    plt.axvline(1.0, color="black", linestyle=":", alpha=0.5, label="Optimal")
-    plt.xlabel("Average Cycle Length")
-    plt.ylabel("Average Runtime (Seconds)")
-    plt.title("Efficiency Comparison: All Methods")
-    plt.grid(True, linestyle="--", alpha=0.4)
-    plt.legend()
-    plt.savefig(out_dir / "runtime_vs_cycle_efficiency.png", dpi=220)
+        if rts and cycs:
+            m_rt, m_cyc = np.mean(rts), np.mean(cycs)
+            plt.errorbar(m_cyc, m_rt, xerr=np.std(cycs), yerr=np.std(rts),
+                         fmt=marker, markersize=10, capsize=5,
+                         label=name, color=color, alpha=0.9)
+            frontier_points.append([m_cyc, m_rt])
+
+    # Draw the Pareto Frontier
+    if len(frontier_points) > 1:
+        pts = np.array(frontier_points)
+        frontier = _get_pareto_frontier(pts)
+        plt.plot(frontier[:, 0], frontier[:, 1], '--', color='black', alpha=0.4,
+                 label="Pareto Frontier (Efficiency Limit)")
+
+    plt.axvline(1.0, color="gold", linestyle="-", alpha=0.5, label="Optimal Cycle Boundary")
+    plt.title("Framework Efficiency: Runtime vs. Cycle Length (Arbiter: WFA)", fontsize=14)
+    plt.xlabel("Average Cycle Length (Higher Cycle = More Interference)", fontsize=11)
+    plt.ylabel("Average Runtime (Seconds)", fontsize=11)
+    plt.legend(loc="upper right")
+    plt.grid(True, linestyle="--", alpha=0.3)
+
+    plt.savefig(out_dir / "efficiency_pareto_wfa.png", dpi=220)
+    plt.close()
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.interpolate import griddata
+
+
+def plot_comprehensive_3d_surface(csv_path: Path, out_dir: Path):
+    """
+    Reads 12,000+ results from CSV, groups them by (N, Density),
+    and draws the tradeoff surface.
+    """
+    df = pd.read_csv(csv_path)
+    _prepare_plot_dir(out_dir)
+
+    # 1. Define algorithms to compare
+    # Map: Label -> (Cycle Col, Perm Col, Runtime Col, Color)
+    algorithms = {
+        "BVN": ("cycle_length_bvn", "num_permutations_bvn", "runtime_bvn", "blue"),
+        "Bitplane-WFA": ("cycle_maximal", "num_perm_maximal", "runtime_maximal", "green"),
+        "Radix-8": ("cycle_radix", "num_perm_radix", "runtime_radix", "purple"),
+        "Split-Tree": ("cycle_split", "num_perm_split", "runtime_split", "red"),
+    }
+
+    fig = plt.figure(figsize=(15, 10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    for name, (cyc_c, perm_c, rt_c, color) in algorithms.items():
+        # Clean data: Remove rows where this algorithm wasn't run
+        data = df.dropna(subset=[cyc_c, perm_c, rt_c])
+
+        # 2. Group by N and Density to find "Centroids"
+        centroids = data.groupby(['n', 'density']).agg({
+            cyc_c: 'mean',
+            perm_c: 'mean',
+            rt_c: 'mean'
+        }).reset_index()
+
+        # 3. Plot the Scatter Centroids (the clusters)
+        # We use log scale for Runtime (Z) to make N=32 vs N=256 comparable
+        z_vals = np.log10(centroids[rt_c] + 1e-9)
+        ax.scatter(centroids[cyc_c], centroids[perm_c], z_vals,
+                   color=color, s=100, label=name, edgecolors='black', linewidth=1.5)
+
+        # 4. Generate Surface Mesh
+        if len(centroids) > 3:
+            # Create a grid across the span of cycle lengths and permutation counts
+            xi = np.linspace(centroids[cyc_c].min(), centroids[cyc_c].max(), 20)
+            yi = np.linspace(centroids[perm_c].min(), centroids[perm_c].max(), 20)
+            xi, yi = np.meshgrid(xi, yi)
+
+            # Interpolate the Z (runtime) surface
+            zi = griddata((centroids[cyc_c], centroids[perm_c]), z_vals, (xi, yi), method='linear')
+
+            # Plot the "Efficiency Sheet" for this algorithm
+            ax.plot_surface(xi, yi, zi, color=color, alpha=0.2, shade=True)
+
+    # 5. Styling
+    ax.set_xlabel('Cycle Length (Accuracy)', labelpad=10)
+    ax.set_ylabel('Num Permutations (Complexity)', labelpad=10)
+    ax.set_zlabel('Log10(Runtime) (seconds)', labelpad=10)
+    ax.set_title(f"Comprehensive Efficiency Surface (12,000 Matrices)\nClusters: N {{32..256}} x Density {{0.3..0.9}}",
+                 fontsize=16)
+
+    ax.view_init(elev=20, azim=-135)  # Optimal angle to see the 'climb' in runtime
+    ax.legend(loc='upper left', fontsize=12)
+
+    plt.savefig(out_dir / "comprehensive_3d_landscape.png", dpi=300, bbox_inches='tight')
+    plt.close()
+
+
+def plot_comprehensive_2d_analysis(csv_path: Path, out_dir: Path):
+    """
+    Generates a 3-subplot figure analyzing networking trade-offs:
+    1. Reconfigurations vs. Runtime
+    2. Completion Delay (Cycle) vs. Runtime
+    3. Dimension (N) vs. Runtime
+    """
+    df = pd.read_csv(csv_path)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Mapping of algorithms to their specific columns in the CSV
+    algos = {
+        "BVN": ("cycle_length_bvn", "num_permutations_bvn", "runtime_bvn"),
+        "Bitplane-WFA": ("cycle_maximal", "num_perm_maximal", "runtime_maximal"),
+        "Radix-8": ("cycle_radix", "num_perm_radix", "runtime_radix"),
+        "Split-Tree": ("cycle_split", "num_perm_split", "runtime_split")
+    }
+
+    # Set up a 1x3 grid
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 8))
+    sns.set_style("whitegrid")
+
+    for name, (cyc_col, perm_col, rt_col) in algos.items():
+        # Aggregate the 1,000 matrices per configuration into mean centroids
+        summary = df.groupby(['n', 'density']).agg({
+            cyc_col: 'mean',
+            perm_col: 'mean',
+            rt_col: 'mean'
+        }).reset_index()
+
+        # Panel 1: Reconfigurations (X) vs Runtime (Y)
+        sns.lineplot(data=summary, x=perm_col, y=rt_col, ax=ax1,
+                     label=name, marker='o', linewidth=2.5)
+
+        # Panel 2: Completion Delay (X) vs Runtime (Y)
+        sns.lineplot(data=summary, x=cyc_col, y=rt_col, ax=ax2,
+                     label=name, marker='s', linewidth=2.5)
+
+        # Panel 3: Dimension N (X) vs Runtime (Y)
+        sns.lineplot(data=summary, x='n', y=rt_col, ax=ax3,
+                     label=name, marker='D', linewidth=2.5)
+
+    # Styling Panel 1: Switching Overhead
+    ax1.set_title("Switch Reconfigurations vs. Runtime", fontsize=15, fontweight='bold')
+    ax1.set_xlabel("Avg. Number of Permutations (Reconfigurations)", fontsize=12)
+    ax1.set_ylabel("Avg. Runtime (sec)", fontsize=12)
+
+    # Styling Panel 2: Traffic Latency
+    ax2.set_title("Traffic Completion Delay vs. Runtime", fontsize=15, fontweight='bold')
+    ax2.set_xlabel("Avg. Cycle Length (Completion Time Ratio)", fontsize=12)
+    ax2.set_ylabel("Avg. Runtime (sec)", fontsize=12)
+    # Mark the ideal completion ratio
+    ax2.axvline(1.0, color='black', linestyle='--', alpha=0.6, label="Ideal (1.0)")
+
+    # Styling Panel 3: Scalability
+    ax3.set_xticks([32, 64, 128, 256])
+    ax3.set_title("Matrix Dimension (N) vs. Runtime", fontsize=15, fontweight='bold')
+    ax3.set_xlabel("Matrix Dimension (N)", fontsize=12)
+    ax3.set_ylabel("Avg. Runtime (sec)", fontsize=12)
+
+    plt.suptitle(
+        f"Network Switch Efficiency Analysis (12,000 Matrices)\nLinear Scaling: N {{32, 64, 128, 256}} | Density {{0.3, 0.6, 0.9}}",
+        fontsize=18, fontweight='bold', y=1.02)
+    plt.tight_layout()
+
+    save_path = out_dir / "network_efficiency_final_layout.png"
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
 
 def plot_results(stats_list: List[DecompositionStats], n: int, bits: int, out_dir: Path):
+    _prepare_plot_dir(out_dir)
     plot_final_cycle_length(stats_list, out_dir)
     plot_final_num_permutations(stats_list, n, bits, out_dir)
     plot_runtime(stats_list, out_dir)

@@ -44,3 +44,5 @@ class DecompositionStats:
     cycle_radix: Optional[float] = None
     runtime_radix: Optional[float] = None
 
+    n: int = 0
+    density: float = 0.0

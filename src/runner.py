@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Tuple
+import itertools
+import pandas as pd
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import time
 
@@ -207,3 +211,54 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
 
     LOGGER.info("[bold green]Experiment completed successfully.[/bold green]")
     return results
+
+
+def run_comprehensive_study(base_config: ExperimentConfig, out_dir: Path):
+    n_values = [32, 64]#, 128, 256]
+    densities = [0.3, 0.6, 0.9]
+    matrices_per_config = 5
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / "comprehensive_results.csv"
+
+    # Header flag for CSV
+    write_header = True
+
+    for n, dens in itertools.product(n_values, densities):
+        LOGGER.info(f"[bold cyan]BATCH START:[/bold cyan] N={n}, Density={dens}")
+
+        batch_config = base_config
+        batch_config.n = n
+        batch_config.density = dens
+        batch_config.num_matrices = matrices_per_config
+        batch_config.split_max_depth = 1
+
+        batch_results = []
+
+        # Adding a progress bar for the internal batch
+        with Progress("[progress.description]{task.description}", BarColumn(),
+                      "[progress.percentage]{task.percentage:>3.0f}%", TimeElapsedColumn()) as progress:
+            task = progress.add_task(f"N={n} D={dens}", total=matrices_per_config)
+
+            with ThreadPoolExecutor(max_workers=batch_config.max_workers) as executor:
+                futures = [executor.submit(_compute_for_index, i, batch_config) for i in range(matrices_per_config)]
+                for future in as_completed(futures):
+                    try:
+                        res = future.result()
+                        stat_dict = res.__dict__
+                        stat_dict['n'] = n
+                        stat_dict['density'] = dens
+                        batch_results.append(stat_dict)
+                    except Exception as e:
+                        LOGGER.error(f"Error: {e}")
+                    progress.update(task, advance=1)
+
+        # Save current batch and CLEAR memory
+        df = pd.DataFrame(batch_results)
+        df.to_csv(csv_path, mode='a', index=False, header=write_header)
+        write_header = False  # Only write header once
+
+        del batch_results  # Free up RAM for the next N-size
+        LOGGER.info(f"Batch N={n}, D={dens} saved to {csv_path}")
+
+    return csv_path
