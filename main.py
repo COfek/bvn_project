@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Updated imports: plot_comprehensive_2d_analysis replaces the 3D surface
 from src.config import ExperimentConfig
-from src.plotting import plot_results, plot_comprehensive_2d_analysis
+from src.plotting import plot_results, plot_comprehensive_2d_analysis, plot_scaling_trajectories
 from src.runner import run_experiment, run_comprehensive_study
 from src.utils.logging_utils import init_logger, print_banner, timed_section
 from src.utils.run_utils import create_run_folder, save_config, get_log_file_path
@@ -82,9 +82,9 @@ def main() -> None:
             # Generates comprehensive_results.csv
             csv_path = run_comprehensive_study(config, run_dir)
 
-        with timed_section("3-Panel Performance Analysis"):
-            # Generates the Reconfigurations, Completion Delay, and Scalability plots
-            plot_comprehensive_2d_analysis(csv_path, plots_dir)
+        with timed_section("Generating Scaling Trajectories"):
+            # This will create the N=32 -> N=256 path plot
+            plot_scaling_trajectories(csv_path, plots_dir)
 
     # --- OVERRIDE: Single Configuration Mode ---
     else:

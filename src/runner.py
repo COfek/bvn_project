@@ -216,7 +216,7 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
 def run_comprehensive_study(base_config: ExperimentConfig, out_dir: Path):
     n_values = [32, 64]#, 128, 256]
     densities = [0.3, 0.6, 0.9]
-    matrices_per_config = 5
+    matrices_per_config = 1000
 
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / "comprehensive_results.csv"

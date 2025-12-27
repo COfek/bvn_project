@@ -400,6 +400,59 @@ def plot_comprehensive_2d_analysis(csv_path: Path, out_dir: Path):
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
 
+
+def plot_scaling_trajectories(csv_path: Path, out_dir: Path):
+    """
+    Creates a trajectory plot showing how the Accuracy vs. Runtime
+    trade-off evolves as the matrix size (N) increases.
+    """
+    df = pd.read_csv(csv_path)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Map algorithms to their data columns and colors
+    algos = {
+        "BVN": ("cycle_length_bvn", "runtime_bvn", "tab:blue"),
+        "Bitplane-WFA": ("cycle_maximal", "runtime_maximal", "tab:orange"),
+        "Radix-8": ("cycle_radix", "runtime_radix", "tab:purple"),
+        "Split-Tree": ("cycle_split", "runtime_split", "tab:red")
+    }
+
+    plt.figure(figsize=(12, 8))
+
+    for name, (cyc_col, rt_col, color) in algos.items():
+        # Group by N to find the mean performance at each scale
+        # (This averages out the density variations to show the pure N-scaling trend)
+        trajectory = df.groupby('n').agg({cyc_col: 'mean', rt_col: 'mean'}).reset_index()
+
+        # Plot the line connecting N=32 -> N=256
+        plt.plot(trajectory[cyc_col], trajectory[rt_col], color=color,
+                 label=name, marker='o', linewidth=3, markersize=8, alpha=0.9)
+
+        # Label each point with its specific N size
+        for i, row in trajectory.iterrows():
+            plt.annotate(f"N={int(row['n'])}",
+                         (row[cyc_col], row[rt_col]),
+                         textcoords="offset points",
+                         xytext=(5, 10),
+                         ha='center',
+                         fontsize=10,
+                         fontweight='bold',
+                         color=color)
+
+    # Styling for clarity
+    plt.axvline(1.0, color='black', linestyle='--', alpha=0.5, label="Ideal Delay (1.0)")
+    plt.xlabel("Average Traffic Completion Delay (Cycle Length)", fontsize=12)
+    plt.ylabel("Average Computation Runtime (Seconds)", fontsize=12)
+    plt.title("Scaling Trajectories: Performance Stability from N=32 to N=256", fontsize=15, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, linestyle=":", alpha=0.6)
+
+    # Save the final result
+    save_path = out_dir / "scaling_trajectories_accuracy_vs_cost.png"
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    return save_path
+
 def plot_results(stats_list: List[DecompositionStats], n: int, bits: int, out_dir: Path):
     _prepare_plot_dir(out_dir)
     plot_final_cycle_length(stats_list, out_dir)
