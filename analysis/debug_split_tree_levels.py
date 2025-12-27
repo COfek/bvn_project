@@ -39,7 +39,7 @@ def main():
     res = analyze_split_tree_levels(
         x=M,
         sparsity_target=3,
-        max_depth=5,
+        max_depth=2,
         p_schedule=0.5,
         tol=1e-12,
         include_node_details=False,  # keep console output readable
