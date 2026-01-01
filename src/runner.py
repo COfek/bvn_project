@@ -108,7 +108,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         num_maximal, cycle_maximal = _compute_single_bitplane(matrix, config, "maximal")
         runtime_maximal = time.perf_counter() - t2
 
-    # --- 4. NEW: Radix Decomposition (Base 8) ---
+    # --- 4. Radix Decomposition (Base 8) ---
     t_radix_start = time.perf_counter()
     # Using base=8 to group bits into heavier, fewer planes
     radix_components = decompose_radix(
@@ -124,22 +124,40 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     cycle_radix = float(sum(comp.weight for comp in radix_components))
 
     # --- 5. Split-tree decomposition ---
-    t3 = time.perf_counter()
-    components_split = split_tree_decomposition(
-        matrix,
-        sparsity_target=config.split_sparsity_target,
-        max_depth=config.split_max_depth,
-        p_schedule=config.split_p,
-        split_method=config.split_method,
-        cv_threshold=config.split_cv_threshold,
-        min_matching_frac=config.split_min_matching_frac,
-    )
-    runtime_split = time.perf_counter() - t3
+    if config.skip_split:
+        t3 = time.perf_counter()
+        components_split = split_tree_decomposition(
+            matrix,
+            sparsity_target=config.split_sparsity_target,
+            max_depth=config.split_max_depth,
+            p_schedule=config.split_p,
+            split_method=config.split_method,
+            cv_threshold=config.split_cv_threshold,
+            min_matching_frac=config.split_min_matching_frac,
+        )
+        runtime_split = time.perf_counter() - t3
 
-    num_split = len(components_split) if components_split else 0
-    cycle_split = float(sum(comp.weight for comp in components_split)) if components_split else 0.0
+        num_split = len(components_split) if components_split else 0
+        cycle_split = float(sum(comp.weight for comp in components_split)) if components_split else 0.0
 
     # --- 6. Return unified stats ---
+    if config.skip_split:
+        return DecompositionStats(
+            matrix_index=index,
+            num_permutations_bvn=len(bvn_components),
+            cycle_length_bvn=cycle_bvn,
+            runtime_bvn=runtime_bvn,
+            num_perm_maximum=num_maximum,
+            cycle_maximum=cycle_maximum,
+            runtime_maximum=runtime_maximum,
+            num_perm_maximal=num_maximal,
+            cycle_maximal=cycle_maximal,
+            runtime_maximal=runtime_maximal,
+            num_perm_radix=num_radix,
+            cycle_radix=cycle_radix,
+            runtime_radix=runtime_radix,
+        )
+
     return DecompositionStats(
         matrix_index=index,
         num_permutations_bvn=len(bvn_components),

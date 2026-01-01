@@ -15,9 +15,10 @@ class RadixComponent:
 def decompose_radix(
         matrix: np.ndarray,
         base: int = 8,
-        precision_bits: int = 16,  # Now used below
+        precision_bits: int = 16,
         tol: float = 1e-12,
-        max_workers: int | None = None
+        max_workers: int | None = None,
+        step_strategy: str = "min"  # Options: "min", "max", "median"
 ) -> List[RadixComponent]:
     max_val = np.max(matrix)
     if max_val < tol:
@@ -48,7 +49,7 @@ def decompose_radix(
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_plane = {
-            executor.submit(_decompose_digit_plane, plane_matrix, weight, tol): weight
+            executor.submit(_decompose_digit_plane, plane_matrix, weight, tol, step_strategy): weight
             for weight, plane_matrix in planes
         }
 
@@ -64,9 +65,10 @@ def decompose_radix(
 def _decompose_digit_plane(
         plane: np.ndarray,
         unit_weight: float,
-        tol: float
+        tol: float,
+        strategy: str = "min"
 ) -> List[RadixComponent]:
-    x = plane.copy()
+    x = plane.astype(np.float64) # Ensure float for clipping
     components: List[RadixComponent] = []
 
     while True:
@@ -78,13 +80,24 @@ def _decompose_digit_plane(
         if not matches:
             break
 
-        digit_step = min(x[i, j] for (i, j) in matches)
+        # Extract values at the matched positions
+        match_values = [x[i, j] for (i, j) in matches]
+
+        # Determine the step based on the requested strategy
+        if strategy == "max":
+            digit_step = max(match_values)
+        elif strategy == "median":
+            digit_step = np.median(match_values)
+        else: # Default to "min"
+            digit_step = min(match_values)
+
         actual_weight = digit_step * unit_weight
 
         p = np.zeros_like(x)
         for (i, j) in matches:
             p[i, j] = 1.0
-            x[i, j] -= digit_step
+            # Truncated Subtraction: Zero out if subtraction would be negative
+            x[i, j] = max(0.0, x[i, j] - digit_step)
 
         components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
 
