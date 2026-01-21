@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from numpy.typing import NDArray
 
-from .wfa import select_matching  # use your existing WFA implementation
+from .wfa import wavefront_matching_vectorized  # use your existing WFA implementation
 
 float_matrix = NDArray[np.float64]
 pschedule = Union[float, Callable[[float_matrix, int], float]]
@@ -251,7 +251,7 @@ def decompose_leaf_with_wfa(
 
         # SOTA FIX: Passing the full mask avoids the cropping issues that
         # were inflating your cycle length to 1.6+.
-        matches, match_type = select_matching(mask)
+        matches, match_type = wavefront_matching_vectorized(mask)
         if not matches:
             break
 

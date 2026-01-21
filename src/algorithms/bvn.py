@@ -14,77 +14,50 @@ FloatMatrix = NDArray[np.float64]
 class BvnComponent:
     """
     Single component in a BVN-style decomposition.
-
-    Attributes:
-        permutation: Permutation matrix (0/1 entries).
-        weight: Weight lambda associated with this permutation.
     """
-
     permutation: FloatMatrix
     weight: float
 
 
-def bvn_upper_bound(n: int) -> int:
-    """
-    Theoretical upper bound on the number of permutations in BVN decomposition:
-
-        n^2 - 2n + 2
-
-    Args:
-        n: Matrix dimension.
-
-    Returns:
-        Upper bound value.
-    """
-    return n * n - 2 * n + 2
-
-
 def bvn_decomposition(
     matrix: FloatMatrix,
-    tol: float = 1e-10,
     max_iters: Optional[int] = None,
 ) -> List[BvnComponent]:
     """
-    Perform a Birkhoff–von Neumann decomposition using the Hungarian algorithm.
+    Perform an exact Birkhoff–von Neumann decomposition on a K-regular integer matrix.
 
-    Algorithm:
-      - At each iteration, find a permutation (perfect matching) using
-        linear_sum_assignment on a cost matrix derived from 'matrix'.
-      - Let lambda be the minimum entry along that permutation.
-      - Subtract lambda from those entries and record (P, lambda).
-      - Stop when the matrix is (approximately) zero.
-
-    Args:
-        matrix: Doubly stochastic matrix of shape (n, n).
-        tol: Numerical tolerance for stopping.
-        max_iters: Optional maximum number of iterations (safety cap).
-
-    Returns:
-        List of BvnComponent entries.
+    Because the input is a sum of permutations, this algorithm is guaranteed
+    to terminate when the residual matrix is exactly zero.
     """
-    work = np.array(matrix, dtype=float, copy=True)
+    # Work on a copy to avoid modifying the original matrix
+    work = np.array(matrix, dtype=np.float64, copy=True)
     components: List[BvnComponent] = []
     iteration = 0
 
-    while True:
+    # In integer space, we continue until the matrix is purely zero
+    while np.any(work > 0):
         iteration += 1
 
-        if np.all(work < tol):
-            break
-
+        # We use -work as cost to find the "heaviest" matching,
+        # ensuring we pick edges that actually exist in the K-regular graph.
         cost = -work
         row_ind, col_ind = linear_sum_assignment(cost)
 
-        permutation = np.zeros_like(work)
-        permutation[row_ind, col_ind] = 1.0
-
+        # Extract the minimum value along the found permutation
         selected_values = work[row_ind, col_ind]
         lambda_value = float(np.min(selected_values))
 
-        if lambda_value < tol:
+        # If we can't find a matching with weight > 0, the matrix is decomposed
+        if lambda_value <= 0:
             break
 
+        # Record the permutation
+        permutation = np.zeros_like(work)
+        permutation[row_ind, col_ind] = 1.0
+
         components.append(BvnComponent(permutation=permutation, weight=lambda_value))
+
+        # Subtract the weight from the working matrix
         work[row_ind, col_ind] -= lambda_value
 
         if max_iters is not None and iteration >= max_iters:

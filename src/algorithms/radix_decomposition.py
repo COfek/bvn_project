@@ -1,9 +1,13 @@
 from __future__ import annotations
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Callable
 from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from .wfa import select_matching
+from concurrent.futures import as_completed, ThreadPoolExecutor
+from scipy.optimize import linear_sum_assignment
+
+# Local imports - ensuring paths match your project structure
+from .sorted_array_matching import heavy_node_matching_array
+from .wfa import wavefront_matching_vectorized
 
 
 @dataclass
@@ -12,44 +16,79 @@ class RadixComponent:
     weight: float
 
 
+def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
+    """
+    Wrapper for Scipy's Hungarian algorithm.
+    Finds the maximum weight matching.
+    """
+    # Use -matrix because linear_sum_assignment minimizes cost
+    row_ind, col_ind = linear_sum_assignment(-matrix)
+
+    # Filter out zero-weight matches to ensure we only return valid edges
+    matches = []
+    for r, c in zip(row_ind, col_ind):
+        if matrix[r, c] > 0:
+            matches.append((r, c))
+    return matches
+
+
+# Global registry of available matching algorithms
+MATCHING_ALGORITHMS: Dict[str, Callable[[np.ndarray], List[Tuple[int, int]]]] = {
+    "heavy": heavy_node_matching_array,
+    "wfa": wavefront_matching_vectorized,
+    "maximum": maximum_matching_wrapper
+}
+
+
 def decompose_radix(
         matrix: np.ndarray,
-        base: int = 8,
-        precision_bits: int = 16,
-        tol: float = 1e-12,
+        base: int = 3,
         max_workers: int | None = None,
-        step_strategy: str = "min"  # Options: "min", "max", "median"
+        step_strategy: str = "min",
+        matching_method: str = "heavy"
 ) -> List[RadixComponent]:
-    max_val = np.max(matrix)
-    if max_val < tol:
-        return []
-    # We scale the matrix into integer space based on the precision requested.
-    # Higher bits = more digit planes = higher accuracy.
-    scaling_factor = 2 ** precision_bits
-    scaled_matrix = np.round((matrix / max_val) * scaling_factor).astype(np.int64)
+    """
+    Decomposes an integer matrix into weighted permutations using a Radix approach.
 
-    # Calculate how many planes are needed for this base
-    num_planes = int(np.ceil(np.log(scaling_factor) / np.log(base)))
+    Args:
+        matrix: The K-regular integer matrix.
+        base: The radix base (e.g., 2 for bitplane).
+        max_workers: Number of parallel processes for plane decomposition.
+        step_strategy: "min", "max", or "median" for weight selection.
+        matching_method: "heavy", "wfa", or "maximum".
+    """
+    max_val = np.max(matrix)
+    if max_val == 0:
+        return []
+
+    # Calculate depth based on actual integer values
+    num_planes = int(np.floor(np.log(max_val) / np.log(base))) + 1
 
     planes: List[Tuple[float, np.ndarray]] = []
-    temp_matrix = scaled_matrix.copy()
+    temp_matrix = matrix.copy().astype(np.int64)
 
+    # Extract digit planes
     for d in range(num_planes):
-        unit_weight = (base ** d) * (max_val / scaling_factor)
+        unit_weight = float(base ** d)
         digit_plane = temp_matrix % base
-
         if np.any(digit_plane > 0):
             planes.append((unit_weight, digit_plane.astype(np.float64)))
-
         temp_matrix //= base
         if np.all(temp_matrix == 0):
             break
 
     all_components: List[RadixComponent] = []
 
+    # Parallelize decomposition of planes
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_plane = {
-            executor.submit(_decompose_digit_plane, plane_matrix, weight, tol, step_strategy): weight
+            executor.submit(
+                _decompose_digit_plane,
+                plane_matrix,
+                weight,
+                step_strategy,
+                matching_method
+            ): weight
             for weight, plane_matrix in planes
         }
 
@@ -57,7 +96,8 @@ def decompose_radix(
             try:
                 all_components.extend(future.result())
             except Exception as exc:
-                print(f"Radix plane worker failed: {exc}")
+                # Thread errors are easier to catch and debug than process crashes
+                print(f"Radix plane thread worker failed: {exc}")
 
     return all_components
 
@@ -65,38 +105,46 @@ def decompose_radix(
 def _decompose_digit_plane(
         plane: np.ndarray,
         unit_weight: float,
-        tol: float,
-        strategy: str = "min"
+        strategy: str = "min",
+        matching_method: str = "heavy"
 ) -> List[RadixComponent]:
-    x = plane.astype(np.float64) # Ensure float for clipping
+    # Work on a float copy for precision
+    x = plane.copy().astype(np.float64)
     components: List[RadixComponent] = []
 
-    while True:
-        mask = x > tol
-        if not mask.any():
-            break
+    match_func = MATCHING_ALGORITHMS.get(matching_method, heavy_node_matching_array)
 
-        matches, _ = select_matching(mask)
+    # Use a small epsilon to prevent infinite loops from float drift
+    epsilon = 1e-9
+
+    while np.any(x > epsilon):
+        # Now passing numeric x so Maximum Matching and Heavy Node work correctly
+        matches = match_func(x)
+
         if not matches:
             break
 
-        # Extract values at the matched positions
         match_values = [x[i, j] for (i, j) in matches]
 
-        # Determine the step based on the requested strategy
         if strategy == "max":
             digit_step = max(match_values)
         elif strategy == "median":
             digit_step = np.median(match_values)
-        else: # Default to "min"
+        else:  # "min" strategy (Standard BVN-style)
             digit_step = min(match_values)
+
+        # Safety: if the step is too small, we stop to avoid infinite cycles
+        if digit_step < 1e-12:
+            break
 
         actual_weight = digit_step * unit_weight
 
+        # Build the weighted permutation matrix
         p = np.zeros_like(x)
         for (i, j) in matches:
             p[i, j] = 1.0
-            # Truncated Subtraction: Zero out if subtraction would be negative
+            # Update working matrix: Clip to zero if we subtract more than exists
+            # This is essential for 'max' or 'median' strategies
             x[i, j] = max(0.0, x[i, j] - digit_step)
 
         components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))

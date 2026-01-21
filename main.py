@@ -2,92 +2,48 @@ from __future__ import annotations
 
 import argparse
 import csv
+import multiprocessing
 from pathlib import Path
 
 from src.config import ExperimentConfig
 from src.plotting import plot_results
 from src.runner import run_experiment
 from src.utils.logging_utils import init_logger, print_banner, timed_section
-
 from src.utils.run_utils import create_run_folder, save_config, get_log_file_path
 
-global RUN_LOG_FILE, LOGGER
+# Global placeholders
+RUN_LOG_FILE = None
+LOGGER = None
+
 
 def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments for the BVN experiment.
-    """
     parser = argparse.ArgumentParser(
-        description=(
-            "Run BVN, bit-plane, and split-tree decompositions on random "
-            "doubly stochastic matrices and collect statistics."
-        )
+        description="Run BVN, Radix (incl. Bit-plane), and Split-tree decompositions."
     )
-
-    parser.add_argument("--n", type=int, default=32,
-                        help="Matrix dimension n (default: 6).")
-
-    parser.add_argument("--num-matrices", type=int, default=1000,
-                        help="Number of matrices to generate (default: 1000).")
-
-    parser.add_argument("--density", type=float, default=9,
-                        help="Matrix density in (0, 1] (default: 1.0 = dense).")
-
-    parser.add_argument("--sinkhorn-iters", type=int, default=1000,
-                        help="Number of Sinkhorn normalization iterations (default: 200).")
-
-    parser.add_argument("--bitplane-bits", type=int, default=8,
-                        help="Number of bits for bit-plane scaling (default: 8).")
-
-    parser.add_argument("--bitplane-method", type=str, default="both",
-                        choices=["maximum", "maximal", "both"],
-                        help="Bit-plane matching method: maximum, maximal (WFA), or both.")
-
-    parser.add_argument("--random-seed", type=int, default=42,
-                        help="Base random seed (default: 42).")
-
-    parser.add_argument("--max-workers", type=int, default=None,
-                        help="Maximum number of worker threads (default: auto).")
-
-    parser.add_argument("--output-csv", type=str, default=None,
-                        help="Optional path to save results CSV.")
-
-    # --- Split-tree parameters ---
-    parser.add_argument("--split-sparsity-target", type=int, default=3,
-                        help="Stop splitting when nnz(X) ≤ this value (default: 3).")
-
-    parser.add_argument("--split-max-depth", type=int, default=1,
-                        help="Maximum recursion depth for split-tree (default: 8).")
-
-    parser.add_argument("--split-p", type=float, default=0.5,
-                        help="Probability used in random binary split (default: 0.5).")
-
-    parser.add_argument("--split-cv-threshold", type=float, default=0.15,
-                        help="Coefficient of variation threshold to stop splitting (default: 0.15).")
-
-    parser.add_argument("--split-min-matching-frac", type=float, default=0.8,
-                        help="Minimum fraction of matchable rows/columns to allow split (default: 0.8).")
-
-    parser.add_argument("--split-method", type=str, default="random",
-                        choices=["pivot", "random"],
-                        help="Split strategy for split-tree (default: random).")
+    parser.add_argument("--n", type=int, default=32, help="Matrix dimension.")
+    parser.add_argument("--k", type=int, default=7,
+                        help="The maximum number of bits which will be used to construct the matrix.")
+    parser.add_argument("--num-matrices", type=int, default=1000, help="Number of matrices.")
+    parser.add_argument("--random-seed", type=int, default=42, help="Base random seed.")
+    parser.add_argument("--max-workers", type=int, default=None, help="Workers for Radix planes.")
+    parser.add_argument("--output-csv", type=str, default="results.csv", help="CSV filename.")
+    parser.add_argument("--split-sparsity-target", type=int, default=3)
+    parser.add_argument("--split-max-depth", type=int, default=1)
+    parser.add_argument("--split-p", type=float, default=0.5)
+    parser.add_argument("--split-cv-threshold", type=float, default=0.15)
+    parser.add_argument("--split-min-matching-frac", type=float, default=0.8)
+    parser.add_argument("--split-method", type=str, default="pivot", choices=["pivot", "random"])
+    parser.add_argument("--matching_method", type=str, default="maximum", choices=["heavy", "wfa", "maximum"])
+    parser.add_argument("--radix-bases", type=int, nargs='+', default=[2, 3, 8, 12, 16])
 
     return parser.parse_args()
 
+
 def build_config(args: argparse.Namespace) -> ExperimentConfig:
-    """
-    Build an ExperimentConfig from parsed CLI arguments.
-    """
     return ExperimentConfig(
         n=args.n,
+        k=args.k,
         num_matrices=args.num_matrices,
-        density=args.density,
-        sinkhorn_iters=args.sinkhorn_iters,
-        sinkhorn_eps=1e-12,
-        bvn_tol=1e-10,
-        bitplane_bits=args.bitplane_bits,
-        bitplane_tol=1e-9,
-        bitplane_method=args.bitplane_method,
         random_seed=args.random_seed,
         max_workers=args.max_workers,
         output_csv=args.output_csv,
@@ -97,100 +53,82 @@ def build_config(args: argparse.Namespace) -> ExperimentConfig:
         split_cv_threshold=args.split_cv_threshold,
         split_min_matching_frac=args.split_min_matching_frac,
         split_method=args.split_method,
+        radix_bases=args.radix_bases,
+        matching_method=args.matching_method,
+        is_parallel=False
     )
 
 
-
 def main() -> None:
-    """
-    Main entry point: parse arguments, run experiment, optionally save CSV, plot.
-    """
-
-    # ------------------------------
-    # 1. Parse args & config
-    # ------------------------------
     args = parse_args()
     config = build_config(args)
 
-    # ------------------------------
-    # 2. Prepare run folder
-    # ------------------------------
-    run_dir = create_run_folder()
-    plots_dir = run_dir / "plots"
-    plots_dir.mkdir(parents=True, exist_ok=True)
+    # CHECK: Is this the main controller process or a spawned worker?
+    is_main_process = multiprocessing.current_process().name == 'MainProcess'
 
-    # ------------------------------
-    # 3. Initialize logging (run folder)
-    # ------------------------------
-    global RUN_LOG_FILE, LOGGER
-    RUN_LOG_FILE = get_log_file_path(run_dir)
-    LOGGER = init_logger()   # must be called AFTER RUN_LOG_FILE is set
+    if is_main_process:
+        # 1. SETUP: Only the main process creates folders and starts logging
+        run_dir = create_run_folder()
+        plots_dir = run_dir / "plots"
+        plots_dir.mkdir(parents=True, exist_ok=True)
 
-    print_banner("BVN, Bitplane, Split tree Experiment Started")
-    LOGGER.info(f"Run directory: {run_dir}")
+        global RUN_LOG_FILE, LOGGER
+        RUN_LOG_FILE = get_log_file_path(run_dir)
+        LOGGER = init_logger()
 
-    # ------------------------------
-    # 4. Save config.json
-    # ------------------------------
-    save_config(config, run_dir)
+        print_banner("BVN, Radix, Split-Tree Experiment Started")
+        LOGGER.info(f"Run directory: {run_dir} | K-Regular Sum: {config.k}")
+        save_config(config, run_dir)
+    else:
+        # Workers don't initialize these variables
+        run_dir = None
+        plots_dir = None
 
-    # ------------------------------
-    # 5. Run experiment
-    # ------------------------------
+    # 2. EXECUTION: This runs in the main process, delegating tasks to workers
     with timed_section("Running Decomposition Experiment"):
         stats_list = run_experiment(config)
 
-    # ------------------------------
-    # 6. Save CSV (optional, into run folder)
-    # ------------------------------
-    if config.output_csv is not None:
-        csv_path = run_dir / config.output_csv
-        csv_path.parent.mkdir(parents=True, exist_ok=True)
-        _write_stats_to_csv(stats_list, csv_path)
-        LOGGER.info(f"Saved CSV: {csv_path}")
+    # 3. TEARDOWN: Only the main process writes final data and plots
+    if is_main_process:
+        if config.output_csv:
+            csv_path = run_dir / config.output_csv
+            _write_stats_to_csv(stats_list, csv_path)
+            LOGGER.info(f"Saved CSV: {csv_path}")
 
-    # ------------------------------
-    # 7. Plot results to run/plots/
-    # ------------------------------
-    with timed_section("Generating Plots"):
-        plot_results(stats_list, n=config.n, bits=config.bitplane_bits, out_dir=plots_dir)
+        with timed_section("Generating Plots"):
+            plot_results(stats_list, n=config.n, bits=config.k, out_dir=plots_dir)
 
-    print_banner("Experiment Complete")
+        print_banner("Experiment Complete")
 
 
 def _write_stats_to_csv(stats_list, path: Path) -> None:
-    """
-    Write decomposition statistics to a CSV file.
+    if not stats_list: return
 
-    Supports unified DecompositionStats with:
-        BVN stats
-        Maximum bitplane stats
-        Maximal (WFA) bitplane stats
-    """
     with path.open("w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
 
-        writer.writerow([
-            "matrix_index",
-            "num_permutations_bvn",
-            "cycle_length_bvn",
-            "num_perm_maximum",
-            "cycle_maximum",
-            "num_perm_maximal",
-            "cycle_maximal",
-        ])
+        all_bases = set()
+        for s in stats_list:
+            all_bases.update(s.radix_multi_results.keys())
+        sorted_bases = sorted(list(all_bases))
+
+        header = ["matrix_index", "bvn_perms", "bvn_cycle", "bvn_runtime"]
+        for b in sorted_bases:
+            label = "bitplane" if b == 2 else f"radix_{b}"
+            header += [f"{label}_time", f"{label}_cycle", f"{label}_perms"]
+
+        writer.writerow(header)
 
         for s in stats_list:
-            writer.writerow([
-                s.matrix_index,
-                s.num_permutations_bvn,
-                s.cycle_length_bvn,
-                s.num_perm_maximum,
-                s.cycle_maximum,
-                s.num_perm_maximal,
-                s.cycle_maximal,
-            ])
+            row = [s.matrix_index, s.num_permutations_bvn, s.cycle_length_bvn, s.runtime_bvn]
+            for b in sorted_bases:
+                if b in s.radix_multi_results:
+                    row += list(s.radix_multi_results[b])
+                else:
+                    row += [None, None, None]
+            writer.writerow(row)
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()
