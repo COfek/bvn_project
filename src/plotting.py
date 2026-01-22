@@ -258,47 +258,145 @@ def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Pat
     _plot_dynamic_grid(stats, out_dir, "permutation_pdf_cdf.png", "Permutations", b_map, 2)
 
 
-def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path):
+def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str):
+    """
+    Plots Average Runtime against the Average Cycle Length.
+    Includes the matching method in the title for better experiment tracking.
+    """
     _prepare_plot_dir(out_dir)
-    baselines = {"BVN": ("runtime_bvn", "cycle_length_bvn", "tab:blue", "o"),
-                 "Split-Tree": ("runtime_split", "cycle_split", "tab:red", "^")}
+
+    baselines = {
+        "BVN": ("runtime_bvn", "cycle_length_bvn", "tab:blue", "o"),
+        "Split-Tree": ("runtime_split", "cycle_split", "tab:red", "^")
+    }
 
     plt.figure(figsize=(12, 8))
+
+    # 1. Plot Baselines (BVN / Split-Tree)
     for name, (rt_f, cyc_f, color, marker) in baselines.items():
         rts = [getattr(s, rt_f) for s in stats if getattr(s, rt_f) is not None]
         cycs = [getattr(s, cyc_f) for s in stats if getattr(s, cyc_f) is not None]
-        if rts and cycs:
-            plt.errorbar(np.mean(cycs), np.mean(rts), xerr=np.std(cycs), yerr=np.std(rts),
-                         fmt=marker, markersize=10, capsize=5, label=name, color=color, alpha=0.7)
 
+        if rts and cycs:
+            plt.errorbar(np.mean(cycs), np.mean(rts),
+                         xerr=np.std(cycs), yerr=np.std(rts),
+                         fmt=marker, markersize=10, capsize=5,
+                         label=name, color=color, alpha=0.7)
+
+    # 2. Plot Radix Bases
     all_bases = _get_all_bases(stats)
     if all_bases:
         cmap = mpl.colormaps['plasma']
         colors = cmap(np.linspace(0, 0.85, len(all_bases)))
+
         for i, base in enumerate(all_bases):
             label = "Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
-            base_rts = [s.radix_multi_results[base][0] for s in stats if base in s.radix_multi_results]
-            base_cycs = [s.radix_multi_results[base][1] for s in stats if base in s.radix_multi_results]
-            if base_rts and base_cycs:
-                plt.errorbar(np.mean(base_cycs), np.mean(base_rts), xerr=np.std(base_cycs), yerr=np.std(base_rts),
-                             fmt='v', markersize=8, capsize=3, label=label, color=colors[i], alpha=0.9)
+            # Index 0 is Runtime, Index 1 is Cycle Length
+            base_data = [s.radix_multi_results[base] for s in stats if base in s.radix_multi_results]
 
+            if base_data:
+                base_rts = [d[0] for d in base_data]
+                base_cycs = [d[1] for d in base_data]
+
+                plt.errorbar(np.mean(base_cycs), np.mean(base_rts),
+                             xerr=np.std(base_cycs), yerr=np.std(base_rts),
+                             fmt='v', markersize=8, capsize=3,
+                             label=label, color=colors[i], alpha=0.9)
+
+    # Reference line for the theoretical K-regular ground truth
     plt.axvline(1.0, color="black", linestyle="--", alpha=0.5, label="Optimal Cycle")
+
     plt.xlabel("Average Cycle Length")
     plt.ylabel("Average Runtime (Seconds)")
-    plt.title("Efficiency Pareto Front")
+
+    # Updated Title incorporating the matching method
+    plt.title(f"Efficiency Pareto Front (Matching: {matching_name.upper()})\nRuntime vs. Cycle Length")
+
     plt.grid(True, linestyle=":", alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
-    plt.savefig(out_dir / "runtime_vs_cycle.png", dpi=250)
+
+    # Filename includes the matching method to prevent overwriting during multi-run batches
+    plt.savefig(out_dir / f"runtime_vs_cycle_{matching_name}.png", dpi=250)
     plt.close()
 
 
-def plot_results(stats_list: List[DecompositionStats], n: int, bits: int, out_dir: Path):
+def plot_runtime_vs_permutation_efficiency(
+        stats: List[DecompositionStats],
+        out_dir: Path,
+        matching_name: str
+):
+    """
+    Plots Average Runtime against the Average Number of Permutations.
+    The matching method is included in the title for better experiment tracking.
+    """
+    _prepare_plot_dir(out_dir)
+
+    baselines = {
+        "BVN": ("runtime_bvn", "num_permutations_bvn", "tab:blue", "o"),
+        "Split-Tree": ("runtime_split", "num_perm_split", "tab:red", "^")
+    }
+
+    plt.figure(figsize=(12, 8))
+
+    # 1. Plot Baselines
+    for name, (rt_f, perm_f, color, marker) in baselines.items():
+        rts = [getattr(s, rt_f) for s in stats if getattr(s, rt_f) is not None]
+        perms = [getattr(s, perm_f) for s in stats if getattr(s, perm_f) is not None]
+
+        if rts and perms:
+            plt.errorbar(np.mean(perms), np.mean(rts),
+                         xerr=np.std(perms), yerr=np.std(rts),
+                         fmt=marker, markersize=10, capsize=5,
+                         label=name, color=color, alpha=0.7)
+
+    # 2. Plot Radix Bases
+    all_bases = _get_all_bases(stats)
+    if all_bases:
+        cmap = mpl.colormaps['plasma']
+        colors = cmap(np.linspace(0, 0.85, len(all_bases)))
+
+        for i, base in enumerate(all_bases):
+            label = "Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
+            base_data = [s.radix_multi_results[base] for s in stats if base in s.radix_multi_results]
+
+            if base_data:
+                base_rts = [d[0] for d in base_data]  # Index 0: Runtime
+                base_perms = [d[2] for d in base_data]  # Index 2: Num Perms
+
+                plt.errorbar(np.mean(base_perms), np.mean(base_rts),
+                             xerr=np.std(base_perms), yerr=np.std(base_rts),
+                             fmt='v', markersize=8, capsize=3,
+                             label=label, color=colors[i], alpha=0.9)
+
+    plt.xlabel("Average Number of Permutations")
+    plt.ylabel("Average Runtime (Seconds)")
+
+    # Updated Title with Matching Method
+    plt.title(f"Efficiency Pareto Front (Matching: {matching_name.upper()})\nRuntime vs. Permutation Count")
+
+    plt.grid(True, linestyle=":", alpha=0.3)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig(out_dir / f"runtime_vs_permutations_{matching_name}.png", dpi=250)
+    plt.close()
+
+
+def plot_results(
+        stats_list: List[DecompositionStats],
+        n: int,
+        bits: int,
+        out_dir: Path,
+        matching_method: str  # Added this parameter
+):
+    # Standard distribution and scalar plots
     plot_final_cycle_length(stats_list, out_dir)
     plot_final_num_permutations(stats_list, n, bits, out_dir)
     plot_runtime(stats_list, out_dir)
     plot_distribution_runtime(stats_list, out_dir)
     plot_cycle_length_distributions(stats_list, out_dir)
     plot_permutation_distributions(stats_list, out_dir)
-    plot_runtime_vs_cycle_efficiency(stats_list, out_dir)
+
+    # Updated Pareto efficiency plots that now require the matching name
+    plot_runtime_vs_cycle_efficiency(stats_list, out_dir, matching_name=matching_method)
+    plot_runtime_vs_permutation_efficiency(stats_list, out_dir, matching_name=matching_method)

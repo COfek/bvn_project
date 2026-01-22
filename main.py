@@ -96,7 +96,8 @@ def main() -> None:
             LOGGER.info(f"Saved CSV: {csv_path}")
 
         with timed_section("Generating Plots"):
-            plot_results(stats_list, n=config.n, bits=config.k, out_dir=plots_dir)
+            plot_results(stats_list, n=config.n, bits=config.k, out_dir=plots_dir,
+                         matching_method=config.matching_method)
 
         print_banner("Experiment Complete")
 
