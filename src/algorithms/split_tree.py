@@ -198,8 +198,23 @@ def split_tree_decomposition(
         max_workers: int | None = None,
 ) -> List[split_tree_component]:
     """
-    High-level wrapper with parallel leaf decomposition:
-    Addresses the runtime disparity shown in the benchmarks.
+    High-level wrapper for Parallel Split-Tree Decomposition.
+    
+    This function performs a recursive splitting of the input matrix into sparser sub-matrices (leaves),
+    and then decomposes each leaf in PARALLEL using the JIT-optimized WFA engine.
+    
+    Args:
+        x (float_matrix): The input N x N doubly stochastic matrix.
+        sparsity_target (int): Target number of non-zeros for leaf nodes (stop splitting).
+        max_depth (int): Maximum recursion depth for splitting.
+        p_schedule (pschedule): Probability schedule for random splitting.
+        split_method (str): Strategy for splitting ('random' or 'pivot').
+        tol (float): Numerical tolerance.
+        max_workers (int | None): Number of threads for parallel leaf decomposition.
+                                  If None, defaults to os.cpu_count().
+                                  
+    Returns:
+        List[split_tree_component]: A list of all permutation matrices and weights found.
     """
     # 1. Recursive splitting (now vectorized)
     leaves = split_tree(
@@ -217,6 +232,8 @@ def split_tree_decomposition(
 
     # 2. Parallel Decomposition of leaves using a ThreadPoolExecutor
     # With max_depth=1, this will launch 2 concurrent workers.
+    # The GIL is released inside 'decompose_leaf_with_wfa' -> '_jit_decompose_wfa', 
+    # enabling true parallelism.
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_leaf = {
             executor.submit(decompose_leaf_with_wfa, leaf, tol=tol): leaf
@@ -239,34 +256,38 @@ def decompose_leaf_with_wfa(
 ) -> List[split_tree_component]:
     """
     Decompose leaf matrix using WFA.
-    OPTIMIZED: Passes full mask to WFA to lower cycle length toward 1.0.
+    OPTIMIZED: Uses Full Loop JIT to release GIL and enable true parallelism.
     """
-    x = leaf.copy()
+    # 1. Prepare data for JIT
+    # We must pass a copy because the JIT kernel modifies it in-place
+    x = leaf.copy().astype(np.float64) 
+    n = x.shape[0]
+    
+    # 2. Call JIT Kernel (releases GIL)
+    # Returns: weights (List[float]), matches (List[List[Tuple]])
+    from .wfa import _jit_decompose_wfa 
+    
+    weights, matches_list = _jit_decompose_wfa(x, n, tol)
+    
+    # 3. Reconstruct Objects (Fast Python loop, GIL re-acquired)
     components: List[split_tree_component] = []
-
-    while True:
-        mask = x > tol
-        if not mask.any():
-            break
-
-        # SOTA FIX: Passing the full mask avoids the cropping issues that
-        # were inflating your cycle length to 1.6+.
-        matches, match_type = wavefront_matching_vectorized(mask)
-        if not matches:
-            break
-
-        # Vectorized weight calculation
-        lam = min(float(x[i, j]) for (i, j) in matches)
-        if lam <= tol:
-            break
-
-        p = np.zeros_like(x)
-        for (i, j) in matches:
-            p[i, j] = 1.0
-            x[i, j] -= lam
-            if x[i, j] <= tol:
-                x[i, j] = 0.0
-
-        components.append(split_tree_component(matrix=lam * p, weight=lam))
-
+    
+    for k in range(len(weights)):
+        w = weights[k]
+        match_indices = matches_list[k]
+        
+        # We need to construct the sparse matrix 'p' * 'w'
+        # Since 'p' is a permutation matrix, it's just 1.0 at indices.
+        # But split_tree_component expects a full matrix `matrix`.
+        # Constructing full NxN arrays here might be slow? 
+        # Actually the original code did `p = np.zeros_like(x)` inside the loop.
+        # So it's the same cost, just deferred.
+        
+        # Optimization: We can reconstruct the matrix efficiently
+        p_matrix = np.zeros((n, n), dtype=np.float64)
+        for r, c in match_indices:
+            p_matrix[r, c] = w
+            
+        components.append(split_tree_component(matrix=p_matrix, weight=w))
+        
     return components

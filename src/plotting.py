@@ -150,7 +150,7 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
 # Time-Series Plots
 # ============================================================
 
-def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path):
+def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     _prepare_plot_dir(out_dir)
     xs = np.array([s.matrix_index for s in stats])
     window = max(5, len(stats) // 50)
@@ -179,7 +179,7 @@ def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path):
     plt.axhline(1.0, color="black", linestyle=":", label="Ideal = 1.0")
     plt.xlabel("Matrix Index")
     plt.ylabel("Cycle Length")
-    plt.title("Cycle Length Trends (Smoothed)")
+    plt.title(f"Cycle Length Trends (Smoothed) {title_suffix}")
     plt.grid(True, alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
@@ -187,7 +187,7 @@ def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path):
     plt.close()
 
 
-def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: int, out_dir: Path):
+def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: int, out_dir: Path, title_suffix: str = ""):
     _prepare_plot_dir(out_dir)
     xs = np.array([s.matrix_index for s in stats])
     window = max(5, len(stats) // 50)
@@ -217,7 +217,7 @@ def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: i
     plt.axhline(n * n - 2 * n + 2, color="orange", linestyle="--", label="BVN UB", alpha=0.5)
     plt.xlabel("Matrix Index")
     plt.ylabel("Number of Permutations")
-    plt.title("Permutation Count Trends (Smoothed)")
+    plt.title(f"Permutation Count Trends (Smoothed) {title_suffix}")
     plt.grid(True, alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
@@ -225,7 +225,7 @@ def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: i
     plt.close()
 
 
-def plot_runtime(stats: List[DecompositionStats], out_dir: Path):
+def plot_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     _prepare_plot_dir(out_dir)
     xs = np.array([s.matrix_index for s in stats])
     window = max(5, len(stats) // 50)
@@ -253,7 +253,7 @@ def plot_runtime(stats: List[DecompositionStats], out_dir: Path):
 
     plt.xlabel("Matrix Index")
     plt.ylabel("Runtime (seconds)")
-    plt.title("Runtime Trends (Smoothed)")
+    plt.title(f"Runtime Trends (Smoothed) {title_suffix}")
     plt.grid(True, alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
@@ -265,22 +265,22 @@ def plot_runtime(stats: List[DecompositionStats], out_dir: Path):
 # Plot Orchestration
 # ============================================================
 
-def plot_distribution_runtime(stats: List[DecompositionStats], out_dir: Path):
+def plot_distribution_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     b_map = {"BVN": "runtime_bvn", "Split-Tree": "runtime_split"}
-    _plot_dynamic_grid(stats, out_dir, "runtime_pdf_cdf_subplots.png", "Runtime", b_map, 0)
+    _plot_dynamic_grid(stats, out_dir, "runtime_pdf_cdf_subplots.png", f"Runtime {title_suffix}", b_map, 0)
 
 
-def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Path):
+def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     b_map = {"BVN": "cycle_length_bvn", "Split-Tree": "cycle_split"}
-    _plot_dynamic_grid(stats, out_dir, "cycle_length_pdf_cdf.png", "Cycle Length", b_map, 1)
+    _plot_dynamic_grid(stats, out_dir, "cycle_length_pdf_cdf.png", f"Cycle Length {title_suffix}", b_map, 1)
 
 
-def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Path):
+def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     b_map = {"BVN": "num_permutations_bvn", "Split-Tree": "num_perm_split"}
-    _plot_dynamic_grid(stats, out_dir, "permutation_pdf_cdf.png", "Permutations", b_map, 2)
+    _plot_dynamic_grid(stats, out_dir, "permutation_pdf_cdf.png", f"Permutations {title_suffix}", b_map, 2)
 
 
-def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str):
+def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = ""):
     """
     Plots Average Runtime against the Average Cycle Length.
     Includes the matching method in the title for better experiment tracking.
@@ -302,17 +302,11 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
         if rts and cycs:
             med_rt = np.median(rts)
             med_cyc = np.median(cycs)
-            # Use percentiles (5th, 95th) to filter outliers
-            rt_err = [[med_rt - np.percentile(rts, 5)], [np.percentile(rts, 95) - med_rt]]
-            cyc_err = [[med_cyc - np.percentile(cycs, 5)], [np.percentile(cycs, 95) - med_cyc]]
             
-            rt_err = np.maximum(0, rt_err)
-            cyc_err = np.maximum(0, cyc_err)
-
-            plt.errorbar(med_cyc, med_rt,
-                        xerr=cyc_err, yerr=rt_err,
-                        fmt=marker, markersize=10, capsize=5,
-                        label=name, color=color, alpha=0.7)
+            # Plot Medians Only
+            plt.plot(med_cyc, med_rt,
+                     marker=marker, markersize=10,
+                     label=name, color=color, alpha=0.7, linestyle='None')
 
     # 2. Plot Radix Bases
     keys = _get_all_keys(stats)
@@ -336,7 +330,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
                 base_cycs = [d[1] for d in base_data]
 
                 # Calculate asymmetric error bars (Percentiles)
-                # Use Median as center to be robust against JIT outliers
+                # Plot Medians Only (No Error Bars)
                 med_rt = np.median(base_rts)
                 med_cyc = np.median(base_cycs)
                 
@@ -347,23 +341,19 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
                 rt_err = np.maximum(0, rt_err)
                 cyc_err = np.maximum(0, cyc_err)
 
-                plt.errorbar(med_cyc, med_rt,
-                            xerr=cyc_err, yerr=rt_err,
-                            fmt='v', markersize=8, capsize=3,
-                            label=label, color=colors[i], alpha=0.9)
+                plt.plot(med_cyc, med_rt,
+                            marker='v', markersize=8,
+                            label=label, color=colors[i], alpha=0.9, linestyle='None')
 
     # Reference line removed per user request
-    # Set hard limit for Y-axis to zoom in on steady state
-    # Use gca() to be explicit and disable autoscaling for Y
-    ax = plt.gca()
-    ax.set_ylim(0, 0.1)
-    # ax.set_autoscale_on(False) # Optional, but set_ylim is usually enough if placed last
+    # Allow autoscaling
+    plt.autoscale(enable=True, axis='y')
 
     plt.xlabel("Average Cycle Length")
     plt.ylabel("Average Runtime (Seconds)")
 
     # Updated Title incorporating the matching method
-    plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()})\nRuntime vs. Cycle Length")
+    plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()}) {metadata}\nRuntime vs. Cycle Length")
 
     plt.grid(True, linestyle=":", alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -377,7 +367,8 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
 def plot_runtime_vs_permutation_efficiency(
         stats: List[DecompositionStats],
         out_dir: Path,
-        matching_name: str
+        matching_name: str,
+        metadata: str = ""
 ):
     """
     Plots Average Runtime against the Average Number of Permutations.
@@ -400,17 +391,11 @@ def plot_runtime_vs_permutation_efficiency(
         if rts and perms:
             med_rt = np.median(rts)
             med_perm = np.median(perms)
-            # Use percentiles (5th, 95th) to filter outliers like JIT Compilation spikes
-            rt_err = [[med_rt - np.percentile(rts, 5)], [np.percentile(rts, 95) - med_rt]]
-            perm_err = [[med_perm - np.percentile(perms, 5)], [np.percentile(perms, 95) - med_perm]]
             
-            rt_err = np.maximum(0, rt_err)
-            perm_err = np.maximum(0, perm_err)
-
-            plt.errorbar(med_perm, med_rt,
-                        xerr=perm_err, yerr=rt_err,
-                        fmt=marker, markersize=10, capsize=5,
-                        label=name, color=color, alpha=0.7)
+            # Plot Medians Only
+            plt.plot(med_perm, med_rt,
+                     marker=marker, markersize=10,
+                     label=name, color=color, alpha=0.7, linestyle='None')
 
     # 2. Plot Radix Bases
     keys = _get_all_keys(stats)
@@ -448,7 +433,7 @@ def plot_runtime_vs_permutation_efficiency(
     plt.ylabel("Average Runtime (Seconds)")
 
     # Updated Title with Matching Method
-    plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()})\nRuntime vs. Permutation Count")
+    plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()}) {metadata}\nRuntime vs. Permutation Count")
 
     plt.grid(True, linestyle=":", alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -462,16 +447,19 @@ def plot_results(
         n: int,
         bits: int,
         out_dir: Path,
-        matching_method: str  # Added this parameter
+        matching_method: str
 ):
-    # Standard distribution and scalar plots
-    plot_final_cycle_length(stats_list, out_dir)
-    plot_final_num_permutations(stats_list, n, bits, out_dir)
-    plot_runtime(stats_list, out_dir)
-    plot_distribution_runtime(stats_list, out_dir)
-    plot_cycle_length_distributions(stats_list, out_dir)
-    plot_permutation_distributions(stats_list, out_dir)
+    num_samples = len(stats_list)
+    title_suffix = f"(N={n}, Samples={num_samples})"
 
-    # Updated Pareto efficiency plots that now require the matching name
-    plot_runtime_vs_cycle_efficiency(stats_list, out_dir, matching_name=matching_method)
-    plot_runtime_vs_permutation_efficiency(stats_list, out_dir, matching_name=matching_method)
+    # Standard distribution and scalar plots
+    plot_final_cycle_length(stats_list, out_dir, title_suffix)
+    plot_final_num_permutations(stats_list, n, bits, out_dir, title_suffix)
+    plot_runtime(stats_list, out_dir, title_suffix)
+    plot_distribution_runtime(stats_list, out_dir, title_suffix)
+    plot_cycle_length_distributions(stats_list, out_dir, title_suffix)
+    plot_permutation_distributions(stats_list, out_dir, title_suffix)
+
+    # Updated Pareto efficiency plots
+    plot_runtime_vs_cycle_efficiency(stats_list, out_dir, matching_name=matching_method, metadata=title_suffix)
+    plot_runtime_vs_permutation_efficiency(stats_list, out_dir, matching_name=matching_method, metadata=title_suffix)

@@ -15,6 +15,19 @@ def _jit_greedy_match_loop(
 ) -> List[Tuple[int, int]]:
     """
     Numba-optimized greedy matching loop.
+    
+    This function iterates through all eligible edges (sorted by weight)
+    and greedily selects edges that do not conflict with previously selected ones.
+    Because it runs with `nogil=True`, multiple such matchings can occur in parallel.
+    
+    Args:
+        sorted_vals: Array of edge weights, sorted descending.
+        sorted_rows: Corresponding row indices.
+        sorted_cols: Corresponding column indices.
+        n: Matrix dimension (for tracking occupancy).
+        
+    Returns:
+        List[Tuple[int, int]]: The greedy maximal matching.
     """
     row_occupied = np.zeros(n, dtype=np.int8)
     col_occupied = np.zeros(n, dtype=np.int8)

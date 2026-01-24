@@ -36,6 +36,19 @@ def _jit_wfa_kernel(
     mask: np.ndarray, # Boolean or numeric mask
     n: int
 ) -> List[Tuple[int, int]]:
+    """
+    Numba-optimized Wavefront Arbiter Kernel.
+    
+    Iterates through the diagonals of the matrix (k = i + j) to find a maximal matching.
+    This mimics the hardware wavefront propagation.
+    
+    Args:
+        mask (np.ndarray): Boolean or integer mask where >0 indicates an edge.
+        n (int): Matrix dimension.
+        
+    Returns:
+        List[Tuple[int, int]]: A list of (row, col) indices representing the matching.
+    """
     row_free = np.ones(n, dtype=np.int8)
     col_free = np.ones(n, dtype=np.int8)
     matches = []
@@ -68,12 +81,96 @@ def _jit_wfa_kernel(
     return matches
 
 
+@jit(nopython=True, nogil=True)
+def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float):
+    """
+    Perform the entire iterative decomposition in Numba to release the GIL.
+    
+    This function implements the complete decomposition loop (matching -> weight calculation -> subtraction)
+    entirely within compiled code. By releasing the GIL (`nogil=True`), multiple threads can execute 
+    this function in parallel on different matrices (e.g. Radix planes or Split-Tree leaves), 
+    achieving near-linear scaling on multi-core CPUs.
+
+    Args:
+        matrix (np.ndarray): The N x N float matrix to decompose. Modified in-place.
+        n (int): Dimension of the matrix.
+        tol (float): Tolerance for treating values as zero.
+
+    Returns:
+        Tuple[List[float], List[List[Tuple[int, int]]]]: 
+            - A list of weights (lambda values).
+            - A list of matching lists (list of (row, col) tuples).
+    """
+    # Clone matrix to avoid modifying the input if that's expected, 
+    # but strictly speaking we modify 'x' in place in the python version.
+    # To be safe and let caller handle copying, we work on 'matrix'.
+    # If caller passes a copy, we are good.
+    
+    weights = []
+    all_matches = []
+    
+    # We need a mutable working copy if we want to be pure, but usually we modify leaf.
+    # Let's assume matrix is mutable and we can modify it.
+    
+    while True:
+        # 1. Compute mask (implicitly or explicitly)
+        # We invoke the kernel. The kernel expects a mask-like object.
+        # We can pass the matrix and check > tol inside kernel, or compute mask here.
+        # Computing boolean mask is fast in Numba.
+        # Check if empty first
+        
+        has_elements = False
+        for i in range(n):
+            for j in range(n):
+                if matrix[i, j] > tol:
+                    has_elements = True
+                    break
+            if has_elements: break
+        
+        if not has_elements:
+            break
+            
+        # Passing matrix directly to _jit_wfa_kernel which we modified to handle > 0 check
+        # But wait, the kernel currently takes 'mask'. 
+        # Let's pass a boolean mask to be consistent with previous kernel signature
+        mask = matrix > tol
+        matches = _jit_wfa_kernel(mask, n)
+        
+        if len(matches) == 0:
+            break
+            
+        # 2. Find min weight (Lambda)
+        lam = np.inf
+        for k in range(len(matches)):
+            i, j = matches[k]
+            val = matrix[i, j]
+            if val < lam:
+                lam = val
+                
+        if lam <= tol:
+            break
+            
+        # 3. Subtract
+        for k in range(len(matches)):
+            i, j = matches[k]
+            matrix[i, j] -= lam
+            if matrix[i, j] <= tol:
+                matrix[i, j] = 0.0
+                
+        weights.append(lam)
+        all_matches.append(matches)
+        
+    return weights, all_matches
+
+
 def wavefront_matching_vectorized(matrix: np.ndarray) -> List[Tuple[int, int]]:
     """
-    JIT-Accelerated Wavefront Matching.
+    JIT-Accelerated Wavefront Matching (Single Step).
+    Kept for compatibility.
     """
     n = matrix.shape[0]
-    
-    # 1. Internal Conversion: Numba works best with typed arrays.
-    # We can pass the matrix directly. If float/int, it treats non-zero as True.
+    # mask = matrix > 1e-12 # Caller usually passes boolean mask to this legacy func
+    # But checking source, it's called with 'mask'.
+    # _jit_wfa_kernel is robust.
     return _jit_wfa_kernel(matrix, n)
+

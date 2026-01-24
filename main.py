@@ -51,6 +51,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split-cv-threshold", type=float, default=0.15)
     parser.add_argument("--split-min-matching-frac", type=float, default=0.8)
     parser.add_argument("--split-method", type=str, default="pivot", choices=["pivot", "random"])
+    
+    # Plotting utilities
+    parser.add_argument("--plot-from-csv", type=str, default=None,
+                        help="Path to results CSV file. If set, generates plots for this CSV and exits.")
 
     return parser.parse_args()
 
@@ -87,6 +91,33 @@ def build_config(args: argparse.Namespace) -> ExperimentConfig:
 def main() -> None:
     args = parse_args()
     config = build_config(args)
+
+    if args.plot_from_csv:
+        # Special Mode: Just plot from existing CSV and exit
+        csv_path = Path(args.plot_from_csv)
+        if not csv_path.exists():
+            print(f"Error: CSV not found at {csv_path}")
+            return
+            
+        print(f"Regenerating plots from: {csv_path}")
+        stats_list = _parse_stats_from_csv(csv_path)
+        
+        # Determine output dir (same folder as csv / plots)
+        plots_dir = csv_path.parent / "plots"
+        plots_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Filter first 5 samples
+        plot_stats = stats_list[5:] if len(stats_list) > 5 else stats_list
+        
+        plot_results(
+            plot_stats, 
+            n=config.n, 
+            bits=config.k, 
+            out_dir=plots_dir, 
+            matching_method=config.engine
+        )
+        print(f"Plots saved to: {plots_dir}")
+        return
 
     # CHECK: Is this the main controller process or a spawned worker?
     is_main_process = multiprocessing.current_process().name == 'MainProcess'
@@ -126,7 +157,9 @@ def main() -> None:
 
         if config.plot:
             with timed_section("Generating Plots"):
-                plot_results(stats_list, n=config.n, bits=config.k, out_dir=plots_dir,
+                # Exclude first 5 samples to remove JIT compilation spikes from plots
+                plot_stats = stats_list[5:] if len(stats_list) > 5 else stats_list
+                plot_results(plot_stats, n=config.n, bits=config.k, out_dir=plots_dir,
                              matching_method=config.engine)
 
         print_banner("Benchmark Complete")
@@ -159,6 +192,48 @@ def _write_stats_to_csv(stats_list, path: Path) -> None:
                 else:
                     row += [None, None, None]
             writer.writerow(row)
+
+
+def _parse_stats_from_csv(csv_path: Path) -> list:
+    """Reconstructs stats objects from CSV for re-plotting."""
+    # Local import to avoid circular dependency if placed at top in some designs,
+    # but here stats is a utility.
+    from src.utils.stats import DecompositionStats
+    
+    stats_list = []
+    with csv_path.open("r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            idx = int(row["matrix_index"])
+            
+            # BVN
+            bvn_perms = row.get("bvn_perms")
+            bvn_cycle = row.get("bvn_cycle")
+            bvn_runtime = row.get("bvn_runtime")
+            
+            ds = DecompositionStats(
+                matrix_index=idx,
+                num_permutations_bvn=int(float(bvn_perms)) if bvn_perms and float(bvn_perms) > 0 else 0, # Note: stats usually expects int or None, but 0 is safe placeholder
+                cycle_length_bvn=float(bvn_cycle) if bvn_cycle and bvn_cycle != "" and bvn_cycle != "None" else None,
+                runtime_bvn=float(bvn_runtime) if bvn_runtime and bvn_runtime != "" and bvn_runtime != "None" else None
+            )
+            
+            # Dynamic keys
+            seen_engines = set()
+            for col in row.keys():
+                if col.endswith("_time"):
+                    seen_engines.add(col[:-5])
+            
+            for key in seen_engines:
+                t = row.get(f"{key}_time")
+                c = row.get(f"{key}_cycle")
+                p = row.get(f"{key}_perms")
+                
+                if t and c and p and t != "None":
+                    ds.radix_multi_results[key] = (float(t), float(c), int(float(p)))
+            
+            stats_list.append(ds)
+    return stats_list
 
 
 if __name__ == "__main__":
