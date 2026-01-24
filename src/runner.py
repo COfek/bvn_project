@@ -53,7 +53,10 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     # --- 2. BVN decomposition (Optimal Baseline) ---
     # Only run BVN if explicitly requested or if engine is 'all' (baseline comparison)
     # For large matrices (N=256), BVN is extremely slow, so we skip it if focusing on a specific engine.
-    if config.engine == "all":
+    # --- 2. BVN decomposition (Optimal Baseline) ---
+    # Only run BVN if explicitly requested or if engine is 'all' (baseline comparison)
+    # For large matrices (N=256), BVN is extremely slow, so we skip it if focusing on a specific engine.
+    if config.engine == "all" or config.engine == "wfa_bvn":
         t0 = time.perf_counter()
         bvn_components = bvn_decomposition(matrix=matrix)
         runtime_bvn = time.perf_counter() - t0
@@ -62,8 +65,8 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     else:
         # Dummy values for when BVN is skipped
         bvn_components = []
-        runtime_bvn = 0.0
-        cycle_length_bvn = 0.0
+        runtime_bvn = None # Changed to None so it's ignored in plots/stats instead of 0.0
+        cycle_length_bvn = None
         num_permutations_bvn = 0
 
     # --- 3. Radix Decomposition (Iterating specified engines & bases) ---
@@ -74,6 +77,8 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         # Note: mapping 'heavy' -> 'sorted_array' is handled in radix_decomposition.py map
         # But here we pass the keys expected by radix_decomposition.py
         target_engines = ["wfa", "maximum", "heavy"]
+    elif config.engine == "wfa_bvn":
+        target_engines = ["wfa"]
     else:
         target_engines = [config.engine]
 

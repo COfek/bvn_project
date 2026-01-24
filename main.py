@@ -27,8 +27,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--density", "-d", type=float, default=0.5,
                         help="Probability (0.0 to 1.0) of a matrix entry being non-zero.")
     parser.add_argument("--engine", "-e", type=str, default="all", 
-                        choices=["wfa", "max", "heavy", "all"],
-                        help="Matching algorithm: wfa, max, heavy, or all.")
+                        choices=["wfa", "max", "heavy", "all", "wfa_bvn"],
+                        help="Matching algorithm: wfa, max, heavy, all, or wfa_bvn.")
     parser.add_argument("--samples", "-s", type=int, default=10, dest="samples",
                         help="Number of random matrices to test per engine.")
     parser.add_argument("--output", "-o", type=str, default="run",
