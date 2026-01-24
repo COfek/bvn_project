@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
 from typing import List, Tuple
-
 import time
+import logging
+import os
 
 import numpy as np
 from rich.console import Console
@@ -15,11 +16,10 @@ from .algorithms.bvn import bvn_decomposition
 from .algorithms.radix_decomposition import decompose_radix
 from .algorithms.split_tree import split_tree_decomposition
 from .utils.stats import DecompositionStats
-from .utils.logging_utils import LOGGER
+from .utils.logging_utils import print_banner
 
-from typing import List
+logger = logging.getLogger(__name__)
 
-import os
 TESTING = os.environ.get("PYTEST_RUNNING", "0") == "1"
 
 
@@ -35,12 +35,11 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     rng = np.random.default_rng(rng_seed)
 
     # Determine K from density if needed
-    # If density is close to 1, use a large K (e.g., 5*N to ensure coverage)
     if config.density >= 0.999:
         effective_k = 5 * config.n
     else:
-        # Density D ~= 1 - (1 - 1/N)^K  => K ~= ln(1-D) / ln(1 - 1/N)
-        # Using approximation ln(1-x) ~= -x, K ~= -N * ln(1-D)
+        # Density D ~= 1 - (1 - 1/N)^K
+        # K ~= -N * ln(1-D)
         effective_k = int(-config.n * np.log(1.0 - config.density))
         effective_k = max(1, effective_k)
 
@@ -51,11 +50,6 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     )
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
-    # Only run BVN if explicitly requested or if engine is 'all' (baseline comparison)
-    # For large matrices (N=256), BVN is extremely slow, so we skip it if focusing on a specific engine.
-    # --- 2. BVN decomposition (Optimal Baseline) ---
-    # Only run BVN if explicitly requested or if engine is 'all' (baseline comparison)
-    # For large matrices (N=256), BVN is extremely slow, so we skip it if focusing on a specific engine.
     if config.engine == "all" or config.engine == "wfa_bvn":
         t0 = time.perf_counter()
         bvn_components = bvn_decomposition(matrix=matrix)
@@ -63,19 +57,15 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
         num_permutations_bvn = len(bvn_components)
     else:
-        # Dummy values for when BVN is skipped
         bvn_components = []
-        runtime_bvn = None # Changed to None so it's ignored in plots/stats instead of 0.0
+        runtime_bvn = None
         cycle_length_bvn = None
         num_permutations_bvn = 0
 
-    # --- 3. Radix Decomposition (Iterating specified engines & bases) ---
+    # --- 3. Radix Decomposition ---
     radix_multi_data = {}
     
-    # Resolve engines
     if config.engine == "all":
-        # Note: mapping 'heavy' -> 'sorted_array' is handled in radix_decomposition.py map
-        # But here we pass the keys expected by radix_decomposition.py
         target_engines = ["wfa", "maximum", "heavy"]
     elif config.engine == "wfa_bvn":
         target_engines = ["wfa"]
@@ -97,7 +87,6 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
             c_len = float(sum(comp.weight for comp in radix_components))
             n_perm = len(radix_components)
             
-            # Key format: "{engine}_{base}"
             key = f"{engine}_{base}"
             radix_multi_data[key] = (radix_runtime, c_len, n_perm)
 
@@ -118,7 +107,6 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         num_split = len(components_split) if components_split else 0
         cycle_split = float(sum(comp.weight for comp in components_split)) if components_split else 0.0
 
-    # --- 6. Return unified stats object ---
     return DecompositionStats(
         matrix_index=index,
         num_permutations_bvn=num_permutations_bvn,
@@ -132,31 +120,28 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
 
 
 # ------------------------------------------------------------
-# Parallel experiment runner with progress bar + logging
+# Parallel experiment runner
 # ------------------------------------------------------------
 def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
-    # 1. Create a dedicated console that forces terminal features
-    # This often bypasses PyCharm's "dumb terminal" limitations
     console = Console(force_terminal=True)
 
-    LOGGER.info(
-        f"[bold yellow]Starting Experiment[/bold yellow] | "
+    logger.info(
+        f"Starting Experiment | "
         f"n={config.n}, matrices={config.num_matrices}, "
         f"parallel={config.is_parallel}"
     )
 
     results: List[DecompositionStats] = []
 
-    # 2. Configure Progress with the explicit console
     progress = Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         MofNCompleteColumn(),
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         TimeElapsedColumn(),
-        console=console,  # Link to our forced console
-        transient=False,  # Keeps the bar visible after it finishes
-        refresh_per_second=10  # Ensure it updates regularly
+        console=console,
+        transient=False,
+        refresh_per_second=10
     )
 
     with progress:
@@ -171,7 +156,6 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
                     stats = _compute_for_index(idx, config)
                     results.append(stats)
                 except Exception as e:
-                    # Use progress.console.log instead of LOGGER inside this block
                     progress.console.log(f"[bold red]Error at index {idx}:[/bold red] {e}")
 
                 progress.update(task, advance=1)

@@ -41,6 +41,7 @@ dist/
 # Logs
 logs/
 run_*.log
+log.txt
 
 # Output from run folder
 runs/

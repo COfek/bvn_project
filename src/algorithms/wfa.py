@@ -82,7 +82,7 @@ def _jit_wfa_kernel(
 
 
 @jit(nopython=True, nogil=True)
-def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float):
+def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
     """
     Perform the entire iterative decomposition in Numba to release the GIL.
     
@@ -101,24 +101,11 @@ def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float):
             - A list of weights (lambda values).
             - A list of matching lists (list of (row, col) tuples).
     """
-    # Clone matrix to avoid modifying the input if that's expected, 
-    # but strictly speaking we modify 'x' in place in the python version.
-    # To be safe and let caller handle copying, we work on 'matrix'.
-    # If caller passes a copy, we are good.
-    
     weights = []
     all_matches = []
     
-    # We need a mutable working copy if we want to be pure, but usually we modify leaf.
-    # Let's assume matrix is mutable and we can modify it.
-    
     while True:
         # 1. Compute mask (implicitly or explicitly)
-        # We invoke the kernel. The kernel expects a mask-like object.
-        # We can pass the matrix and check > tol inside kernel, or compute mask here.
-        # Computing boolean mask is fast in Numba.
-        # Check if empty first
-        
         has_elements = False
         for i in range(n):
             for j in range(n):
@@ -130,9 +117,6 @@ def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float):
         if not has_elements:
             break
             
-        # Passing matrix directly to _jit_wfa_kernel which we modified to handle > 0 check
-        # But wait, the kernel currently takes 'mask'. 
-        # Let's pass a boolean mask to be consistent with previous kernel signature
         mask = matrix > tol
         matches = _jit_wfa_kernel(mask, n)
         
@@ -166,11 +150,10 @@ def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float):
 def wavefront_matching_vectorized(matrix: np.ndarray) -> List[Tuple[int, int]]:
     """
     JIT-Accelerated Wavefront Matching (Single Step).
-    Kept for compatibility.
+    Designed to be compatible with radix decomposition wrapper.
+    Accepts a numeric matrix, treats > 0 as edges.
     """
     n = matrix.shape[0]
-    # mask = matrix > 1e-12 # Caller usually passes boolean mask to this legacy func
-    # But checking source, it's called with 'mask'.
-    # _jit_wfa_kernel is robust.
     return _jit_wfa_kernel(matrix, n)
+
 

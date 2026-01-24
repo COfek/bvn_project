@@ -4,37 +4,30 @@ import logging
 import os
 import multiprocessing
 from contextlib import contextmanager
-from datetime import datetime
 from time import perf_counter
 from pathlib import Path
+from datetime import datetime
 
 from rich.console import Console
 from rich.logging import RichHandler
 
 console = Console()
 
-# The run folder will inject its preferred log file here.
-RUN_LOG_FILE: Path | None = None
-
-
-def init_logger(level: int = logging.INFO) -> logging.Logger:
+def configure_logging(log_file: Path | None = None, level: int = logging.INFO) -> None:
     """
-    Initialize a logger with:
-    - Rich console output
-    - File logging (Main Process only)
+    Configure the root logger with:
+    - Rich console output (for all processes, though workers usually shouldn't log much)
+    - File logging (Main Process only, if log_file is provided)
     """
-    logger = logging.getLogger("bvn_project")
-
-    # Check if this is the Parent process
-    is_main = multiprocessing.current_process().name == 'MainProcess'
-
-    # If handlers are already attached, don't add them again
-    if logger.handlers:
-        return logger
-
+    # Get root logger
+    logger = logging.getLogger()
     logger.setLevel(level)
 
-    # 1. Rich console handler (All processes can have this for console output)
+    # Clear existing handlers to avoid duplicates on re-init
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # 1. Rich console handler
     rich_handler = RichHandler(
         markup=True,
         rich_tracebacks=True,
@@ -42,52 +35,41 @@ def init_logger(level: int = logging.INFO) -> logging.Logger:
         show_level=True,
         show_path=False,
     )
+    rich_handler.setLevel(level)
     logger.addHandler(rich_handler)
 
-    # 2. File logging (ONLY for the MainProcess to prevent worker spam)
+    # 2. File logging (Main Process Only)
+    is_main = multiprocessing.current_process().name == 'MainProcess'
+    
     if is_main:
-        if RUN_LOG_FILE is not None:
-            log_file = RUN_LOG_FILE
-            os.makedirs(log_file.parent, exist_ok=True)
+        if log_file:
+            # Ensure directory exists
+            log_file.parent.mkdir(parents=True, exist_ok=True)
+            target_file = log_file
         else:
-            log_dir = "logs"
-            os.makedirs(log_dir, exist_ok=True)
-            log_file = os.path.join(
-                log_dir,
-                f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            )
+            # Fallback default
+            log_dir = Path("logs")
+            log_dir.mkdir(parents=True, exist_ok=True)
+            target_file = log_dir / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler = logging.FileHandler(target_file, encoding="utf-8")
         file_handler.setLevel(level)
         file_handler.setFormatter(
             logging.Formatter(
-                "[%(asctime)s] [%(levelname)s] %(message)s",
+                "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
         )
         logger.addHandler(file_handler)
-
-        # Only print the setup message once in the main terminal
-        console.print(
-            f"[green]Logging initialized.[/green] "
-            f"Log file: [cyan]{log_file}[/cyan]"
-        )
-
-    logger.propagate = False  # prevent double logs
-    return logger
-
-
-# Global shared logger instance.
-# On Windows, this runs on every 'import', but our guard inside
-# the function prevents it from printing or creating files in workers.
-LOGGER = init_logger()
+        
+        # We can print to console that logging is set up
+        console.print(f"[green]Logging configured.[/green] Log file: [cyan]{target_file}[/cyan]")
 
 
 def print_banner(text: str) -> None:
     """
     Print a nice banner in the console to mark experiment phases.
     """
-    # Only the main process should print banners
     if multiprocessing.current_process().name == 'MainProcess':
         console.rule(f"[bold cyan]{text}[/bold cyan]")
 
@@ -97,18 +79,18 @@ def timed_section(name: str):
     """
     Measure execution time of a code section and log it.
     """
-    # Only log start/finish in the main process to keep console clean
+    logger = logging.getLogger("bvn.timer")
     is_main = multiprocessing.current_process().name == 'MainProcess'
 
     if is_main:
-        LOGGER.info(f"[bold green]Starting:[/bold green] {name}")
+        logger.info(f"[bold green]Starting:[/bold green] {name}")
 
     start = perf_counter()
     yield
     elapsed = perf_counter() - start
 
     if is_main:
-        LOGGER.info(
+        logger.info(
             f"[bold green]Finished:[/bold green] {name} "
             f"in [cyan]{elapsed:.3f}[/cyan] seconds"
         )
