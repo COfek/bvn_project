@@ -4,3 +4,4 @@ matplotlib>=3.7
 networkx>=3.1
 rich
 pytest
+numba>=0.57

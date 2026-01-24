@@ -6,7 +6,7 @@ from concurrent.futures import as_completed, ThreadPoolExecutor
 from scipy.optimize import linear_sum_assignment
 
 # Local imports - ensuring paths match your project structure
-from .sorted_array_matching import heavy_node_matching_array
+from .sorted_array_matching import sorted_array_matching
 from .wfa import wavefront_matching_vectorized
 
 
@@ -34,7 +34,7 @@ def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
 
 # Global registry of available matching algorithms
 MATCHING_ALGORITHMS: Dict[str, Callable[[np.ndarray], List[Tuple[int, int]]]] = {
-    "heavy": heavy_node_matching_array,
+    "heavy": sorted_array_matching,
     "wfa": wavefront_matching_vectorized,
     "maximum": maximum_matching_wrapper
 }
@@ -112,7 +112,7 @@ def _decompose_digit_plane(
     x = plane.copy().astype(np.float64)
     components: List[RadixComponent] = []
 
-    match_func = MATCHING_ALGORITHMS.get(matching_method, heavy_node_matching_array)
+    match_func = MATCHING_ALGORITHMS.get(matching_method, sorted_array_matching)
 
     # Use a small epsilon to prevent infinite loops from float drift
     epsilon = 1e-9

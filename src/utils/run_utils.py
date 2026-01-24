@@ -15,7 +15,7 @@ def create_run_folder(base_dir: str = "runs") -> Path:
         Path object of the new directory.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = Path(base_dir) / f"run_{timestamp}"
+    run_dir = Path(base_dir) / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_dir
 

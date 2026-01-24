@@ -11,11 +11,13 @@ class ExperimentConfig:
     """
 
     # --- Matrix Generation Parameters ---
-    n: int = 32  # Dimension of the square matrix (n x n)
-    num_matrices: int = 1000  # Total number of matrices to process
+    n: int = 128  # Dimension of the square matrix (n x n), updated default from README
+    num_matrices: int = 10  # Total number of matrices, updated default from README (samples)
+    density: float = 0.5  # Target density of the matrix
 
     # K is the ground-truth sum for all rows and columns.
     # If K=127, it represents 7-bit precision.
+    # Note: If density is specified, k might be derived or ignored depending on generator logic
     k: int = 8
 
     # --- Execution & Reproducibility ---
@@ -25,7 +27,7 @@ class ExperimentConfig:
     # decompose_radix for parallel plane processing.
     max_workers: Optional[int] = None
 
-    output_csv: Optional[str] = "results.csv"
+    output_csv: Optional[str] = "results.csv"  # This will be derived from main.py args
 
     # --- Split-Tree Parameters ---
     split_sparsity_target: int = 3
@@ -33,22 +35,24 @@ class ExperimentConfig:
     split_p: float = 0.5
     split_cv_threshold: float = 0.15
     split_min_matching_frac: float = 0.8
-    split_method: str = "pivot"  # pivot, random, or skip
+    split_method: str = "pivot"
     skip_split: bool = True
 
     # --- Radix Parameters ---
-    # List of bases to test. Base 2 is mathematically identical to Bitplane.
-    radix_bases: List[int] = field(default_factory=lambda: [2, 3, 8, 12, 16])
+    # List of bases to test.
+    radix_bases: List[int] = field(default_factory=lambda: [2]) 
 
-    # Strategy for selecting matching weight: "min", "max", or "median"
+    # Strategy: "min", "max", "median"
     radix_strategy: str = "min"
 
-    # "heavy": heavy_node_matching_array,
-    # "wfa": wavefront_matching_vectorized,
-    # "maximum": maximum_matching_wrapper
-    matching_method: str = "maximum"
+    # Matching Engines: "heavy" (sorted_array), "wfa", "maximum", or "all"
+    # This replaces the single matching_method string
+    engine: str = "all"
+
+    # --- Logging & Visualization ---
+    verbose: bool = False
+    plot: bool = True
+    output_dir: str = "./outputs"
 
     # --- Parallelism Control ---
-    # Set to False to time individual matrices accurately using internal
-    # ProcessPool parallelism for Radix planes.
     is_parallel: bool = False

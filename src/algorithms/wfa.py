@@ -29,36 +29,51 @@ def wavefront_matching(mask: BoolMatrix) -> List[Tuple[int, int]]:
     return matches
 
 
-def wavefront_matching_vectorized(matrix: NDArray) -> List[Tuple[int, int]]:
-    """
-    Vectorized Wavefront matching. Now accepts numeric matrices
-    to support a universal algorithm interface.
-    """
-    # 1. Internal Conversion: Treat any non-zero value as 'True'
-    # This ensures WFA logic remains the same even if passed numeric weights
-    if matrix.dtype != bool:
-        mask = matrix > 0
-    else:
-        mask = matrix
+from numba import jit
 
-    n = mask.shape[0]
-    row_free = np.ones(n, dtype=bool)
-    col_free = np.ones(n, dtype=bool)
+@jit(nopython=True, nogil=True)
+def _jit_wfa_kernel(
+    mask: np.ndarray, # Boolean or numeric mask
+    n: int
+) -> List[Tuple[int, int]]:
+    row_free = np.ones(n, dtype=np.int8)
+    col_free = np.ones(n, dtype=np.int8)
     matches = []
-
+    
+    # Sweep diagonals k = i + j
+    # Max k is 2*n - 2 (indices 0..n-1)
     for k in range(2 * n - 1):
-        i_indices = np.arange(max(0, k - n + 1), min(k + 1, n))
-        j_indices = k - i_indices
-
-        # Diagonal evaluation
-        eligible = mask[i_indices, j_indices] & row_free[i_indices] & col_free[j_indices]
-
-        if np.any(eligible):
-            for idx in np.where(eligible)[0]:
-                row_idx = i_indices[idx]
-                col_idx = j_indices[idx]
-                matches.append((row_idx, col_idx))
-                row_free[row_idx] = False
-                col_free[col_idx] = False
-
+        # Calculate range for i
+        # i + j = k => j = k - i
+        # 0 <= i < n AND 0 <= j < n
+        # => 0 <= k - i < n => i <= k AND i > k - n
+        
+        start_i = max(0, k - n + 1)
+        end_i = min(k + 1, n)
+        
+        # Iterate diagonal elements
+        for i in range(start_i, end_i):
+            j = k - i
+            
+            # Logic: If free and eligible
+            # Note: Assuming mask[i, j] checks > 0 logic externally or implicit bool
+            if row_free[i] == 1 and col_free[j] == 1:
+                # Numba handles non-zero check on numeric types as Truthy usually,
+                # but let's be explicit if possible. But inputs vary.
+                if mask[i, j]:  # Works for bool and non-zero numbers
+                    matches.append((i, j))
+                    row_free[i] = 0
+                    col_free[j] = 0
+                    
     return matches
+
+
+def wavefront_matching_vectorized(matrix: np.ndarray) -> List[Tuple[int, int]]:
+    """
+    JIT-Accelerated Wavefront Matching.
+    """
+    n = matrix.shape[0]
+    
+    # 1. Internal Conversion: Numba works best with typed arrays.
+    # We can pass the matrix directly. If float/int, it treats non-zero as True.
+    return _jit_wfa_kernel(matrix, n)

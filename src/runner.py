@@ -34,34 +34,67 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     rng_seed = config.random_seed + index if config.random_seed is not None else None
     rng = np.random.default_rng(rng_seed)
 
+    # Determine K from density if needed
+    # If density is close to 1, use a large K (e.g., 5*N to ensure coverage)
+    if config.density >= 0.999:
+        effective_k = 5 * config.n
+    else:
+        # Density D ~= 1 - (1 - 1/N)^K  => K ~= ln(1-D) / ln(1 - 1/N)
+        # Using approximation ln(1-x) ~= -x, K ~= -N * ln(1-D)
+        effective_k = int(-config.n * np.log(1.0 - config.density))
+        effective_k = max(1, effective_k)
+
     matrix = generate_scaled_doubly_stochastic_matrix(
         n=config.n,
-        k=(2**config.k)-1,
+        k=effective_k,
         rng=rng,
     )
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
-    t0 = time.perf_counter()
-    bvn_components = bvn_decomposition(matrix=matrix)
-    runtime_bvn = time.perf_counter() - t0
-    cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
+    # Only run BVN if explicitly requested or if engine is 'all' (baseline comparison)
+    # For large matrices (N=256), BVN is extremely slow, so we skip it if focusing on a specific engine.
+    if config.engine == "all":
+        t0 = time.perf_counter()
+        bvn_components = bvn_decomposition(matrix=matrix)
+        runtime_bvn = time.perf_counter() - t0
+        cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
+        num_permutations_bvn = len(bvn_components)
+    else:
+        # Dummy values for when BVN is skipped
+        bvn_components = []
+        runtime_bvn = 0.0
+        cycle_length_bvn = 0.0
+        num_permutations_bvn = 0
 
-    # --- 3. Radix Decomposition (Iterating only specific bases) ---
+    # --- 3. Radix Decomposition (Iterating specified engines & bases) ---
     radix_multi_data = {}
-    for base in config.radix_bases:
-        t1 = time.perf_counter()
-        radix_components = decompose_radix(
-            matrix=matrix,
-            base=base,
-            matching_method=config.matching_method,
-            max_workers=config.max_workers,
-            step_strategy=getattr(config, 'radix_strategy', 'min')
-        )
-        radix_runtime = time.perf_counter() - t1
+    
+    # Resolve engines
+    if config.engine == "all":
+        # Note: mapping 'heavy' -> 'sorted_array' is handled in radix_decomposition.py map
+        # But here we pass the keys expected by radix_decomposition.py
+        target_engines = ["wfa", "maximum", "heavy"]
+    else:
+        target_engines = [config.engine]
 
-        c_len = float(sum(comp.weight for comp in radix_components))
-        n_perm = len(radix_components)
-        radix_multi_data[base] = (radix_runtime, c_len, n_perm)
+    for engine in target_engines:
+        for base in config.radix_bases:
+            t1 = time.perf_counter()
+            radix_components = decompose_radix(
+                matrix=matrix,
+                base=base,
+                matching_method=engine,
+                max_workers=config.max_workers,
+                step_strategy=getattr(config, 'radix_strategy', 'min')
+            )
+            radix_runtime = time.perf_counter() - t1
+
+            c_len = float(sum(comp.weight for comp in radix_components))
+            n_perm = len(radix_components)
+            
+            # Key format: "{engine}_{base}"
+            key = f"{engine}_{base}"
+            radix_multi_data[key] = (radix_runtime, c_len, n_perm)
 
     # --- 4. Split-tree decomposition ---
     num_split = cycle_split = runtime_split = None
@@ -83,7 +116,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     # --- 6. Return unified stats object ---
     return DecompositionStats(
         matrix_index=index,
-        num_permutations_bvn=len(bvn_components),
+        num_permutations_bvn=num_permutations_bvn,
         cycle_length_bvn=cycle_length_bvn,
         runtime_bvn=runtime_bvn,
         num_perm_split=num_split,

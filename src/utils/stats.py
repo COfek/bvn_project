@@ -16,5 +16,5 @@ class DecompositionStats:
     cycle_split: Optional[float] = None
     runtime_split: Optional[float] = None
 
-    # Dictionary to store multiple bases: {base: (runtime, cycle, num_perms)}
-    radix_multi_results: Dict[int, Tuple[float, float, int]] = field(default_factory=dict)
+    # Dictionary to store multiple bases: {key_str: (runtime, cycle, num_perms)}
+    radix_multi_results: Dict[str, Tuple[float, float, int]] = field(default_factory=dict)

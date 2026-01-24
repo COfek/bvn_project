@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Dict
 from pathlib import Path
@@ -33,16 +34,12 @@ def _smooth(xs, ys, window):
     return xs_smooth, ys_smooth
 
 
-def _get_all_bases(stats: List[DecompositionStats]) -> List[int]:
-    """Helper to find all unique radix bases, ensuring keys are integers."""
-    bases = set()
+def _get_all_keys(stats: List[DecompositionStats]) -> List[str]:
+    """Helper to find all unique result keys (e.g. 'wfa_2')."""
+    keys = set()
     for s in stats:
-        for b in s.radix_multi_results.keys():
-            try:
-                bases.add(int(b)) # Force to int for consistency
-            except ValueError:
-                continue
-    return sorted(list(bases))
+        keys.update(s.radix_multi_results.keys())
+    return sorted(list(keys))
 
 
 # ============================================================
@@ -98,9 +95,9 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
 
     # Filter for fields that actually contain data
     active_baselines = {n: f for n, f in baseline_map.items() if any(getattr(s, f) is not None for s in stats)}
-    radix_bases = _get_all_bases(stats)
+    keys = _get_all_keys(stats)
 
-    total_plots = len(active_baselines) + len(radix_bases)
+    total_plots = len(active_baselines) + len(keys)
     if total_plots == 0:
         return
 
@@ -125,9 +122,15 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
         idx += 1
 
     # 2. Plot All Radix Bases
-    for base in radix_bases:
-        label = f"Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
-        vals = [s.radix_multi_results[base][radix_index] for s in stats if base in s.radix_multi_results]
+    for key in keys:
+        parts = str(key).split('_')
+        if len(parts) == 2:
+            eng, b = parts
+            label = f"{eng.upper()} (B-{b})"
+        else:
+            label = f"Result ({key})"
+            
+        vals = [s.radix_multi_results[key][radix_index] for s in stats if key in s.radix_multi_results]
         h, l = _plot_pdf_cdf_on_ax(axes_list[idx], vals, label)
         axes_list[idx].set_title(f"{label} {title}")
         if h: axes_list[idx].legend(h, l, loc="upper right", fontsize=8)
@@ -160,10 +163,16 @@ def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path):
         x_s, y_s = _smooth(xs, values, window)
         plt.plot(x_s, y_s, label=name, linewidth=2.5)
 
-    bases = _get_all_bases(stats)
-    for base in bases:
-        label = "Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
-        vals = [s.radix_multi_results[base][1] for s in stats if base in s.radix_multi_results]
+    keys = _get_all_keys(stats)
+    for key in keys:
+        parts = str(key).split('_')
+        if len(parts) == 2:
+            eng, b = parts
+            label = f"{eng.upper()} (B-{b})"
+        else:
+            label = f"Result ({key})"
+
+        vals = [s.radix_multi_results[key][1] for s in stats if key in s.radix_multi_results]
         x_s, y_s = _smooth(xs, vals, window)
         plt.plot(x_s, y_s, label=label, linestyle="--", alpha=0.8)
 
@@ -191,10 +200,17 @@ def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: i
         x_s, y_s = _smooth(xs, values, window)
         plt.plot(x_s, y_s, label=name, linewidth=2.5)
 
-    bases = _get_all_bases(stats)
-    for base in bases:
-        label = "Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
-        vals = [s.radix_multi_results[base][2] for s in stats if base in s.radix_multi_results]
+    keys = _get_all_keys(stats)
+    for key in keys:
+        # Key format expected: "engine_base" or just "base" (legacy)
+        parts = str(key).split('_')
+        if len(parts) == 2:
+            eng, b = parts
+            label = f"{eng.upper()} (B-{b})"
+        else:
+            label = f"Result ({key})"
+
+        vals = [s.radix_multi_results[key][2] for s in stats if key in s.radix_multi_results]
         x_s, y_s = _smooth(xs, vals, window)
         plt.plot(x_s, y_s, label=label, linestyle="--", alpha=0.8)
 
@@ -222,10 +238,16 @@ def plot_runtime(stats: List[DecompositionStats], out_dir: Path):
         x_s, y_s = _smooth(xs, values, window)
         plt.plot(x_s, y_s, label=name, linewidth=2.5)
 
-    bases = _get_all_bases(stats)
-    for base in bases:
-        label = "Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
-        vals = [s.radix_multi_results[base][0] for s in stats if base in s.radix_multi_results]
+    keys = _get_all_keys(stats)
+    for key in keys:
+        parts = str(key).split('_')
+        if len(parts) == 2:
+            eng, b = parts
+            label = f"{eng.upper()} (B-{b})"
+        else:
+            label = f"Result ({key})"
+
+        vals = [s.radix_multi_results[key][0] for s in stats if key in s.radix_multi_results]
         x_s, y_s = _smooth(xs, vals, window)
         plt.plot(x_s, y_s, label=label, linestyle="--", alpha=0.8)
 
@@ -278,39 +300,70 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
         cycs = [getattr(s, cyc_f) for s in stats if getattr(s, cyc_f) is not None]
 
         if rts and cycs:
-            plt.errorbar(np.mean(cycs), np.mean(rts),
-                         xerr=np.std(cycs), yerr=np.std(rts),
-                         fmt=marker, markersize=10, capsize=5,
-                         label=name, color=color, alpha=0.7)
+            med_rt = np.median(rts)
+            med_cyc = np.median(cycs)
+            # Use percentiles (5th, 95th) to filter outliers
+            rt_err = [[med_rt - np.percentile(rts, 5)], [np.percentile(rts, 95) - med_rt]]
+            cyc_err = [[med_cyc - np.percentile(cycs, 5)], [np.percentile(cycs, 95) - med_cyc]]
+            
+            rt_err = np.maximum(0, rt_err)
+            cyc_err = np.maximum(0, cyc_err)
+
+            plt.errorbar(med_cyc, med_rt,
+                        xerr=cyc_err, yerr=rt_err,
+                        fmt=marker, markersize=10, capsize=5,
+                        label=name, color=color, alpha=0.7)
 
     # 2. Plot Radix Bases
-    all_bases = _get_all_bases(stats)
-    if all_bases:
+    keys = _get_all_keys(stats)
+    if keys:
         cmap = mpl.colormaps['plasma']
-        colors = cmap(np.linspace(0, 0.85, len(all_bases)))
+        colors = cmap(np.linspace(0, 0.85, len(keys)))
 
-        for i, base in enumerate(all_bases):
-            label = "Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
+        for i, key in enumerate(keys):
+            parts = str(key).split('_')
+            if len(parts) == 2:
+                eng, b = parts
+                label = f"{eng.upper()} (B-{b})"
+            else:
+                label = f"Result ({key})"
+
             # Index 0 is Runtime, Index 1 is Cycle Length
-            base_data = [s.radix_multi_results[base] for s in stats if base in s.radix_multi_results]
+            base_data = [s.radix_multi_results[key] for s in stats if key in s.radix_multi_results]
 
             if base_data:
                 base_rts = [d[0] for d in base_data]
                 base_cycs = [d[1] for d in base_data]
 
-                plt.errorbar(np.mean(base_cycs), np.mean(base_rts),
-                             xerr=np.std(base_cycs), yerr=np.std(base_rts),
-                             fmt='v', markersize=8, capsize=3,
-                             label=label, color=colors[i], alpha=0.9)
+                # Calculate asymmetric error bars (Percentiles)
+                # Use Median as center to be robust against JIT outliers
+                med_rt = np.median(base_rts)
+                med_cyc = np.median(base_cycs)
+                
+                rt_err = [[med_rt - np.percentile(base_rts, 5)], [np.percentile(base_rts, 95) - med_rt]]
+                cyc_err = [[med_cyc - np.percentile(base_cycs, 5)], [np.percentile(base_cycs, 95) - med_cyc]]
 
-    # Reference line for the theoretical K-regular ground truth
-    plt.axvline(1.0, color="black", linestyle="--", alpha=0.5, label="Optimal Cycle")
+                # Ensure non-negative (can happen if distribution is weirdly tight)
+                rt_err = np.maximum(0, rt_err)
+                cyc_err = np.maximum(0, cyc_err)
+
+                plt.errorbar(med_cyc, med_rt,
+                            xerr=cyc_err, yerr=rt_err,
+                            fmt='v', markersize=8, capsize=3,
+                            label=label, color=colors[i], alpha=0.9)
+
+    # Reference line removed per user request
+    # Set hard limit for Y-axis to zoom in on steady state
+    # Use gca() to be explicit and disable autoscaling for Y
+    ax = plt.gca()
+    ax.set_ylim(0, 0.1)
+    # ax.set_autoscale_on(False) # Optional, but set_ylim is usually enough if placed last
 
     plt.xlabel("Average Cycle Length")
     plt.ylabel("Average Runtime (Seconds)")
 
     # Updated Title incorporating the matching method
-    plt.title(f"Efficiency Pareto Front (Matching: {matching_name.upper()})\nRuntime vs. Cycle Length")
+    plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()})\nRuntime vs. Cycle Length")
 
     plt.grid(True, linestyle=":", alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -345,35 +398,57 @@ def plot_runtime_vs_permutation_efficiency(
         perms = [getattr(s, perm_f) for s in stats if getattr(s, perm_f) is not None]
 
         if rts and perms:
-            plt.errorbar(np.mean(perms), np.mean(rts),
-                         xerr=np.std(perms), yerr=np.std(rts),
-                         fmt=marker, markersize=10, capsize=5,
-                         label=name, color=color, alpha=0.7)
+            med_rt = np.median(rts)
+            med_perm = np.median(perms)
+            # Use percentiles (5th, 95th) to filter outliers like JIT Compilation spikes
+            rt_err = [[med_rt - np.percentile(rts, 5)], [np.percentile(rts, 95) - med_rt]]
+            perm_err = [[med_perm - np.percentile(perms, 5)], [np.percentile(perms, 95) - med_perm]]
+            
+            rt_err = np.maximum(0, rt_err)
+            perm_err = np.maximum(0, perm_err)
+
+            plt.errorbar(med_perm, med_rt,
+                        xerr=perm_err, yerr=rt_err,
+                        fmt=marker, markersize=10, capsize=5,
+                        label=name, color=color, alpha=0.7)
 
     # 2. Plot Radix Bases
-    all_bases = _get_all_bases(stats)
-    if all_bases:
+    keys = _get_all_keys(stats)
+    if keys:
         cmap = mpl.colormaps['plasma']
-        colors = cmap(np.linspace(0, 0.85, len(all_bases)))
+        colors = cmap(np.linspace(0, 0.85, len(keys)))
 
-        for i, base in enumerate(all_bases):
-            label = "Bitplane (B-2)" if base == 2 else f"Radix (B-{base})"
-            base_data = [s.radix_multi_results[base] for s in stats if base in s.radix_multi_results]
+        for i, key in enumerate(keys):
+            parts = str(key).split('_')
+            if len(parts) == 2:
+                eng, b = parts
+                label = f"{eng.upper()} (B-{b})"
+            else:
+                label = f"Result ({key})"
+
+            base_data = [s.radix_multi_results[key] for s in stats if key in s.radix_multi_results]
 
             if base_data:
                 base_rts = [d[0] for d in base_data]  # Index 0: Runtime
                 base_perms = [d[2] for d in base_data]  # Index 2: Num Perms
 
-                plt.errorbar(np.mean(base_perms), np.mean(base_rts),
-                             xerr=np.std(base_perms), yerr=np.std(base_rts),
-                             fmt='v', markersize=8, capsize=3,
-                             label=label, color=colors[i], alpha=0.9)
+                # Calculate asymmetric error bars (Percentiles)
+                med_rt = np.median(base_rts)
+                med_perms = np.median(base_perms)
+                
+                # Plot Medians Only (No Error Bars)
+                plt.plot(med_perms, med_rt,
+                         marker='v', markersize=8,
+                         label=label, color=colors[i], alpha=0.9, linestyle='None')
+
+    # Allow autoscaling to zoom in on the data
+    plt.autoscale(enable=True, axis='y')
 
     plt.xlabel("Average Number of Permutations")
     plt.ylabel("Average Runtime (Seconds)")
 
     # Updated Title with Matching Method
-    plt.title(f"Efficiency Pareto Front (Matching: {matching_name.upper()})\nRuntime vs. Permutation Count")
+    plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()})\nRuntime vs. Permutation Count")
 
     plt.grid(True, linestyle=":", alpha=0.3)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
