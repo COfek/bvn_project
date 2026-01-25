@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Tuple
+from typing import Dict, Optional, Tuple
+
 
 @dataclass
 class DecompositionStats:

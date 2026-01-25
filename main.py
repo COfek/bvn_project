@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import multiprocessing
 import logging
+import multiprocessing
 from pathlib import Path
 
 from src.cli import parse_args
 from src.config import ExperimentConfig
 from src.plotting import plot_results
 from src.runner import run_experiment
+from src.utils.io_utils import parse_stats_from_csv, write_stats_to_csv
 from src.utils.logging_utils import configure_logging, print_banner, timed_section
-from src.utils.run_utils import create_run_folder, save_config, get_log_file_path
-from src.utils.io_utils import write_stats_to_csv, parse_stats_from_csv
+from src.utils.run_utils import create_run_folder, get_log_file_path, save_config
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,7 @@ def build_config(args) -> ExperimentConfig:
         split_cv_threshold=args.split_cv_threshold,
         split_min_matching_frac=args.split_min_matching_frac,
         split_method=args.split_method,
+        fixed_k=args.fixed_k,
         is_parallel=False
     )
 

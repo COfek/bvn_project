@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 import csv
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from src.utils.stats import DecompositionStats
+
 
 def write_stats_to_csv(stats_list: List[DecompositionStats], path: Path) -> None:
     """Writes the list of decomposition stats to a CSV file."""

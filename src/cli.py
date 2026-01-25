@@ -1,5 +1,6 @@
 import argparse
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="BvN-Arbiter: High-Performance Matrix Decomposition Suite"
@@ -10,6 +11,8 @@ def parse_args() -> argparse.Namespace:
                         help="Dimension of the N x N traffic matrix.")
     parser.add_argument("--density", "-d", type=float, default=0.5,
                         help="Probability (0.0 to 1.0) of a matrix entry being non-zero.")
+    parser.add_argument("--fixed-k", type=int, default=None,
+                        help="Force generate K-regular matrices with specific K (overrides density).")
     parser.add_argument("--engine", "-e", type=str, default="all", 
                         choices=["wfa", "max", "heavy", "all", "wfa_bvn"],
                         help="Matching algorithm: wfa, max, heavy, all, or wfa_bvn.")

@@ -1,10 +1,9 @@
-import numpy as np
-from typing import List, Tuple
 import time
+from typing import List, Tuple
 
-
-
+import numpy as np
 from numba import jit
+
 
 @jit(nopython=True, nogil=True)
 def _jit_greedy_match_loop(

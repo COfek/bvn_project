@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import matplotlib as mpl
+
 mpl.use('Agg')
+from pathlib import Path
+from typing import List
+
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import List, Dict
-from pathlib import Path
 from scipy.stats import gaussian_kde
 
 from .utils.stats import DecompositionStats

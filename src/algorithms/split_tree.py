@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Tuple, Union
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 from numpy.typing import NDArray
-
-from .wfa import wavefront_matching_vectorized  # use your existing WFA implementation
 
 float_matrix = NDArray[np.float64]
 pschedule = Union[float, Callable[[float_matrix, int], float]]
@@ -265,7 +262,7 @@ def decompose_leaf_with_wfa(
     
     # 2. Call JIT Kernel (releases GIL)
     # Returns: weights (List[float]), matches (List[List[Tuple]])
-    from .wfa import _jit_decompose_wfa 
+    from .wfa import _jit_decompose_wfa
     
     weights, matches_list = _jit_decompose_wfa(x, n, tol)
     

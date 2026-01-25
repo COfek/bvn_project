@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 from typing import List, Tuple
+
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import linear_sum_assignment
+from numba import jit
 
 BoolMatrix = NDArray[np.bool_]
 
@@ -30,6 +32,7 @@ def wavefront_matching(mask: BoolMatrix) -> List[Tuple[int, int]]:
 
 
 from numba import jit
+
 
 @jit(nopython=True, nogil=True)
 def _jit_wfa_kernel(

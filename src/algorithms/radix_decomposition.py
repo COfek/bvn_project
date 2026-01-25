@@ -1,8 +1,10 @@
 from __future__ import annotations
-import numpy as np
-from typing import List, Tuple, Dict, Callable
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from concurrent.futures import as_completed, ThreadPoolExecutor
+from typing import Callable, Dict, List, Tuple
+
+import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 # Local imports - ensuring paths match your project structure

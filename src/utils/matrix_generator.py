@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import numpy as np
 from numpy.typing import NDArray
+
 FloatMatrix = NDArray[np.float64]
 
 def generate_scaled_doubly_stochastic_matrix(

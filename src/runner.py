@@ -1,22 +1,27 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
-from typing import List, Tuple
-import time
 import logging
 import os
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import List
 
 import numpy as np
 from rich.console import Console
-from rich.progress import Progress, BarColumn, TimeElapsedColumn, TextColumn, MofNCompleteColumn
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+)
 
-from .config import ExperimentConfig
-from .utils.matrix_generator import generate_scaled_doubly_stochastic_matrix
 from .algorithms.bvn import bvn_decomposition
 from .algorithms.radix_decomposition import decompose_radix
 from .algorithms.split_tree import split_tree_decomposition
+from .config import ExperimentConfig
+from .utils.matrix_generator import generate_scaled_doubly_stochastic_matrix
 from .utils.stats import DecompositionStats
-from .utils.logging_utils import print_banner
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +40,10 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     rng = np.random.default_rng(rng_seed)
 
     # Determine K from density if needed
-    if config.density >= 0.999:
+    # Determine K from density if needed, or use fixed_k if provided
+    if config.fixed_k is not None:
+        effective_k = config.fixed_k
+    elif config.density >= 0.999:
         effective_k = 5 * config.n
     else:
         # Density D ~= 1 - (1 - 1/N)^K

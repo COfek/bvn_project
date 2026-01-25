@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import List, Optional
 
 
 @dataclass
@@ -19,6 +20,7 @@ class ExperimentConfig:
     # If K=127, it represents 7-bit precision.
     # Note: If density is specified, k might be derived or ignored depending on generator logic
     k: int = 8
+    fixed_k: Optional[int] = None
 
     # --- Execution & Reproducibility ---
     random_seed: Optional[int] = 42

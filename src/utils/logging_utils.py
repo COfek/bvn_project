@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import logging
-import os
 import multiprocessing
 from contextlib import contextmanager
-from time import perf_counter
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from time import perf_counter
 
 from rich.console import Console
 from rich.logging import RichHandler
