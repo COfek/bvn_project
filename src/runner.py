@@ -19,6 +19,7 @@ from rich.progress import (
 from .algorithms.bvn import bvn_decomposition
 from .algorithms.radix_decomposition import decompose_radix
 from .algorithms.split_tree import split_tree_decomposition
+from .algorithms.shuffled_parallel import shuffled_parallel_decomposition
 from .config import ExperimentConfig
 from .utils.matrix_generator import generate_scaled_doubly_stochastic_matrix
 from .utils.stats import DecompositionStats
@@ -58,7 +59,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     )
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
-    if config.engine == "all" or config.engine == "wfa_bvn":
+    if config.engine == "all" or config.engine == "wfa_bvn" or config.engine == "shuffled":
         t0 = time.perf_counter()
         bvn_components = bvn_decomposition(matrix=matrix)
         runtime_bvn = time.perf_counter() - t0
@@ -77,12 +78,34 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         target_engines = ["wfa", "maximum", "heavy"]
     elif config.engine == "wfa_bvn":
         target_engines = ["wfa"]
+    elif config.engine == "shuffled":
+        target_engines = ["shuffled"]
     else:
         target_engines = [config.engine]
 
     for engine in target_engines:
+        if engine == "shuffled":
+            # Comparison sweep: Proposals [3, 4, 5]
+            # We ignore config.radix_bases for shuffled engine logic
+            proposal_counts = [3, 4, 5]
+            for p_count in proposal_counts:
+                t1 = time.perf_counter()
+                radix_components = shuffled_parallel_decomposition(
+                    matrix=matrix,
+                    max_workers=config.max_workers,
+                    num_proposals=p_count
+                )
+                radix_runtime = time.perf_counter() - t1
+                c_len = float(sum(comp.weight for comp in radix_components))
+                n_perm = len(radix_components)
+                
+                key = f"{engine}_{p_count}"
+                radix_multi_data[key] = (radix_runtime, c_len, n_perm)
+            continue
+
         for base in config.radix_bases:
             t1 = time.perf_counter()
+            # Standard radix decomposition
             radix_components = decompose_radix(
                 matrix=matrix,
                 base=base,

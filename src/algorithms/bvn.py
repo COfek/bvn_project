@@ -11,18 +11,18 @@ FloatMatrix = NDArray[np.float64]
 
 
 @dataclass
-class BvnComponent:
+class DecompositionComponent:
     """
-    Single component in a BVN-style decomposition.
+    Single component in a decomposition.
     """
-    permutation: FloatMatrix
+    permutation: FloatMatrix | Dict[int, int]
     weight: float
 
 
 def bvn_decomposition(
     matrix: FloatMatrix,
     max_iters: Optional[int] = None,
-) -> List[BvnComponent]:
+) -> List[DecompositionComponent]:
     """
     Perform an exact Birkhoff–von Neumann decomposition on a K-regular integer matrix.
 
@@ -31,7 +31,7 @@ def bvn_decomposition(
     """
     # Work on a copy to avoid modifying the original matrix
     work = np.array(matrix, dtype=np.float64, copy=True)
-    components: List[BvnComponent] = []
+    components: List[DecompositionComponent] = []
     iteration = 0
 
     # In integer space, we continue until the matrix is purely zero
@@ -55,7 +55,7 @@ def bvn_decomposition(
         permutation = np.zeros_like(work)
         permutation[row_ind, col_ind] = 1.0
 
-        components.append(BvnComponent(permutation=permutation, weight=lambda_value))
+        components.append(DecompositionComponent(permutation=permutation, weight=lambda_value))
 
         # Subtract the weight from the working matrix
         work[row_ind, col_ind] -= lambda_value

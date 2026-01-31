@@ -110,6 +110,27 @@ def _get_color_for_key(key: str, index: int, total: int):
         return cmap(index / max(1, total - 1))
 
 
+def _get_pareto_frontier(points):
+    """
+    Finds the Pareto frontier for minimizing both X and Y.
+    Points: list of (x, y) tuples.
+    Returns: list of (x, y) sorted by x.
+    """
+    # Sort by X (ascending), then Y (ascending)
+    # If multiple points have same X, we only care about the one with min Y.
+    sorted_points = sorted(points, key=lambda p: (p[0], p[1]))
+    
+    frontier = []
+    min_y_so_far = float('inf')
+    
+    for x, y in sorted_points:
+        if y < min_y_so_far:
+            frontier.append((x, y))
+            min_y_so_far = y
+            
+    return frontier
+
+
 # ============================================================
 # Distribution Helpers
 # ============================================================
@@ -300,11 +321,18 @@ def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Pat
 
 def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = ""):
     """
-    Plots Average Runtime against the Average Cycle Length.
+    Plots Average Runtime against the Average Cycle Length with Error Bars.
+    Includes Pareto Frontier and WFA Trend Line.
     """
     _prepare_plot_dir(out_dir)
 
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(12, 8))
+    
+    all_points = [] # (x, y) for pareto
+    wfa_points = [] # (base, x, y) for trend line
+
+    # Add vertical line for Optimal Cycle = 1.0 (if relevant for the x-axis)
+    plt.axvline(x=1.0, color='gray', linestyle='--', linewidth=1.5, label="Optimal Cycle", alpha=0.8, zorder=1)
 
     # 1. Plot Baselines (BVN / Split-Tree)
     baselines = {
@@ -317,49 +345,97 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
         cycs = [getattr(s, cyc_f) for s in stats if getattr(s, cyc_f) is not None]
 
         if rts and cycs:
-            med_rt = np.median(rts)
-            med_cyc = np.median(cycs)
-            plt.plot(med_cyc, med_rt, marker=marker, markersize=12,
-                     label=name, color=color, alpha=0.9, linestyle='None')
+            rts = np.array(rts)
+            cycs = np.array(cycs)
+            mean_rt = np.mean(rts)
+            std_rt = np.std(rts)
+            mean_cyc = np.mean(cycs)
+            std_cyc = np.std(cycs)
+            
+            plt.errorbar(mean_cyc, mean_rt, xerr=std_cyc, yerr=std_rt, 
+                         fmt=marker, markersize=10, label=name, color=color, 
+                         alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
+            all_points.append((mean_cyc, mean_rt))
 
     # 2. Plot Radix Bases
     keys = _get_all_keys(stats)
     if keys:
         for i, key in enumerate(keys):
             parts = str(key).split('_')
-            if len(parts) == 2:
-                eng, b = parts
-                label = f"{eng.upper()} (B-{b})"
-            else:
-                label = f"Result ({key})"
-            
             c = _get_color_for_key(key, i, len(keys))
-
+            
             base_data = [s.radix_multi_results[key] for s in stats if key in s.radix_multi_results]
             if base_data:
-                base_rts = [d[0] for d in base_data]
-                base_cycs = [d[1] for d in base_data]
-                med_rt = np.median(base_rts)
-                med_cyc = np.median(base_cycs)
-                plt.plot(med_cyc, med_rt, marker='v', markersize=11,
-                            label=label, color=c, alpha=0.9, linestyle='None')
+                base_rts = np.array([d[0] for d in base_data])
+                base_cycs = np.array([d[1] for d in base_data])
+                
+                mean_rt = np.mean(base_rts)
+                std_rt = np.std(base_rts)
+                mean_cyc = np.mean(base_cycs)
+                std_cyc = np.std(base_cycs)
+                
+                all_points.append((mean_cyc, mean_rt))
+                
+                label = f"Result ({key})"
+                marker_style = 'v'
+                
+                if len(parts) == 2:
+                    eng, b = parts
+                    if eng == 'shuffled':
+                         label = f"Shuffled (P={b})"
+                    else:
+                         label = f"{eng.upper()} (B-{b})"
+                    
+                    if eng == 'wfa':
+                        try:
+                            wfa_points.append((int(b), mean_cyc, mean_rt))
+                        except ValueError:
+                            pass
 
-    plt.xlabel("Average Cycle Length")
-    plt.ylabel("Average Runtime (Seconds)")
+                plt.errorbar(mean_cyc, mean_rt, xerr=std_cyc, yerr=std_rt,
+                             fmt=marker_style, markersize=9, label=label, color=c, 
+                             alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
+
+    # 3. Draw WFA Trend Line
+    if wfa_points:
+        wfa_points.sort(key=lambda x: x[0]) # Sort by base
+        wx = [p[1] for p in wfa_points]
+        wy = [p[2] for p in wfa_points]
+        plt.plot(wx, wy, '--', color='gray', alpha=0.5, label="WFA Trend", linewidth=1.5, zorder=3)
+        
+        # Annotate bases
+        for b, x, y in wfa_points:
+            plt.annotate(f"B{b}", (x, y), xytext=(5, 5), textcoords='offset points', fontsize=8, alpha=0.7)
+
+    # 4. Draw Pareto Frontier
+    if all_points:
+        frontier = _get_pareto_frontier(all_points)
+        fx, fy = zip(*frontier)
+        plt.plot(fx, fy, '-', color='black', alpha=0.6, linewidth=2, label="Pareto Frontier", zorder=4)
+
+    plt.xlabel("Average Cycle Length (Lower is better)")
+    plt.ylabel("Average Runtime (Seconds) (Lower is better)")
     plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()}) {metadata}\nRuntime vs. Cycle Length")
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    plt.grid(True, which='both', linestyle=':', alpha=0.4)
     plt.tight_layout()
+    # plt.xscale('log') # Removed as requested
+    # plt.yscale('log') # Removed as requested
     plt.savefig(out_dir / f"runtime_vs_cycle_{matching_name}.png", dpi=200)
     plt.close()
 
 
 def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = ""):
     """
-    Plots Average Runtime against the Average Number of Permutations.
+    Plots Average Runtime against the Average Number of Permutations with Error Bars.
+    Includes Pareto Frontier and WFA Trend Line.
     """
     _prepare_plot_dir(out_dir)
 
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(12, 8))
+    
+    all_points = []
+    wfa_points = []
 
     baselines = {
         "BVN": ("runtime_bvn", "num_permutations_bvn", COLORS_BASE['BVN'], "o"),
@@ -371,37 +447,78 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
         perms = [getattr(s, perm_f) for s in stats if getattr(s, perm_f) is not None]
 
         if rts and perms:
-            med_rt = np.median(rts)
-            med_perm = np.median(perms)
-            plt.plot(med_perm, med_rt, marker=marker, markersize=12,
-                     label=name, color=color, alpha=0.9, linestyle='None')
+            rts = np.array(rts)
+            perms = np.array(perms)
+            mean_rt = np.mean(rts)
+            std_rt = np.std(rts)
+            mean_perm = np.mean(perms)
+            std_perm = np.std(perms)
+            
+            plt.errorbar(mean_perm, mean_rt, xerr=std_perm, yerr=std_rt,
+                         fmt=marker, markersize=10, label=name, color=color, 
+                         alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
+            all_points.append((mean_perm, mean_rt))
 
     keys = _get_all_keys(stats)
     if keys:
         for i, key in enumerate(keys):
             parts = str(key).split('_')
-            if len(parts) == 2:
-                eng, b = parts
-                label = f"{eng.upper()} (B-{b})"
-            else:
-                label = f"Result ({key})"
-            
             c = _get_color_for_key(key, i, len(keys))
 
             base_data = [s.radix_multi_results[key] for s in stats if key in s.radix_multi_results]
             if base_data:
-                base_rts = [d[0] for d in base_data]
-                base_perms = [d[2] for d in base_data] # Index 2 is permutations
-                med_rt = np.median(base_rts)
-                med_perms = np.median(base_perms)
-                plt.plot(med_perms, med_rt, marker='v', markersize=11,
-                         label=label, color=c, alpha=0.9, linestyle='None')
+                base_rts = np.array([d[0] for d in base_data])
+                base_perms = np.array([d[2] for d in base_data]) # Index 2 is permutations
+                
+                mean_rt = np.mean(base_rts)
+                std_rt = np.std(base_rts)
+                mean_perms = np.mean(base_perms)
+                std_perms = np.std(base_perms)
+                
+                all_points.append((mean_perms, mean_rt))
 
-    plt.xlabel("Average Number of Permutations")
-    plt.ylabel("Average Runtime (Seconds)")
+                label = f"Result ({key})"
+                marker_style = 'v'
+                if len(parts) == 2:
+                    eng, b = parts
+                    if eng == 'shuffled':
+                         label = f"Shuffled (P={b})"
+                    else:
+                         label = f"{eng.upper()} (B-{b})"
+                    
+                    if eng == 'wfa':
+                        try:
+                            wfa_points.append((int(b), mean_perms, mean_rt))
+                        except ValueError:
+                            pass
+                
+                plt.errorbar(mean_perms, mean_rt, xerr=std_perms, yerr=std_rt,
+                             fmt=marker_style, markersize=9, label=label, color=c, 
+                             alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
+
+    # 3. Draw WFA Trend Line
+    if wfa_points:
+        wfa_points.sort(key=lambda x: x[0])
+        wx = [p[1] for p in wfa_points]
+        wy = [p[2] for p in wfa_points]
+        plt.plot(wx, wy, '--', color='gray', alpha=0.5, label="WFA Trend", linewidth=1.5, zorder=3)
+        for b, x, y in wfa_points:
+            plt.annotate(f"B{b}", (x, y), xytext=(5, 5), textcoords='offset points', fontsize=8, alpha=0.7)
+
+    # 4. Draw Pareto Frontier
+    if all_points:
+        frontier = _get_pareto_frontier(all_points)
+        fx, fy = zip(*frontier)
+        plt.plot(fx, fy, '-', color='black', alpha=0.6, linewidth=2, label="Pareto Frontier", zorder=4)
+
+    plt.xlabel("Average Number of Permutations (Lower is better)")
+    plt.ylabel("Average Runtime (Seconds) (Lower is better)")
     plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()}) {metadata}\nRuntime vs. Permutations")
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    plt.grid(True, which='both', linestyle=':', alpha=0.4)
     plt.tight_layout()
+    # plt.xscale('log') # Removed as requested
+    # plt.yscale('log') # Removed as requested
     plt.savefig(out_dir / f"runtime_vs_permutations_{matching_name}.png", dpi=200)
     plt.close()
 

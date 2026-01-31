@@ -42,14 +42,12 @@ class ExperimentConfig:
 
     # --- Radix Parameters ---
     # List of bases to test.
-    radix_bases: List[int] = field(default_factory=lambda: [2]) 
+    radix_bases: List[int] = field(default_factory=lambda: [2])
 
     # Strategy: "min", "max", "median"
     radix_strategy: str = "min"
 
-    # Matching Engines: "heavy" (sorted_array), "wfa", "maximum", or "all"
-    # This replaces the single matching_method string
-    engine: str = "all"
+    engine: str = field(default="bvn", metadata={"help": "Decomposition engine: 'bvn', 'wfa', 'heavy', 'maximum', 'all', 'wfa_bvn', 'shuffled'"})
 
     # --- Logging & Visualization ---
     verbose: bool = False
