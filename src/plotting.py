@@ -29,10 +29,10 @@ mpl.rcParams.update({
     
     # Grid Settings
     'axes.grid': True,
-    'grid.alpha': 1.0,           # Fully opaque
-    'grid.color': '#e0e0e0',     # Light gray grid
-    'grid.linestyle': '-',       # Solid line
-    'grid.linewidth': 0.8,
+    'grid.alpha': 0.5,           # Semi-transparent
+    'grid.color': '#000000',     # Black grid for clarity
+    'grid.linestyle': '--',      # Dashed line
+    'grid.linewidth': 0.5,
     'axes.axisbelow': True,      # Grid behind plot elements
     'axes.facecolor': 'white',   # White background for contrast
     'figure.facecolor': 'white',
@@ -183,7 +183,7 @@ def _plot_pdf_cdf_on_ax(ax, values, label: str, color=None):
 # Dynamic Grid Plotting
 # ============================================================
 
-def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_index):
+def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_index, k=1):
     _prepare_plot_dir(out_dir)
 
     # Filter for active baselines
@@ -203,10 +203,16 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
     idx = 0
     # 1. Plot Core Baselines
     for name, field in active_baselines.items():
-        vals = [getattr(s, field) for s in stats]
+        if "cycle" in field:
+            vals = [getattr(s, field) / k for s in stats if getattr(s, field) is not None]
+        else:
+            vals = [getattr(s, field) for s in stats]
+            
         c = COLORS_BASE.get(name, '#333333')
         h, l = _plot_pdf_cdf_on_ax(axes_list[idx], vals, name, color=c)
         axes_list[idx].set_title(f"{name} {title}")
+        axes_list[idx].grid(True, which='both', linestyle='--', alpha=0.5)
+        axes_list[idx].minorticks_on()
         idx += 1
 
     # 2. Plot All Radix Bases
@@ -220,9 +226,16 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
         
         c = _get_color_for_key(key, i, len(keys))
             
-        vals = [s.radix_multi_results[key][radix_index] for s in stats if key in s.radix_multi_results]
+        if radix_index == 1:
+             vals = [s.radix_multi_results[key][radix_index] / k for s in stats if key in s.radix_multi_results]
+        else:
+             vals = [s.radix_multi_results[key][radix_index] for s in stats if key in s.radix_multi_results]
+             
         h, l = _plot_pdf_cdf_on_ax(axes_list[idx], vals, label, color=c)
         axes_list[idx].set_title(f"{label} {title}")
+        axes_list[idx].grid(True, which='both', linestyle='--', alpha=0.5)
+        # Ensure minor ticks are on for the grid to be fully 'clear' if zoom is large
+        axes_list[idx].minorticks_on()
         idx += 1
 
     # Hide unused axes
@@ -239,7 +252,7 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
 # Time-Series Plots
 # ============================================================
 
-def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_index, hline=None):
+def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_index, hline=None, k=1):
     _prepare_plot_dir(out_dir)
     xs = np.array([s.matrix_index for s in stats])
     window = max(5, len(stats) // 50)
@@ -248,7 +261,11 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
     
     # Baselines
     for name, field in baseline_map.items():
-        vals = [getattr(s, field) for s in stats]
+        if "Cycle" in y_label:
+             vals = [getattr(s, field) / k if getattr(s, field) is not None else None for s in stats]
+        else:
+             vals = [getattr(s, field) for s in stats]
+             
         if all(v is None for v in vals): continue
         c = COLORS_BASE.get(name, '#000000')
         x_s, y_s = _smooth(xs, vals, window)
@@ -266,7 +283,11 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
             
         c = _get_color_for_key(key, i, len(keys))
 
-        vals = [s.radix_multi_results[key][radix_index] for s in stats if key in s.radix_multi_results]
+        if radix_index == 1:
+            vals = [s.radix_multi_results[key][radix_index] / k for s in stats if key in s.radix_multi_results]
+        else:
+            vals = [s.radix_multi_results[key][radix_index] for s in stats if key in s.radix_multi_results]
+            
         x_s, y_s = _smooth(xs, vals, window)
         plt.plot(x_s, y_s, label=label, linestyle="-", linewidth=2.0, alpha=0.9, color=c)
 
@@ -277,21 +298,23 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
     plt.ylabel(y_label)
     plt.title(title)
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+    plt.minorticks_on()
     plt.tight_layout()
     plt.savefig(out_dir / filename, dpi=200)
     plt.close()
 
 
-def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
+def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = "", k: int = 1):
     _plot_trend(stats, out_dir, "cycle_length_all_methods.png", 
-                f"Cycle Length Trends (Smoothed) {title_suffix}", "Cycle Length",
-                {"BVN": "cycle_length_bvn", "Split-Tree": "cycle_split"}, 1, hline=1.0)
+                f"Cycle Length Trends (Smoothed) {title_suffix}", "Cycle Length (Normalized)",
+                {"BVN": "cycle_length_bvn", "Split-Tree": "cycle_split"}, 1, hline=1.0, k=k)
 
 
 def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: int, out_dir: Path, title_suffix: str = ""):
     _plot_trend(stats, out_dir, "permutation_count_all_methods.png", 
                 f"Permutation Count Trends (Smoothed) {title_suffix}", "Number of Permutations",
-                {"BVN": "num_permutations_bvn", "Split-Tree": "num_perm_split"}, 2, hline=n * n - 2 * n + 2)
+                {"BVN": "num_permutations_bvn", "Split-Tree": "num_perm_split"}, 2, hline=None)
 
 
 def plot_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
@@ -309,9 +332,9 @@ def plot_distribution_runtime(stats: List[DecompositionStats], out_dir: Path, ti
     _plot_dynamic_grid(stats, out_dir, "runtime_pdf_cdf_subplots.png", f"Runtime {title_suffix}", b_map, 0)
 
 
-def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
-    b_map = {"BVN": "cycle_length_bvn", "Split-Tree": "cycle_split"}
-    _plot_dynamic_grid(stats, out_dir, "cycle_length_pdf_cdf.png", f"Cycle Length {title_suffix}", b_map, 1)
+def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = "", k: int = 1):
+    bvn_map = {"BVN": "cycle_length_bvn", "Split-Tree": "cycle_split"}
+    _plot_dynamic_grid(stats, out_dir, "cycle_length_pdf_cdf.png", f"Cycle Length (Normalized) {title_suffix}", bvn_map, 1, k=k)
 
 
 def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
@@ -319,7 +342,7 @@ def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Pat
     _plot_dynamic_grid(stats, out_dir, "permutation_pdf_cdf.png", f"Permutations {title_suffix}", b_map, 2)
 
 
-def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = ""):
+def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = "", k: int = 1):
     """
     Plots Average Runtime against the Average Cycle Length with Error Bars.
     Includes Pareto Frontier and WFA Trend Line.
@@ -332,7 +355,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
     wfa_points = [] # (base, x, y) for trend line
 
     # Add vertical line for Optimal Cycle = 1.0 (if relevant for the x-axis)
-    plt.axvline(x=1.0, color='gray', linestyle='--', linewidth=1.5, label="Optimal Cycle", alpha=0.8, zorder=1)
+    # plt.axvline(x=1.0, color='gray', linestyle='--', linewidth=1.5, label="Optimal Cycle", alpha=0.8, zorder=1)
 
     # 1. Plot Baselines (BVN / Split-Tree)
     baselines = {
@@ -342,7 +365,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
 
     for name, (rt_f, cyc_f, color, marker) in baselines.items():
         rts = [getattr(s, rt_f) for s in stats if getattr(s, rt_f) is not None]
-        cycs = [getattr(s, cyc_f) for s in stats if getattr(s, cyc_f) is not None]
+        cycs = [getattr(s, cyc_f) / k for s in stats if getattr(s, cyc_f) is not None]
 
         if rts and cycs:
             rts = np.array(rts)
@@ -367,7 +390,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
             base_data = [s.radix_multi_results[key] for s in stats if key in s.radix_multi_results]
             if base_data:
                 base_rts = np.array([d[0] for d in base_data])
-                base_cycs = np.array([d[1] for d in base_data])
+                base_cycs = np.array([d[1] / k for d in base_data])
                 
                 mean_rt = np.mean(base_rts)
                 std_rt = np.std(base_rts)
@@ -413,11 +436,12 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
         fx, fy = zip(*frontier)
         plt.plot(fx, fy, '-', color='black', alpha=0.6, linewidth=2, label="Pareto Frontier", zorder=4)
 
-    plt.xlabel("Average Cycle Length (Lower is better)")
+    plt.xlabel("Average Cycle Length (Normalized) (Lower is better)")
     plt.ylabel("Average Runtime (Seconds) (Lower is better)")
     plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()}) {metadata}\nRuntime vs. Cycle Length")
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-    plt.grid(True, which='both', linestyle=':', alpha=0.4)
+    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+    plt.minorticks_on()
     plt.tight_layout()
     # plt.xscale('log') # Removed as requested
     # plt.yscale('log') # Removed as requested
@@ -515,7 +539,8 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
     plt.ylabel("Average Runtime (Seconds) (Lower is better)")
     plt.title(f"Efficiency Pareto (Matching: {matching_name.upper()}) {metadata}\nRuntime vs. Permutations")
     plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-    plt.grid(True, which='both', linestyle=':', alpha=0.4)
+    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+    plt.minorticks_on()
     plt.tight_layout()
     # plt.xscale('log') # Removed as requested
     # plt.yscale('log') # Removed as requested

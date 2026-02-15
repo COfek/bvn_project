@@ -8,8 +8,8 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 # Local imports - ensuring paths match your project structure
-from .sorted_array_matching import sorted_array_matching
-from .wfa import wavefront_matching_vectorized
+from .sorted_array_matching import sorted_array_matching, _jit_decompose_sorted
+from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
 
 
 @dataclass
@@ -23,8 +23,8 @@ def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
     Wrapper for Scipy's Hungarian algorithm.
     Finds the maximum weight matching.
     """
-    # Use -matrix because linear_sum_assignment minimizes cost
-    row_ind, col_ind = linear_sum_assignment(-matrix)
+    # Use maximize=True for direct maximization
+    row_ind, col_ind = linear_sum_assignment(matrix, maximize=True)
 
     # Filter out zero-weight matches to ensure we only return valid edges
     matches = []
@@ -114,6 +114,43 @@ def _decompose_digit_plane(
     x = plane.copy().astype(np.float64)
     components: List[RadixComponent] = []
 
+    # Fast path: Use JIT-compiled decomposition if possible (Releases GIL)
+    # Only for "min" strategy which is the standard decomposition
+    if strategy == "min":
+        # Check matching method
+        if matching_method == "heavy":
+            # Using Sorted Array Matching (JIT)
+            weights, all_matches_list = _jit_decompose_sorted(x, tol=1e-9)
+            
+            for w, matches in zip(weights, all_matches_list):
+                actual_weight = w * unit_weight
+                
+                # Reconstruct generic permutation matrix (sparse-ish)
+                # We could optimize this by storing matching directly, 
+                # but RadixComponent expects a matrix.
+                p = np.zeros_like(x)
+                for (i, j) in matches:
+                    p[i, j] = 1.0
+                    
+                components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
+                
+            return components
+            
+        elif matching_method == "wfa":
+             # Using Wavefront Matching (JIT)
+            n = x.shape[0]
+            weights, all_matches_list = _jit_decompose_wfa(x, n, tol=1e-9)
+            
+            for w, matches in zip(weights, all_matches_list):
+                actual_weight = w * unit_weight
+                p = np.zeros_like(x)
+                for (i, j) in matches:
+                    p[i, j] = 1.0
+                components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
+                
+            return components
+
+    # Slow path: Python loop (Holds GIL)
     match_func = MATCHING_ALGORITHMS.get(matching_method, sorted_array_matching)
 
     # Use a small epsilon to prevent infinite loops from float drift

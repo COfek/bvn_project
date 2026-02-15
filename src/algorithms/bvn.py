@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import linear_sum_assignment
+from .sorted_array_matching import sorted_array_matching
+from .wfa import wavefront_matching_vectorized
 
 FloatMatrix = NDArray[np.float64]
 

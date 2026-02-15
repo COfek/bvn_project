@@ -59,9 +59,16 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     )
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
-    if config.engine == "all" or config.engine == "wfa_bvn" or config.engine == "shuffled":
+    # Determine BVN engine
+    bvn_engine = "maximum"
+    if config.engine == "wfa_bvn":
+        bvn_engine = "wfa"
+    elif config.engine == "heavy_bvn":
+        bvn_engine = "heavy"
+    
+    if config.engine == "all" or config.engine == "wfa_bvn" or config.engine == "shuffled" or config.engine == "heavy_bvn" or config.engine == "maximum_bvn":
         t0 = time.perf_counter()
-        bvn_components = bvn_decomposition(matrix=matrix)
+        bvn_components = bvn_decomposition(matrix=matrix, matching_engine=bvn_engine)
         runtime_bvn = time.perf_counter() - t0
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
         num_permutations_bvn = len(bvn_components)
@@ -80,6 +87,10 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         target_engines = ["wfa"]
     elif config.engine == "shuffled":
         target_engines = ["shuffled"]
+    elif config.engine == "heavy_bvn":
+        target_engines = ["heavy"]
+    elif config.engine == "maximum_bvn":
+        target_engines = ["maximum"]
     else:
         target_engines = [config.engine]
 

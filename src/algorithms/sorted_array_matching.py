@@ -119,3 +119,60 @@ def run_full_decomposition(matrix: np.ndarray):
 
     return permutations, duration_ms
 
+
+@jit(nopython=True, nogil=True)
+def _jit_decompose_sorted(matrix: np.ndarray, tol: float = 1e-9) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
+    """
+    JIT-compiled loop for 'heavy' (sorted array) decomposition.
+    Releases the GIL for true parallelism in the radix decomposition step.
+    """
+    n = matrix.shape[0]
+    weights = []
+    all_matches = []
+
+    while True:
+        # 1. Identify non-zero slots
+        # Note: In Numba, np.nonzero on a boolean array (matrix > tol) works well
+        rows, cols = np.nonzero(matrix > tol)
+        if len(rows) == 0:
+            break
+
+        vals = np.empty(len(rows), dtype=matrix.dtype)
+        for k in range(len(rows)):
+            vals[k] = matrix[rows[k], cols[k]]
+
+        # 2. Sort descending
+        # np.argsort on -vals
+        sort_idx = np.argsort(-vals)
+
+        s_rows = rows[sort_idx]
+        s_cols = cols[sort_idx]
+        s_vals = vals[sort_idx]
+
+        # 3. Match
+        matches = _jit_greedy_match_loop(s_vals, s_rows, s_cols, n)
+
+        if len(matches) == 0:
+            break
+
+        # 4. Find min weight (Lambda) for 'min' strategy
+        min_w = np.inf
+        for r, c in matches:
+            val = matrix[r, c]
+            if val < min_w:
+                min_w = val
+
+        if min_w <= tol:
+            break
+
+        # 5. Subtract
+        # We also need to build the match list for return
+        # matches is already a list of tuples from _jit_greedy_match_loop
+        
+        for r, c in matches:
+            matrix[r, c] = max(0.0, matrix[r, c] - min_w)
+
+        weights.append(min_w)
+        all_matches.append(matches)
+
+    return weights, all_matches
