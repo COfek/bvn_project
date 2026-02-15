@@ -33,7 +33,7 @@ dist/
 
 # VSCode
 .vscode/
-
+agent_scripts/
 # ----------------------------
 # Project-specific output
 # ----------------------------

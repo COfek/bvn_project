@@ -40,6 +40,7 @@ def build_config(args) -> ExperimentConfig:
         split_min_matching_frac=args.split_min_matching_frac,
         split_method=args.split_method,
         fixed_k=args.fixed_k,
+        k=args.fixed_k if args.fixed_k is not None else 127,
         is_parallel=False
     )
 

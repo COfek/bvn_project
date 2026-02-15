@@ -58,18 +58,20 @@ def decompose_radix(
         max_workers: Number of parallel processes for plane decomposition.
         step_strategy: "min", "max", or "median" for weight selection.
         matching_method: "heavy", "wfa", or "maximum".
+        float_precision_bits: Bits of precision for Sinkhorn/Float matrices.
+        normalize_input: If True, scale float matrix to int space (Sinkhorn mode).
     """
     max_val = np.max(matrix)
     if max_val == 0:
         return []
 
-    # Calculate depth based on actual integer values
-    num_planes = int(np.floor(np.log(max_val) / np.log(base))) + 1
-
     planes: List[Tuple[float, np.ndarray]] = []
+
+    # Standard Integer Mode (Permutation Sum)
+    # Matrix is already integer K-regular.
+    num_planes = int(np.floor(np.log(max_val) / np.log(base))) + 1
     temp_matrix = matrix.copy().astype(np.int64)
 
-    # Extract digit planes
     for d in range(num_planes):
         unit_weight = float(base ** d)
         digit_plane = temp_matrix % base
@@ -98,7 +100,6 @@ def decompose_radix(
             try:
                 all_components.extend(future.result())
             except Exception as exc:
-                # Thread errors are easier to catch and debug than process crashes
                 print(f"Radix plane thread worker failed: {exc}")
 
     return all_components
@@ -111,8 +112,10 @@ def _decompose_digit_plane(
         matching_method: str = "heavy"
 ) -> List[RadixComponent]:
     # Work on a float copy for precision
-    x = plane.copy().astype(np.float64)
+    x = plane.astype(np.float64) # Ensure float for clipping
     components: List[RadixComponent] = []
+    iterations = 0
+    tol = 1e-9 # Tolerance for checking if matrix elements are effectively zero
 
     # Fast path: Use JIT-compiled decomposition if possible (Releases GIL)
     # Only for "min" strategy which is the standard decomposition
@@ -120,7 +123,7 @@ def _decompose_digit_plane(
         # Check matching method
         if matching_method == "heavy":
             # Using Sorted Array Matching (JIT)
-            weights, all_matches_list = _jit_decompose_sorted(x, tol=1e-9)
+            weights, all_matches_list = _jit_decompose_sorted(x, tol=tol)
             
             for w, matches in zip(weights, all_matches_list):
                 actual_weight = w * unit_weight
@@ -147,7 +150,7 @@ def _decompose_digit_plane(
                 for (i, j) in matches:
                     p[i, j] = 1.0
                 components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
-                
+            
             return components
 
     # Slow path: Python loop (Holds GIL)
@@ -177,15 +180,29 @@ def _decompose_digit_plane(
             break
 
         actual_weight = digit_step * unit_weight
-
-        # Build the weighted permutation matrix
-        p = np.zeros_like(x)
-        for (i, j) in matches:
-            p[i, j] = 1.0
-            # Update working matrix: Clip to zero if we subtract more than exists
-            # This is essential for 'max' or 'median' strategies
-            x[i, j] = max(0.0, x[i, j] - digit_step)
-
+        
+        # Optimize: Convert matches to arrays for vectorized update
+        # matches is list of (r, c)
+        if len(matches) > 0:
+            rows, cols = zip(*matches)
+            rows = np.array(rows)
+            cols = np.array(cols)
+            
+            p = np.zeros_like(x)
+            p[rows, cols] = 1.0
+            
+            if strategy == "max":
+                # For max strategy, we subtract digit_step but clip at 0
+                # We only need to update the matched indices
+                current_vals = x[rows, cols]
+                # If using 'max', digit_step = max(current_vals). 
+                # So we subtract max. Some entries might go negative without clipping.
+                x[rows, cols] = np.maximum(0.0, current_vals - digit_step)
+            else:
+                 # For min strategy, digit_step <= all current_vals, so simple subtraction is safe
+                 # usually. But let's use maximum(0) to be safe against float drift.
+                 x[rows, cols] = np.maximum(0.0, x[rows, cols] - digit_step)
+        
         components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
 
     return components

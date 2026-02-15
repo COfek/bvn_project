@@ -21,7 +21,9 @@ from .algorithms.radix_decomposition import decompose_radix
 from .algorithms.split_tree import split_tree_decomposition
 from .algorithms.shuffled_parallel import shuffled_parallel_decomposition
 from .config import ExperimentConfig
-from .utils.matrix_generator import generate_scaled_doubly_stochastic_matrix
+from src.utils.matrix_generator import (
+    generate_scaled_doubly_stochastic_matrix,
+)
 from .utils.stats import DecompositionStats
 
 logger = logging.getLogger(__name__)
@@ -66,11 +68,14 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     elif config.engine == "heavy_bvn":
         bvn_engine = "heavy"
     
-    if config.engine == "all" or config.engine == "wfa_bvn" or config.engine == "shuffled" or config.engine == "heavy_bvn" or config.engine == "maximum_bvn":
+    if config.engine == "all" or config.engine == "wfa_bvn" or config.engine == "shuffled" or config.engine == "heavy_bvn" or config.engine == "maximum_bvn" or config.engine == "maximum":
         t0 = time.perf_counter()
-        bvn_components = bvn_decomposition(matrix=matrix, matching_engine=bvn_engine)
+        
+        bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
         runtime_bvn = time.perf_counter() - t0
+        
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
+            
         num_permutations_bvn = len(bvn_components)
     else:
         bvn_components = []

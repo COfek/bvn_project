@@ -204,7 +204,11 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
     # 1. Plot Core Baselines
     for name, field in active_baselines.items():
         if "cycle" in field:
-            vals = [getattr(s, field) / k for s in stats if getattr(s, field) is not None]
+            vals = []
+            for s in stats:
+                if getattr(s, field) is not None:
+                     norm_k = s.cycle_length_bvn if s.cycle_length_bvn and s.cycle_length_bvn > 0 else k
+                     vals.append(getattr(s, field) / norm_k)
         else:
             vals = [getattr(s, field) for s in stats]
             
@@ -227,7 +231,11 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
         c = _get_color_for_key(key, i, len(keys))
             
         if radix_index == 1:
-             vals = [s.radix_multi_results[key][radix_index] / k for s in stats if key in s.radix_multi_results]
+             vals = []
+             for s in stats:
+                 if key in s.radix_multi_results:
+                     norm_k = s.cycle_length_bvn if s.cycle_length_bvn and s.cycle_length_bvn > 0 else k
+                     vals.append(s.radix_multi_results[key][radix_index] / norm_k)
         else:
              vals = [s.radix_multi_results[key][radix_index] for s in stats if key in s.radix_multi_results]
              
@@ -262,7 +270,13 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
     # Baselines
     for name, field in baseline_map.items():
         if "Cycle" in y_label:
-             vals = [getattr(s, field) / k if getattr(s, field) is not None else None for s in stats]
+             vals = []
+             for s in stats:
+                 if getattr(s, field) is not None:
+                     norm_k = s.cycle_length_bvn if s.cycle_length_bvn and s.cycle_length_bvn > 0 else k
+                     vals.append(getattr(s, field) / norm_k)
+                 else:
+                     vals.append(None)
         else:
              vals = [getattr(s, field) for s in stats]
              
@@ -284,7 +298,11 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
         c = _get_color_for_key(key, i, len(keys))
 
         if radix_index == 1:
-            vals = [s.radix_multi_results[key][radix_index] / k for s in stats if key in s.radix_multi_results]
+            vals = []
+            for s in stats:
+                if key in s.radix_multi_results:
+                     norm_k = s.cycle_length_bvn if s.cycle_length_bvn and s.cycle_length_bvn > 0 else k
+                     vals.append(s.radix_multi_results[key][radix_index] / norm_k)
         else:
             vals = [s.radix_multi_results[key][radix_index] for s in stats if key in s.radix_multi_results]
             
@@ -364,8 +382,13 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
     }
 
     for name, (rt_f, cyc_f, color, marker) in baselines.items():
-        rts = [getattr(s, rt_f) for s in stats if getattr(s, rt_f) is not None]
-        cycs = [getattr(s, cyc_f) / k for s in stats if getattr(s, cyc_f) is not None]
+        rts = []
+        cycs = []
+        for s in stats:
+             if getattr(s, rt_f) is not None and getattr(s, cyc_f) is not None:
+                 base_k = s.cycle_length_bvn if s.cycle_length_bvn and s.cycle_length_bvn > 0 else k
+                 rts.append(getattr(s, rt_f))
+                 cycs.append(getattr(s, cyc_f) / base_k)
 
         if rts and cycs:
             rts = np.array(rts)
@@ -387,10 +410,16 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
             parts = str(key).split('_')
             c = _get_color_for_key(key, i, len(keys))
             
-            base_data = [s.radix_multi_results[key] for s in stats if key in s.radix_multi_results]
+            base_data = [] # stores (runtime, cycle_len, perms, bvn_cycle)
+            for s in stats:
+                if key in s.radix_multi_results:
+                     res = s.radix_multi_results[key]
+                     bvn = s.cycle_length_bvn if s.cycle_length_bvn and s.cycle_length_bvn > 0 else k
+                     base_data.append((res[0], res[1], bvn))
+            
             if base_data:
                 base_rts = np.array([d[0] for d in base_data])
-                base_cycs = np.array([d[1] / k for d in base_data])
+                base_cycs = np.array([d[1] / d[2] for d in base_data])
                 
                 mean_rt = np.mean(base_rts)
                 std_rt = np.std(base_rts)
@@ -565,5 +594,5 @@ def plot_results(
     plot_cycle_length_distributions(stats_list, out_dir, title_suffix)
     plot_permutation_distributions(stats_list, out_dir, title_suffix)
 
-    plot_runtime_vs_cycle_efficiency(stats_list, out_dir, matching_name=matching_method, metadata=title_suffix)
+    plot_runtime_vs_cycle_efficiency(stats_list, out_dir, matching_name=matching_method, metadata=title_suffix, k=bits)
     plot_runtime_vs_permutation_efficiency(stats_list, out_dir, matching_name=matching_method, metadata=title_suffix)

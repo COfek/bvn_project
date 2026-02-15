@@ -13,6 +13,7 @@ def parse_args() -> argparse.Namespace:
                         help="Probability (0.0 to 1.0) of a matrix entry being non-zero.")
     parser.add_argument("--fixed-k", type=int, default=None,
                         help="Force generate K-regular matrices with specific K (overrides density).")
+
     parser.add_argument("--engine", "-e", type=str, default="all", 
                         choices=["wfa", "max", "heavy", "all", "wfa_bvn", "shuffled", "heavy_bvn"],
                         help="Matching algorithm: wfa, max, heavy, all, wfa_bvn, or shuffled.")
@@ -26,8 +27,9 @@ def parse_args() -> argparse.Namespace:
                         help="Disable automatic plot generation.")
 
     # Advanced / Legacy Arguments
-    parser.add_argument("--radix-bases", type=int, nargs='+', default=[2,4,8,16,32],
+    parser.add_argument("--radix-bases", type=int, nargs='*', default=[2,4,8,16,32],
                         help="Radix bases to test (defaults to [2] i.e., bitplane).")
+
     parser.add_argument("--random-seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--max-workers", type=int, default=None, help="Workers for Radix planes.")
     
