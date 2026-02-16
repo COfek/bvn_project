@@ -7,7 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import linear_sum_assignment
 from .sorted_array_matching import sorted_array_matching
-from .wfa import wavefront_matching_vectorized
+from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
 
 FloatMatrix = NDArray[np.float64]
 
@@ -72,17 +72,22 @@ def bvn_decomposition(
                 col_ind = np.array([], dtype=int)
 
         elif matching_algorithm == "wfa":
-            # Wavefront Matching
-            # Returns list of (r, c) tuples
-            matches = wavefront_matching_vectorized(work)
-
-            if matches:
+            # Optimization: Use JIT-compiled full decomposition for WFA
+            # This bypasses the Python loop for finding matches and updating the matrix
+            weights, all_matches = _jit_decompose_wfa(work, n, 1e-9)
+            
+            # Convert to DecompositionComponent objects
+            for w, matches in zip(weights, all_matches):
+                if w <= 1e-12: continue
+                
+                permutation = np.zeros_like(work)
                 rows, cols = zip(*matches)
-                row_ind = np.array(rows)
-                col_ind = np.array(cols)
-            else:
-                row_ind = np.array([], dtype=int)
-                col_ind = np.array([], dtype=int)
+                permutation[rows, cols] = 1.0
+                
+                components.append(DecompositionComponent(permutation=permutation, weight=w))
+                
+            # The matrix is fully decomposed by _jit_decompose_wfa
+            return components
         
         else:
             raise ValueError(f"Unknown matching algorithm: {matching_algorithm}")

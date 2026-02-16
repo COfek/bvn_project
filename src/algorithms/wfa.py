@@ -36,8 +36,9 @@ from numba import jit
 
 @jit(nopython=True, nogil=True)
 def _jit_wfa_kernel(
-    mask: np.ndarray, # Boolean or numeric mask
-    n: int
+    matrix: np.ndarray, # Numeric matrix
+    n: int,
+    tol: float
 ) -> List[Tuple[int, int]]:
     """
     Numba-optimized Wavefront Arbiter Kernel.
@@ -46,8 +47,9 @@ def _jit_wfa_kernel(
     This mimics the hardware wavefront propagation.
     
     Args:
-        mask (np.ndarray): Boolean or integer mask where >0 indicates an edge.
+        matrix (np.ndarray): The N x N float matrix.
         n (int): Matrix dimension.
+        tol (float): Tolerance check for edges.
         
     Returns:
         List[Tuple[int, int]]: A list of (row, col) indices representing the matching.
@@ -60,10 +62,6 @@ def _jit_wfa_kernel(
     # Max k is 2*n - 2 (indices 0..n-1)
     for k in range(2 * n - 1):
         # Calculate range for i
-        # i + j = k => j = k - i
-        # 0 <= i < n AND 0 <= j < n
-        # => 0 <= k - i < n => i <= k AND i > k - n
-        
         start_i = max(0, k - n + 1)
         end_i = min(k + 1, n)
         
@@ -72,11 +70,8 @@ def _jit_wfa_kernel(
             j = k - i
             
             # Logic: If free and eligible
-            # Note: Assuming mask[i, j] checks > 0 logic externally or implicit bool
             if row_free[i] == 1 and col_free[j] == 1:
-                # Numba handles non-zero check on numeric types as Truthy usually,
-                # but let's be explicit if possible. But inputs vary.
-                if mask[i, j]:  # Works for bool and non-zero numbers
+                if matrix[i, j] > tol:
                     matches.append((i, j))
                     row_free[i] = 0
                     col_free[j] = 0
@@ -89,11 +84,6 @@ def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float) -> Tuple[List[flo
     """
     Perform the entire iterative decomposition in Numba to release the GIL.
     
-    This function implements the complete decomposition loop (matching -> weight calculation -> subtraction)
-    entirely within compiled code. By releasing the GIL (`nogil=True`), multiple threads can execute 
-    this function in parallel on different matrices (e.g. Radix planes or Split-Tree leaves), 
-    achieving near-linear scaling on multi-core CPUs.
-
     Args:
         matrix (np.ndarray): The N x N float matrix to decompose. Modified in-place.
         n (int): Dimension of the matrix.
@@ -108,20 +98,11 @@ def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float) -> Tuple[List[flo
     all_matches = []
     
     while True:
-        # 1. Compute mask (implicitly or explicitly)
-        has_elements = False
-        for i in range(n):
-            for j in range(n):
-                if matrix[i, j] > tol:
-                    has_elements = True
-                    break
-            if has_elements: break
+        # Optimization: Skip separate mask creation and has_elements check.
+        # Run kernel directly. If no matches found, we are effectively done 
+        # (or matrix is zero).
         
-        if not has_elements:
-            break
-            
-        mask = matrix > tol
-        matches = _jit_wfa_kernel(mask, n)
+        matches = _jit_wfa_kernel(matrix, n, tol)
         
         if len(matches) == 0:
             break
@@ -157,6 +138,6 @@ def wavefront_matching_vectorized(matrix: np.ndarray) -> List[Tuple[int, int]]:
     Accepts a numeric matrix, treats > 0 as edges.
     """
     n = matrix.shape[0]
-    return _jit_wfa_kernel(matrix, n)
+    return _jit_wfa_kernel(matrix, n, 1e-9)
 
 

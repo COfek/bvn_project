@@ -23,6 +23,7 @@ from .algorithms.shuffled_parallel import shuffled_parallel_decomposition
 from .config import ExperimentConfig
 from src.utils.matrix_generator import (
     generate_scaled_doubly_stochastic_matrix,
+    generate_binary_weighted_matrix,
 )
 from .utils.stats import DecompositionStats
 
@@ -54,11 +55,16 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         effective_k = int(-config.n * np.log(1.0 - config.density))
         effective_k = max(1, effective_k)
 
-    matrix = generate_scaled_doubly_stochastic_matrix(
-        n=config.n,
-        k=effective_k,
-        rng=rng,
-    )
+    if config.generator == "binary":
+        matrix = generate_binary_weighted_matrix(n=config.n, rng=rng, bits=config.binary_bits)
+        # Binary generator produces fixed K based on bits.
+    else:
+        # Standard or Sinkhorn (not fully implemented in runner yet, default to standard)
+        matrix = generate_scaled_doubly_stochastic_matrix(
+            n=config.n,
+            k=effective_k,
+            rng=rng,
+        )
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
     # Determine BVN engine

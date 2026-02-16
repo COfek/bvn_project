@@ -58,3 +58,5 @@ class ExperimentConfig:
 
     # --- Parallelism Control ---
     is_parallel: bool = False
+    generator: str = "standard"
+    binary_bits: int = 8

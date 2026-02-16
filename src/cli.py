@@ -25,6 +25,11 @@ def parse_args() -> argparse.Namespace:
                         help="Enables detailed logging.")
     parser.add_argument("--no-plot", action="store_true",
                         help="Disable automatic plot generation.")
+    parser.add_argument("--generator", type=str, default="standard",
+                        choices=["standard", "binary", "sinkhorn"],
+                        help="Matrix generation method: standard (sum of K perms), binary (weighted perms), sinkhorn.")
+    parser.add_argument("--binary-bits", type=int, default=8,
+                        help="Number of bit-planes for binary generator (precision limit ~53).")
 
     # Advanced / Legacy Arguments
     parser.add_argument("--radix-bases", type=int, nargs='*', default=[2,4,8,16,32],

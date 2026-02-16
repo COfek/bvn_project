@@ -21,9 +21,6 @@ def build_config(args) -> ExperimentConfig:
         engine = "maximum"
         
     return ExperimentConfig(
-        n=args.n,
-        num_matrices=args.samples,
-        density=args.density,
         engine=engine,
         radix_bases=args.radix_bases,
         random_seed=args.random_seed,
@@ -39,9 +36,16 @@ def build_config(args) -> ExperimentConfig:
         split_cv_threshold=args.split_cv_threshold,
         split_min_matching_frac=args.split_min_matching_frac,
         split_method=args.split_method,
+
+        # Matrix generation
+        n=args.n,
+        num_matrices=args.samples,
+        density=args.density,
         fixed_k=args.fixed_k,
         k=args.fixed_k if args.fixed_k is not None else 127,
-        is_parallel=False
+        is_parallel=False,
+        generator=args.generator,
+        binary_bits=args.binary_bits
     )
 
 def main() -> None:

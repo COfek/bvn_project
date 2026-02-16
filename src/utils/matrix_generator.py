@@ -103,6 +103,31 @@ def generate_scaled_doubly_stochastic_matrix(
     # Return as float64 to prevent the UFunc Casting Errors we saw earlier
     return result.astype(np.float64)
 
+
+def generate_binary_weighted_matrix(
+    n: int,
+    rng: np.random.Generator,
+    bits: int = 8
+) -> np.ndarray:
+    """
+    Generates a matrix by summing weighted permutations:
+    M = 1*P0 + 2*P1 + ... + 2^(bits-1)*P(bits-1)
+    
+    This results in a K=(2^bits - 1) matrix (if unscaled) with entries in range [0, 2^bits - 1].
+    NOTE: float64 has 53 bits of precision. bits > 53 will lose lower planes.
+    """
+    # Use object type for intermediate calculation if bits > 63 to avoid overflow before cast?
+    # But ultimately we return float64, so >53 is lossy regardless.
+    # We stick to int64 accumulator which is safe up to 63 bits.
+    result = np.zeros((n, n), dtype=np.int64)
+    
+    for i in range(bits):
+        weight = 2**i
+        p = rng.permutation(n)
+        result[np.arange(n), p] += weight
+        
+    return result.astype(np.float64)
+
 # --- The fixed validation function ---
 def check_k_regularity(matrix: NDArray[np.int64], expected_k: int) -> bool:
     """
