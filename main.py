@@ -45,7 +45,9 @@ def build_config(args) -> ExperimentConfig:
         k=args.fixed_k if args.fixed_k is not None else 127,
         is_parallel=False,
         generator=args.generator,
-        binary_bits=args.binary_bits
+        binary_bits=args.binary_bits,
+        weights=args.weights,
+        sub_k=args.sub_k
     )
 
 def main() -> None:

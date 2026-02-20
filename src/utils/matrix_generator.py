@@ -139,4 +139,51 @@ def check_k_regularity(matrix: NDArray[np.int64], expected_k: int) -> bool:
     rows_ok = np.all(row_sums == expected_k)
     cols_ok = np.all(col_sums == expected_k)
 
+
     return rows_ok and cols_ok
+
+
+def generate_weighted_sum_matrix(
+    n: int,
+    weights: list[int],
+    sub_k: int | list[int],
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """
+    Generates a matrix by summing weighted K-regular layers.
+    M = w0 * Layer0 + w1 * Layer1 + ...
+    
+    Each Layer_i is a sum of sub_k[i] (or sub_k if int) random permutations.
+    This creates a matrix where decomposition in the basis of `weights` yields
+    dense layers of weight sub_k[i], rather than trivial single permutations.
+    
+    Args:
+        n: Matrix dimension.
+        weights: List of weights for each layer (e.g. [1, 16, 256] for base 16).
+        sub_k: Number of permutations per layer. Can be a single int or a list
+               matching len(weights).
+        rng: Random generator.
+        
+    Returns:
+        A float64 matrix.
+    """
+    if isinstance(sub_k, int):
+        sub_k_list = [sub_k] * len(weights)
+    else:
+        sub_k_list = sub_k
+        if len(sub_k_list) != len(weights):
+            raise ValueError("Length of sub_k list must match length of weights")
+            
+    result = np.zeros((n, n), dtype=np.int64)
+    
+    for w, k in zip(weights, sub_k_list):
+        # Generate a layer with sum k
+        layer = generate_scaled_doubly_stochastic_matrix(n, k, rng)
+        # Add to result with weight w
+        # layer is already int64 inside generate_scaled_doubly_stochastic_matrix (before cast to float)
+        # But the function returns float64, so we cast back to int to keep precision
+        # or just use the float result. Since we want exact integers, let's cast.
+        result += (layer.astype(np.int64) * w)
+        
+    return result.astype(np.float64)
+

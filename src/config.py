@@ -60,3 +60,7 @@ class ExperimentConfig:
     is_parallel: bool = False
     generator: str = "standard"
     binary_bits: int = 8
+    
+    # --- Weighted Generator ---
+    weights: List[int] = field(default_factory=list)
+    sub_k: List[int] = field(default_factory=list)
