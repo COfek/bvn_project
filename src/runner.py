@@ -24,6 +24,7 @@ from .config import ExperimentConfig
 from src.utils.matrix_generator import (
     generate_scaled_doubly_stochastic_matrix,
     generate_binary_weighted_matrix,
+    generate_weighted_sum_matrix,
 )
 from .utils.stats import DecompositionStats
 
@@ -58,6 +59,13 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     if config.generator == "binary":
         matrix = generate_binary_weighted_matrix(n=config.n, rng=rng, bits=config.binary_bits)
         # Binary generator produces fixed K based on bits.
+    elif config.generator == "weighted":
+        matrix = generate_weighted_sum_matrix(
+            n=config.n, 
+            weights=config.weights, 
+            sub_k=config.sub_k, 
+            rng=rng
+        )
     else:
         # Standard or Sinkhorn (not fully implemented in runner yet, default to standard)
         matrix = generate_scaled_doubly_stochastic_matrix(

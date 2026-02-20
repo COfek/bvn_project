@@ -171,7 +171,9 @@ def generate_weighted_sum_matrix(
         sub_k_list = [sub_k] * len(weights)
     else:
         sub_k_list = sub_k
-        if len(sub_k_list) != len(weights):
+        if len(sub_k_list) == 1:
+            sub_k_list = sub_k_list * len(weights)
+        elif len(sub_k_list) != len(weights):
             raise ValueError("Length of sub_k list must match length of weights")
             
     result = np.zeros((n, n), dtype=np.int64)

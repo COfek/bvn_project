@@ -84,23 +84,37 @@ def decompose_radix(
     all_components: List[RadixComponent] = []
 
     # Parallelize decomposition of planes
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_plane = {
-            executor.submit(
-                _decompose_digit_plane,
-                plane_matrix,
-                weight,
-                step_strategy,
-                matching_method
-            ): weight
-            for weight, plane_matrix in planes
-        }
-
-        for future in as_completed(future_to_plane):
+    if max_workers == 1:
+        # Sequential path: completely bypass ThreadPool overhead
+        for weight, plane_matrix in planes:
             try:
-                all_components.extend(future.result())
+                comps = _decompose_digit_plane(
+                    plane_matrix,
+                    weight,
+                    step_strategy,
+                    matching_method
+                )
+                all_components.extend(comps)
             except Exception as exc:
-                print(f"Radix plane thread worker failed: {exc}")
+                print(f"Radix plane sequential worker failed: {exc}")
+    else:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_plane = {
+                executor.submit(
+                    _decompose_digit_plane,
+                    plane_matrix,
+                    weight,
+                    step_strategy,
+                    matching_method
+                ): weight
+                for weight, plane_matrix in planes
+            }
+    
+            for future in as_completed(future_to_plane):
+                try:
+                    all_components.extend(future.result())
+                except Exception as exc:
+                    print(f"Radix plane thread worker failed: {exc}")
 
     return all_components
 
