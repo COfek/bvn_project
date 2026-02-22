@@ -49,7 +49,7 @@ class ExperimentConfig:
     # Strategy: "min", "max", "median"
     radix_strategy: str = "min"
 
-    engine: str = field(default="bvn", metadata={"help": "Decomposition engine: 'bvn', 'wfa', 'heavy', 'maximum', 'all', 'wfa_bvn', 'shuffled'"})
+    engine: str = field(default="bvn", metadata={"help": "Decomposition engine: 'bvn', 'wfa', 'heavy', 'maximum', 'all', 'wfa_bvn'"})
 
     # --- Logging & Visualization ---
     verbose: bool = False

@@ -19,12 +19,12 @@ from rich.progress import (
 from .algorithms.bvn import bvn_decomposition
 from .algorithms.radix_decomposition import decompose_radix
 from .algorithms.split_tree import split_tree_decomposition
-from .algorithms.shuffled_parallel import shuffled_parallel_decomposition
 from .config import ExperimentConfig
 from src.utils.matrix_generator import (
     generate_scaled_doubly_stochastic_matrix,
     generate_binary_weighted_matrix,
     generate_weighted_sum_matrix,
+    generate_sinkhorn_matrix
 )
 from .utils.stats import DecompositionStats
 
@@ -64,10 +64,17 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
             n=config.n, 
             weights=config.weights, 
             sub_k=config.sub_k, 
-            rng=rng
+           rng=rng
+        )
+    elif config.generator == "sinkhorn":
+        matrix = generate_sinkhorn_matrix(
+            n=config.n,
+            k=effective_k,
+            rng=rng,
+            density=config.density
         )
     else:
-        # Standard or Sinkhorn (not fully implemented in runner yet, default to standard)
+        # Standard
         matrix = generate_scaled_doubly_stochastic_matrix(
             n=config.n,
             k=effective_k,
@@ -81,8 +88,10 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         bvn_engine = "wfa"
     elif config.engine == "heavy_bvn":
         bvn_engine = "heavy"
+    elif config.engine == "heavy_static_bvn":
+        bvn_engine = "heavy_static"
     
-    if config.engine == "all" or config.engine == "wfa_bvn" or config.engine == "shuffled" or config.engine == "heavy_bvn" or config.engine == "maximum_bvn" or config.engine == "maximum":
+    if config.engine in ["all", "wfa_bvn", "shuffled", "heavy_bvn", "heavy_static_bvn", "maximum_bvn", "maximum"]:
         t0 = time.perf_counter()
         
         bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
@@ -101,55 +110,37 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     radix_multi_data = {}
     
     if config.engine == "all":
-        target_engines = ["wfa", "maximum", "heavy"]
+        target_engines = ["wfa", "maximum", "heavy", "heavy_static"]
     elif config.engine == "wfa_bvn":
         target_engines = ["wfa"]
-    elif config.engine == "shuffled":
-        target_engines = ["shuffled"]
     elif config.engine == "heavy_bvn":
         target_engines = ["heavy"]
+    elif config.engine == "heavy_static_bvn":
+        target_engines = ["heavy_static"]
     elif config.engine == "maximum_bvn":
         target_engines = ["maximum"]
     else:
         target_engines = [config.engine]
 
     for engine in target_engines:
-        if engine == "shuffled":
-            # Comparison sweep: Proposals [3, 4, 5]
-            # We ignore config.radix_bases for shuffled engine logic
-            proposal_counts = [3, 4, 5]
-            for p_count in proposal_counts:
+        if isinstance(config.radix_bases, list):
+            for base in config.radix_bases:
                 t1 = time.perf_counter()
-                radix_components = shuffled_parallel_decomposition(
+                # Standard radix decomposition
+                radix_components = decompose_radix(
                     matrix=matrix,
+                    base=base,
+                    matching_method=engine,
                     max_workers=config.max_workers,
-                    num_proposals=p_count
+                    step_strategy=getattr(config, 'radix_strategy', 'min')
                 )
                 radix_runtime = time.perf_counter() - t1
+
                 c_len = float(sum(comp.weight for comp in radix_components))
                 n_perm = len(radix_components)
-                
-                key = f"{engine}_{p_count}"
-                radix_multi_data[key] = (radix_runtime, c_len, n_perm)
-            continue
-
-        for base in config.radix_bases:
-            t1 = time.perf_counter()
-            # Standard radix decomposition
-            radix_components = decompose_radix(
-                matrix=matrix,
-                base=base,
-                matching_method=engine,
-                max_workers=config.max_workers,
-                step_strategy=getattr(config, 'radix_strategy', 'min')
-            )
-            radix_runtime = time.perf_counter() - t1
-
-            c_len = float(sum(comp.weight for comp in radix_components))
-            n_perm = len(radix_components)
             
-            key = f"{engine}_{base}"
-            radix_multi_data[key] = (radix_runtime, c_len, n_perm)
+                key = f"{engine}_{base}"
+                radix_multi_data[key] = (radix_runtime, c_len, n_perm)
 
     # --- 4. Split-tree decomposition ---
     num_split = cycle_split = runtime_split = None
@@ -194,46 +185,37 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
 
     results: List[DecompositionStats] = []
 
-    progress = Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        MofNCompleteColumn(),
-        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        TimeElapsedColumn(),
-        console=console,
-        transient=False,
-        refresh_per_second=10
-    )
+    update_interval = max(1, config.num_matrices // 20)  # Log every 5%
 
-    with progress:
-        task = progress.add_task(
-            "[cyan]Decomposing matrices...",
-            total=config.num_matrices
-        )
+    if not config.is_parallel:
+        for idx in range(config.num_matrices):
+            try:
+                stats = _compute_for_index(idx, config)
+                results.append(stats)
+            except Exception as e:
+                logger.error(f"Error at index {idx}: {e}")
 
-        if not config.is_parallel:
-            for idx in range(config.num_matrices):
+            if (idx + 1) % update_interval == 0 or (idx + 1) == config.num_matrices:
+                percent = ((idx + 1) / config.num_matrices) * 100
+                logger.info(f"Progress: {idx + 1}/{config.num_matrices} matrices processed ({percent:.0f}%)")
+    else:
+        with ProcessPoolExecutor(max_workers=config.max_workers) as executor:
+            futures = {
+                executor.submit(_compute_for_index, idx, config): idx
+                for idx in range(config.num_matrices)
+            }
+            completed_count = 0
+            for future in as_completed(futures):
                 try:
-                    stats = _compute_for_index(idx, config)
-                    results.append(stats)
+                    results.append(future.result())
                 except Exception as e:
-                    progress.console.log(f"[bold red]Error at index {idx}:[/bold red] {e}")
+                    logger.error(f"Worker error: {e}")
 
-                progress.update(task, advance=1)
-        else:
-            with ProcessPoolExecutor(max_workers=config.max_workers) as executor:
-                futures = {
-                    executor.submit(_compute_for_index, idx, config): idx
-                    for idx in range(config.num_matrices)
-                }
-                for future in as_completed(futures):
-                    try:
-                        results.append(future.result())
-                    except Exception as e:
-                        progress.console.log(f"[bold red]Worker error:[/bold red] {e}")
-
-                    progress.update(task, advance=1)
+                completed_count += 1
+                if completed_count % update_interval == 0 or completed_count == config.num_matrices:
+                    percent = (completed_count / config.num_matrices) * 100
+                    logger.info(f"Progress: {completed_count}/{config.num_matrices} matrices processed ({percent:.0f}%)")
 
     results.sort(key=lambda s: s.matrix_index)
-    console.print("[bold green]✔ Experiment completed successfully.[/bold green]")
+    logger.info("Experiment completed successfully.")
     return results

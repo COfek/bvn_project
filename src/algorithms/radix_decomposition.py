@@ -8,7 +8,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 # Local imports - ensuring paths match your project structure
-from .sorted_array_matching import sorted_array_matching, _jit_decompose_sorted
+from .sorted_array_matching import sorted_array_matching, _jit_decompose_sorted_static, _jit_decompose_sorted_dynamic
 from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
 
 
@@ -67,19 +67,40 @@ def decompose_radix(
 
     planes: List[Tuple[float, np.ndarray]] = []
 
-    # Standard Integer Mode (Permutation Sum)
-    # Matrix is already integer K-regular.
-    num_planes = int(np.floor(np.log(max_val) / np.log(base))) + 1
-    temp_matrix = matrix.copy().astype(np.int64)
+    is_float = np.issubdtype(matrix.dtype, np.floating)
+    
+    # Check if a float matrix is secretly just an integer matrix.
+    # We use a tiny tolerance (1e-9) in case of floating point drift during generation.
+    is_functionally_integer = is_float and np.allclose(matrix, np.round(matrix), rtol=0, atol=1e-9)
 
-    for d in range(num_planes):
-        unit_weight = float(base ** d)
-        digit_plane = temp_matrix % base
-        if np.any(digit_plane > 0):
-            planes.append((unit_weight, digit_plane.astype(np.float64)))
-        temp_matrix //= base
-        if np.all(temp_matrix == 0):
-            break
+    if is_float and not is_functionally_integer:
+        precision_bits = 16
+        scaling_factor = 2 ** precision_bits
+        scaled_matrix = np.round((matrix / max_val) * scaling_factor).astype(np.int64)
+        num_planes = int(np.ceil(np.log(scaling_factor) / np.log(base)))
+        temp_matrix = scaled_matrix.copy()
+
+        for d in range(num_planes):
+            unit_weight = (base ** d) * (max_val / scaling_factor)
+            digit_plane = temp_matrix % base
+            if np.any(digit_plane > 0):
+                planes.append((unit_weight, digit_plane.astype(np.float64)))
+            temp_matrix //= base
+            if np.all(temp_matrix == 0):
+                break
+    else:
+        # Standard Integer Mode (Permutation Sum)
+        num_planes = int(np.floor(np.log(max_val) / np.log(base))) + 1
+        temp_matrix = matrix.copy().astype(np.int64)
+
+        for d in range(num_planes):
+            unit_weight = float(base ** d)
+            digit_plane = temp_matrix % base
+            if np.any(digit_plane > 0):
+                planes.append((unit_weight, digit_plane.astype(np.float64)))
+            temp_matrix //= base
+            if np.all(temp_matrix == 0):
+                break
 
     all_components: List[RadixComponent] = []
 
@@ -135,9 +156,11 @@ def _decompose_digit_plane(
     # Only for "min" strategy which is the standard decomposition
     if strategy == "min":
         # Check matching method
-        if matching_method == "heavy":
-            # Using Sorted Array Matching (JIT)
-            weights, all_matches_list = _jit_decompose_sorted(x, tol=tol)
+        if matching_method in ["heavy", "heavy_static"]:
+            if matching_method == "heavy":
+                weights, all_matches_list = _jit_decompose_sorted_dynamic(x, tol=tol)
+            else:
+                weights, all_matches_list = _jit_decompose_sorted_static(x, tol=tol)
             
             for w, matches in zip(weights, all_matches_list):
                 actual_weight = w * unit_weight

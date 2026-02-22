@@ -6,7 +6,7 @@ from typing import List, Optional, Dict
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import linear_sum_assignment
-from .sorted_array_matching import sorted_array_matching
+from .sorted_array_matching import sorted_array_matching, _jit_decompose_sorted_static
 from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
 
 FloatMatrix = NDArray[np.float64]
@@ -58,8 +58,7 @@ def bvn_decomposition(
             row_ind, col_ind = linear_sum_assignment(cost)
 
         elif matching_algorithm == "heavy":
-            # Greedy Sorted Array Matching
-            # Returns list of (r, c) tuples
+            # Greedy Sorted Array Matching (Dynamic resorter)
             matches = sorted_array_matching(work)
             
             # Convert to arrays for indexing
@@ -70,6 +69,25 @@ def bvn_decomposition(
             else:
                 row_ind = np.array([], dtype=int)
                 col_ind = np.array([], dtype=int)
+
+        elif matching_algorithm == "heavy_static":
+            # Optimization: Use JIT-compiled full decomposition for static Heavy
+            # This bypasses the Python loop for finding matches and updating the matrix
+            weights, all_matches = _jit_decompose_sorted_static(work, 1e-9)
+            
+            # Convert to DecompositionComponent objects
+            for w, matches in zip(weights, all_matches):
+                if w <= 1e-12: continue
+                
+                permutation = np.zeros_like(work)
+                if matches:
+                    rows, cols = zip(*matches)
+                    permutation[rows, cols] = 1.0
+                
+                components.append(DecompositionComponent(permutation=permutation, weight=w))
+                
+            # The matrix is fully decomposed by _jit_decompose_sorted_static
+            return components
 
         elif matching_algorithm == "wfa":
             # Optimization: Use JIT-compiled full decomposition for WFA

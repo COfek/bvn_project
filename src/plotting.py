@@ -433,10 +433,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
                 
                 if len(parts) == 2:
                     eng, b = parts
-                    if eng == 'shuffled':
-                         label = f"Shuffled (P={b})"
-                    else:
-                         label = f"{eng.upper()} (B-{b})"
+                    label = f"{eng.upper()} (B-{b})"
                     
                     if eng == 'wfa':
                         try:
@@ -534,10 +531,7 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
                 marker_style = 'v'
                 if len(parts) == 2:
                     eng, b = parts
-                    if eng == 'shuffled':
-                         label = f"Shuffled (P={b})"
-                    else:
-                         label = f"{eng.upper()} (B-{b})"
+                    label = f"{eng.upper()} (B-{b})"
                     
                     if eng == 'wfa':
                         try:
@@ -582,10 +576,11 @@ def plot_results(
         n: int,
         bits: int,
         out_dir: Path,
-        matching_method: str
+        matching_method: str,
+        generator: str
 ):
     num_samples = len(stats_list)
-    title_suffix = f"(N={n}, Samples={num_samples})"
+    title_suffix = f"(N={n}, Samples={num_samples}, Gen={generator})"
 
     plot_final_cycle_length(stats_list, out_dir, title_suffix)
     plot_final_num_permutations(stats_list, n, bits, out_dir, title_suffix)

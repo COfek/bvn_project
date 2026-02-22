@@ -77,7 +77,8 @@ def main() -> None:
             n=config.n, 
             bits=config.k, 
             out_dir=plots_dir, 
-            matching_method=config.engine
+            matching_method=config.engine,
+            generator=config.generator
         )
         print(f"Plots saved to: {plots_dir}")
         return
@@ -100,7 +101,7 @@ def main() -> None:
         configure_logging(log_file=log_file, level=logging.INFO if not config.verbose else logging.DEBUG)
 
         print_banner("BvN-Arbiter Benchmark Started")
-        logger.info(f"Run directory: {run_dir} | Density: {config.density} | Engine: {config.engine}")
+        logger.info(f"Run directory: {run_dir} | Density: {config.density} | Engine: {config.engine} | Generator: {config.generator} | Bases: {config.radix_bases}")
         save_config(config, run_dir)
     else:
         # Worker processes just inherit basic logging or configure silently if needed
@@ -127,7 +128,7 @@ def main() -> None:
                 # Exclude first 5 samples to remove JIT compilation spikes from plots
                 plot_stats = stats_list[5:] if len(stats_list) > 10 else stats_list
                 plot_results(plot_stats, n=config.n, bits=config.k, out_dir=plots_dir,
-                            matching_method=config.engine)
+                            matching_method=config.engine, generator=config.generator)
 
         print_banner("Benchmark Complete")
 

@@ -15,8 +15,8 @@ def parse_args() -> argparse.Namespace:
                         help="Force generate K-regular matrices with specific K (overrides density).")
 
     parser.add_argument("--engine", "-e", type=str, default="all", 
-                        choices=["wfa", "max", "heavy", "all", "wfa_bvn", "shuffled", "heavy_bvn"],
-                        help="Matching algorithm: wfa, max, heavy, all, wfa_bvn, or shuffled.")
+                        choices=["wfa", "max", "heavy", "heavy_static", "all", "wfa_bvn", "heavy_bvn", "heavy_static_bvn", "maximum_bvn"],
+                        help="Matching algorithm: wfa, max, heavy, heavy_static, all, wfa_bvn, heavy_bvn, heavy_static_bvn, maximum_bvn.")
     parser.add_argument("--samples", "-s", type=int, default=10, dest="samples",
                         help="Number of random matrices to test per engine.")
     parser.add_argument("--output", "-o", type=str, default="run",

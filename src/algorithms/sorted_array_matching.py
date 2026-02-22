@@ -121,18 +121,98 @@ def run_full_decomposition(matrix: np.ndarray):
 
 
 @jit(nopython=True, nogil=True)
-def _jit_decompose_sorted(matrix: np.ndarray, tol: float = 1e-9) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
+def _jit_decompose_sorted_static(matrix: np.ndarray, tol: float = 1e-9) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
+    """
+    JIT-compiled loop for 'heavy_static' (sorted array) decomposition.
+    Optimized to extract non-zeros and sort them exactly ONCE at the start.
+    """
+    n = matrix.shape[0]
+    weights = []
+    all_matches = []
+
+    # 1. Initial Extraction and Sort (Done exactly ONCE)
+    rows, cols = np.nonzero(matrix > tol)
+    if len(rows) == 0:
+        return weights, all_matches
+
+    vals = np.empty(len(rows), dtype=matrix.dtype)
+    for k in range(len(rows)):
+        vals[k] = matrix[rows[k], cols[k]]
+
+    sort_idx = np.argsort(-vals)
+    s_rows = rows[sort_idx]
+    s_cols = cols[sort_idx]
+    s_vals = vals[sort_idx]
+    num_edges = len(s_vals)
+
+    while True:
+        # Greedily sweep the pre-sorted list to build a matching
+        row_occupied = np.zeros(n, dtype=np.int8)
+        col_occupied = np.zeros(n, dtype=np.int8)
+        
+        matches_r = []
+        matches_c = []
+        matches_idx = [] # Track which indices in s_vals we used
+
+        for i in range(num_edges):
+            if s_vals[i] > tol:
+                r = s_rows[i]
+                c = s_cols[i]
+                
+                if row_occupied[r] == 0 and col_occupied[c] == 0:
+                    matches_r.append(r)
+                    matches_c.append(c)
+                    matches_idx.append(i)
+                    row_occupied[r] = 1
+                    col_occupied[c] = 1
+                    
+                    if len(matches_r) == n:
+                        break
+                        
+        if len(matches_r) == 0:
+            break
+
+        # Find min weight (Lambda) for 'min' strategy
+        min_w = np.inf
+        for idx in matches_idx:
+            if s_vals[idx] < min_w:
+                min_w = s_vals[idx]
+        
+        if min_w <= tol:
+            break
+
+        # Format matches for return and subtract min_w
+        formatted_matches = []
+        for j in range(len(matches_r)):
+            r = matches_r[j]
+            c = matches_c[j]
+            idx = matches_idx[j]
+            
+            # Apply subtraction
+            new_val = max(0.0, matrix[r, c] - min_w)
+            matrix[r, c] = new_val
+            s_vals[idx] = new_val
+            
+            formatted_matches.append((int(r), int(c)))
+
+        weights.append(min_w)
+        all_matches.append(formatted_matches)
+
+    return weights, all_matches
+
+
+@jit(nopython=True, nogil=True)
+def _jit_decompose_sorted_dynamic(matrix: np.ndarray, tol: float = 1e-9) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
     """
     JIT-compiled loop for 'heavy' (sorted array) decomposition.
-    Releases the GIL for true parallelism in the radix decomposition step.
+    Resorts the non-zero edges dynamically at the start of every single iteration.
     """
     n = matrix.shape[0]
     weights = []
     all_matches = []
 
     while True:
-        # 1. Identify non-zero slots
-        # Note: In Numba, np.nonzero on a boolean array (matrix > tol) works well
+        # 1. Identify non-zero slots dynamically
         rows, cols = np.nonzero(matrix > tol)
         if len(rows) == 0:
             break
@@ -142,7 +222,6 @@ def _jit_decompose_sorted(matrix: np.ndarray, tol: float = 1e-9) -> Tuple[List[f
             vals[k] = matrix[rows[k], cols[k]]
 
         # 2. Sort descending
-        # np.argsort on -vals
         sort_idx = np.argsort(-vals)
 
         s_rows = rows[sort_idx]
@@ -155,7 +234,7 @@ def _jit_decompose_sorted(matrix: np.ndarray, tol: float = 1e-9) -> Tuple[List[f
         if len(matches) == 0:
             break
 
-        # 4. Find min weight (Lambda) for 'min' strategy
+        # 4. Find min weight
         min_w = np.inf
         for r, c in matches:
             val = matrix[r, c]
@@ -165,14 +244,13 @@ def _jit_decompose_sorted(matrix: np.ndarray, tol: float = 1e-9) -> Tuple[List[f
         if min_w <= tol:
             break
 
-        # 5. Subtract
-        # We also need to build the match list for return
-        # matches is already a list of tuples from _jit_greedy_match_loop
-        
+        # 5. Subtract and Format
+        formatted_matches = []
         for r, c in matches:
             matrix[r, c] = max(0.0, matrix[r, c] - min_w)
+            formatted_matches.append((int(r), int(c)))
 
         weights.append(min_w)
-        all_matches.append(matches)
+        all_matches.append(formatted_matches)
 
     return weights, all_matches
