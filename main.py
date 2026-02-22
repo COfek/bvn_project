@@ -130,7 +130,7 @@ def main() -> None:
                 plot_results(plot_stats, n=config.n, bits=config.k, out_dir=plots_dir,
                             matching_method=config.engine, generator=config.generator)
 
-        print_banner("Benchmark Complete")
+        print_banner("Benchmark Complete!")
 
 
 if __name__ == "__main__":
