@@ -21,8 +21,6 @@ def parse_args() -> argparse.Namespace:
                         help="Number of random matrices to test per engine.")
     parser.add_argument("--output", "-o", type=str, default="run",
                         help="Root directory path for saving generated plots and CSV logs.")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                        help="Enables detailed logging.")
     parser.add_argument("--no-plot", action="store_true",
                         help="Disable automatic plot generation.")
     parser.add_argument("--generator", type=str, default="standard",
@@ -43,14 +41,6 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--random-seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--max-workers", type=int, default=None, help="Workers for Radix planes.")
-    
-    # Split-tree arguments (Hidden/Advanced)
-    parser.add_argument("--split-sparsity-target", type=int, default=3)
-    parser.add_argument("--split-max-depth", type=int, default=1)
-    parser.add_argument("--split-p", type=float, default=0.5)
-    parser.add_argument("--split-cv-threshold", type=float, default=0.15)
-    parser.add_argument("--split-min-matching-frac", type=float, default=0.8)
-    parser.add_argument("--split-method", type=str, default="pivot", choices=["pivot", "random"])
     
     # Plotting utilities
     parser.add_argument("--plot-from-csv", type=str, default=None,

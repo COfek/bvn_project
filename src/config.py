@@ -32,15 +32,6 @@ class ExperimentConfig:
 
     output_csv: Optional[str] = "results.csv"  # This will be derived from main.py args
 
-    # --- Split-Tree Parameters ---
-    split_sparsity_target: int = 3
-    split_max_depth: int = 1
-    split_p: float = 0.5
-    split_cv_threshold: float = 0.15
-    split_min_matching_frac: float = 0.8
-    split_method: str = "pivot"
-    skip_split: bool = True
-
     # --- Radix Parameters ---
     # List of bases to test.
     radix_bases: List[int] = field(default_factory=lambda: [2])
@@ -52,7 +43,6 @@ class ExperimentConfig:
     engine: str = field(default="bvn", metadata={"help": "Decomposition engine: 'bvn', 'wfa', 'heavy', 'maximum', 'all', 'wfa_bvn'"})
 
     # --- Logging & Visualization ---
-    verbose: bool = False
     plot: bool = True
     output_dir: str = "./outputs"
 

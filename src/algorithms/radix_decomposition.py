@@ -48,14 +48,16 @@ def decompose_radix(
         max_workers: int | None = None,
         step_strategy: str = "min",
         matching_method: str = "heavy"
-) -> List[RadixComponent]:
+) -> Tuple[List[RadixComponent], float]:
     """
     Decomposes an integer matrix into weighted permutations using a Radix approach.
+    Simulates hardware parallelism by computing planes sequentially and returning
+    the maximum execution time of any single plane.
 
     Args:
         matrix: The K-regular integer matrix.
         base: The radix base (e.g., 2 for bitplane).
-        max_workers: Number of parallel processes for plane decomposition.
+        max_workers: Ignored (forced sequential for hardware simulation).
         step_strategy: "min", "max", or "median" for weight selection.
         matching_method: "heavy", "wfa", or "maximum".
         float_precision_bits: Bits of precision for Sinkhorn/Float matrices.
@@ -63,7 +65,7 @@ def decompose_radix(
     """
     max_val = np.max(matrix)
     if max_val == 0:
-        return []
+        return [], 0.0
 
     planes: List[Tuple[float, np.ndarray]] = []
 
@@ -103,41 +105,28 @@ def decompose_radix(
                 break
 
     all_components: List[RadixComponent] = []
+    max_plane_runtime = 0.0
+    import time
 
-    # Parallelize decomposition of planes
-    if max_workers == 1:
-        # Sequential path: completely bypass ThreadPool overhead
-        for weight, plane_matrix in planes:
-            try:
-                comps = _decompose_digit_plane(
-                    plane_matrix,
-                    weight,
-                    step_strategy,
-                    matching_method
-                )
-                all_components.extend(comps)
-            except Exception as exc:
-                print(f"Radix plane sequential worker failed: {exc}")
-    else:
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_plane = {
-                executor.submit(
-                    _decompose_digit_plane,
-                    plane_matrix,
-                    weight,
-                    step_strategy,
-                    matching_method
-                ): weight
-                for weight, plane_matrix in planes
-            }
-    
-            for future in as_completed(future_to_plane):
-                try:
-                    all_components.extend(future.result())
-                except Exception as exc:
-                    print(f"Radix plane thread worker failed: {exc}")
+    # Sequential hardware simulation
+    for weight, plane_matrix in planes:
+        try:
+            t_start = time.perf_counter()
+            comps = _decompose_digit_plane(
+                plane_matrix,
+                weight,
+                step_strategy,
+                matching_method
+            )
+            plane_runtime = time.perf_counter() - t_start
+            
+            # Simulated hardware runtime is the max of any independent plane
+            max_plane_runtime = max(max_plane_runtime, plane_runtime)
+            all_components.extend(comps)
+        except Exception as exc:
+            print(f"Radix plane sequential worker failed: {exc}")
 
-    return all_components
+    return all_components, max_plane_runtime
 
 
 def _decompose_digit_plane(

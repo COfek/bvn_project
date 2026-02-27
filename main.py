@@ -26,17 +26,8 @@ def build_config(args) -> ExperimentConfig:
         random_seed=args.random_seed,
         max_workers=args.max_workers,
         output_dir=args.output,
-        verbose=args.verbose,
         plot=not args.no_plot,
         
-        # Split-tree
-        split_sparsity_target=args.split_sparsity_target,
-        split_max_depth=args.split_max_depth,
-        split_p=args.split_p,
-        split_cv_threshold=args.split_cv_threshold,
-        split_min_matching_frac=args.split_min_matching_frac,
-        split_method=args.split_method,
-
         # Matrix generation
         n=args.n,
         num_matrices=args.samples,
@@ -98,7 +89,7 @@ def main() -> None:
 
         # 2. Configure Logging
         log_file = get_log_file_path(run_dir)
-        configure_logging(log_file=log_file, level=logging.INFO if not config.verbose else logging.DEBUG)
+        configure_logging(log_file=log_file, level=logging.INFO)
 
         print_banner("BvN-Arbiter Benchmark Started")
         logger.info(f"Run directory: {run_dir} | Density: {config.density} | Engine: {config.engine} | Generator: {config.generator} | Bases: {config.radix_bases}")

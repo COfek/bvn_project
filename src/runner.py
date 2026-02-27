@@ -18,7 +18,6 @@ from rich.progress import (
 
 from .algorithms.bvn import bvn_decomposition
 from .algorithms.radix_decomposition import decompose_radix
-from .algorithms.split_tree import split_tree_decomposition
 from .config import ExperimentConfig
 from src.utils.matrix_generator import (
     generate_scaled_doubly_stochastic_matrix,
@@ -125,16 +124,17 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     for engine in target_engines:
         if isinstance(config.radix_bases, list):
             for base in config.radix_bases:
-                t1 = time.perf_counter()
-                # Standard radix decomposition
-                radix_components = decompose_radix(
+                # Standard radix decomposition returns (components, simulated_max_plane_runtime)
+                radix_components, simulated_max_runtime = decompose_radix(
                     matrix=matrix,
                     base=base,
                     matching_method=engine,
                     max_workers=config.max_workers,
                     step_strategy=getattr(config, 'radix_strategy', 'min')
                 )
-                radix_runtime = time.perf_counter() - t1
+                
+                # The runtime is now the simulated hardware parallel runtime (max plane time)
+                radix_runtime = simulated_max_runtime
 
                 c_len = float(sum(comp.weight for comp in radix_components))
                 n_perm = len(radix_components)
@@ -142,31 +142,11 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
                 key = f"{engine}_{base}"
                 radix_multi_data[key] = (radix_runtime, c_len, n_perm)
 
-    # --- 4. Split-tree decomposition ---
-    num_split = cycle_split = runtime_split = None
-    if not config.skip_split:
-        t2 = time.perf_counter()
-        components_split = split_tree_decomposition(
-            matrix,
-            sparsity_target=config.split_sparsity_target,
-            max_depth=config.split_max_depth,
-            p_schedule=config.split_p,
-            split_method=config.split_method,
-            cv_threshold=config.split_cv_threshold,
-            min_matching_frac=config.split_min_matching_frac,
-        )
-        runtime_split = time.perf_counter() - t2
-        num_split = len(components_split) if components_split else 0
-        cycle_split = float(sum(comp.weight for comp in components_split)) if components_split else 0.0
-
     return DecompositionStats(
         matrix_index=index,
         num_permutations_bvn=num_permutations_bvn,
         cycle_length_bvn=cycle_length_bvn,
         runtime_bvn=runtime_bvn,
-        num_perm_split=num_split,
-        cycle_split=cycle_split,
-        runtime_split=runtime_split,
         radix_multi_results=radix_multi_data
     )
 
