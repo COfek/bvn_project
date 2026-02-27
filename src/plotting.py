@@ -45,7 +45,6 @@ mpl.rcParams.update({
 # Base colors for fixed methods
 COLORS_BASE = {
     'BVN': '#1f77b4',     # Strong Blue
-    'Split-Tree': '#d62728' # Strong Red
 }
 
 # ============================================================
@@ -326,19 +325,19 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
 def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = "", k: int = 1):
     _plot_trend(stats, out_dir, "cycle_length_all_methods.png", 
                 f"Cycle Length Trends (Smoothed) {title_suffix}", "Cycle Length (Normalized)",
-                {"BVN": "cycle_length_bvn", "Split-Tree": "cycle_split"}, 1, hline=1.0, k=k)
+                {"BVN": "cycle_length_bvn"}, 1, hline=1.0, k=k)
 
 
 def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: int, out_dir: Path, title_suffix: str = ""):
     _plot_trend(stats, out_dir, "permutation_count_all_methods.png", 
                 f"Permutation Count Trends (Smoothed) {title_suffix}", "Number of Permutations",
-                {"BVN": "num_permutations_bvn", "Split-Tree": "num_perm_split"}, 2, hline=None)
+                {"BVN": "num_permutations_bvn"}, 2, hline=None)
 
 
 def plot_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     _plot_trend(stats, out_dir, "runtime_comparison.png", 
                 f"Runtime Trends (Smoothed) {title_suffix}", "Runtime (seconds)",
-                {"BVN": "runtime_bvn", "Split-Tree": "runtime_split"}, 0)
+                {"BVN": "runtime_bvn"}, 0)
 
 
 # ============================================================
@@ -346,17 +345,17 @@ def plot_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: s
 # ============================================================
 
 def plot_distribution_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
-    b_map = {"BVN": "runtime_bvn", "Split-Tree": "runtime_split"}
+    b_map = {"BVN": "runtime_bvn"}
     _plot_dynamic_grid(stats, out_dir, "runtime_pdf_cdf_subplots.png", f"Runtime {title_suffix}", b_map, 0)
 
 
 def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = "", k: int = 1):
-    bvn_map = {"BVN": "cycle_length_bvn", "Split-Tree": "cycle_split"}
+    bvn_map = {"BVN": "cycle_length_bvn"}
     _plot_dynamic_grid(stats, out_dir, "cycle_length_pdf_cdf.png", f"Cycle Length (Normalized) {title_suffix}", bvn_map, 1, k=k)
 
 
 def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
-    b_map = {"BVN": "num_permutations_bvn", "Split-Tree": "num_perm_split"}
+    b_map = {"BVN": "num_permutations_bvn"}
     _plot_dynamic_grid(stats, out_dir, "permutation_pdf_cdf.png", f"Permutations {title_suffix}", b_map, 2)
 
 
@@ -375,10 +374,9 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
     # Add vertical line for Optimal Cycle = 1.0 (if relevant for the x-axis)
     # plt.axvline(x=1.0, color='gray', linestyle='--', linewidth=1.5, label="Optimal Cycle", alpha=0.8, zorder=1)
 
-    # 1. Plot Baselines (BVN / Split-Tree)
+    # 1. Plot Baselines (BVN)
     baselines = {
-        "BVN": ("runtime_bvn", "cycle_length_bvn", COLORS_BASE['BVN'], "o"),
-        "Split-Tree": ("runtime_split", "cycle_split", COLORS_BASE['Split-Tree'], "^")
+        "BVN": ("runtime_bvn", "cycle_length_bvn", COLORS_BASE['BVN'], "o")
     }
 
     for name, (rt_f, cyc_f, color, marker) in baselines.items():
@@ -488,8 +486,7 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
     wfa_points = []
 
     baselines = {
-        "BVN": ("runtime_bvn", "num_permutations_bvn", COLORS_BASE['BVN'], "o"),
-        "Split-Tree": ("runtime_split", "num_perm_split", COLORS_BASE['Split-Tree'], "^")
+        "BVN": ("runtime_bvn", "num_permutations_bvn", COLORS_BASE['BVN'], "o")
     }
 
     for name, (rt_f, perm_f, color, marker) in baselines.items():

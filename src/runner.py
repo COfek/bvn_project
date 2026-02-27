@@ -8,23 +8,11 @@ from typing import List
 
 import numpy as np
 from rich.console import Console
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    TextColumn,
-    TimeElapsedColumn,
-)
 
 from .algorithms.bvn import bvn_decomposition
 from .algorithms.radix_decomposition import decompose_radix
 from .config import ExperimentConfig
-from src.utils.matrix_generator import (
-    generate_scaled_doubly_stochastic_matrix,
-    generate_binary_weighted_matrix,
-    generate_weighted_sum_matrix,
-    generate_sinkhorn_matrix
-)
+from src.utils.matrix_generator import generate_matrix
 from .utils.stats import DecompositionStats
 
 logger = logging.getLogger(__name__)
@@ -43,42 +31,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     rng_seed = config.random_seed + index if config.random_seed is not None else None
     rng = np.random.default_rng(rng_seed)
 
-    # Determine K from density if needed
-    # Determine K from density if needed, or use fixed_k if provided
-    if config.fixed_k is not None:
-        effective_k = config.fixed_k
-    elif config.density >= 0.999:
-        effective_k = 5 * config.n
-    else:
-        # Density D ~= 1 - (1 - 1/N)^K
-        # K ~= -N * ln(1-D)
-        effective_k = int(-config.n * np.log(1.0 - config.density))
-        effective_k = max(1, effective_k)
-
-    if config.generator == "binary":
-        matrix = generate_binary_weighted_matrix(n=config.n, rng=rng, bits=config.binary_bits)
-        # Binary generator produces fixed K based on bits.
-    elif config.generator == "weighted":
-        matrix = generate_weighted_sum_matrix(
-            n=config.n, 
-            weights=config.weights, 
-            sub_k=config.sub_k, 
-           rng=rng
-        )
-    elif config.generator == "sinkhorn":
-        matrix = generate_sinkhorn_matrix(
-            n=config.n,
-            k=effective_k,
-            rng=rng,
-            density=config.density
-        )
-    else:
-        # Standard
-        matrix = generate_scaled_doubly_stochastic_matrix(
-            n=config.n,
-            k=effective_k,
-            rng=rng,
-        )
+    matrix = generate_matrix(n=config.n, k=config.k, max_weight=config.max_weight, rng=rng)
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
     # Determine BVN engine

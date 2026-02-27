@@ -14,14 +14,8 @@ class ExperimentConfig:
     # --- Matrix Generation Parameters ---
     n: int = 128  # Dimension of the square matrix (n x n), updated default from README
     num_matrices: int = 10  # Total number of matrices, updated default from README (samples)
-    density: float = 0.5  # Target density of the matrix
-
-
-    # K is the ground-truth sum for all rows and columns.
-    # If K=127, it represents 7-bit precision.
-    # Note: If density is specified, k might be derived or ignored depending on generator logic
-    k: int = 1028
-    fixed_k: Optional[int] = 1028
+    # Details for the generated Matrix
+    k: int = 10
 
     # --- Execution & Reproducibility ---
     random_seed: Optional[int] = 42
@@ -48,9 +42,6 @@ class ExperimentConfig:
 
     # --- Parallelism Control ---
     is_parallel: bool = False
-    generator: str = "standard"
-    binary_bits: int = 8
     
-    # --- Weighted Generator ---
-    weights: List[int] = field(default_factory=list)
-    sub_k: List[int] = field(default_factory=list)
+    # --- Matrix Weights ---
+    max_weight: int = 1
