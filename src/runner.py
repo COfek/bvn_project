@@ -31,7 +31,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     rng_seed = config.random_seed + index if config.random_seed is not None else None
     rng = np.random.default_rng(rng_seed)
 
-    matrix = generate_matrix(n=config.n, k=config.k, max_weight=config.max_weight, rng=rng)
+    matrix = generate_matrix(n=config.n, k=config.k, max_weight=config.max_weight, rng=rng, float_weights=config.float_weights)
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
     # Determine BVN engine

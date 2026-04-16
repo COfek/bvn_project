@@ -22,8 +22,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-plot", action="store_true",
                         help="Disable automatic plot generation.")
     # Matrix Generation Weights
-    parser.add_argument("--max-weight", type=int, default=1,
+    parser.add_argument("--max-weight", type=float, default=1.0,
                         help="The maximum weight (W) to randomly sample from [0, W] when generating permutations.")
+    parser.add_argument("--float-weights", action="store_true",
+                        help="Generate float weights instead of integer weights.")
 
     # Advanced / Legacy Arguments
     parser.add_argument("--radix-bases", type=int, nargs='*', default=[2,4,8,16,32],

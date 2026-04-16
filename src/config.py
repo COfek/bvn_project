@@ -44,4 +44,5 @@ class ExperimentConfig:
     is_parallel: bool = False
     
     # --- Matrix Weights ---
-    max_weight: int = 1
+    max_weight: float = 1.0
+    float_weights: bool = False

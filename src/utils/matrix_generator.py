@@ -7,20 +7,23 @@ from numpy.typing import NDArray
 def generate_matrix(
     n: int, 
     k: int, 
-    max_weight: int, 
-    rng: np.random.Generator
+    max_weight: float, 
+    rng: np.random.Generator,
+    float_weights: bool = False
 ) -> NDArray[np.float64]:
     r"""
     Generates an n x n matrix by summing 'k' weighted random permutations.
     For each permutation, a random weight is chosen uniformly in the range [0, max_weight].
+    Can optionally pick real numbers (float_weights=True) instead of integers.
     
     Formula: M = \sum_{i=1}^{k} P_i * Random(0, W)
     
     Args:
         n: Dimension of the matrix (n x n)
         k: The number of permutations to sum
-        max_weight: The maximum weight W (inclusive) to randomly sample from.
+        max_weight: The maximum weight W (inclusive for ints, exclusive for floats) to randomly sample from.
         rng: NumPy random generator
+        float_weights: If True, weights are drawn uniformly from [0, max_weight) as floats.
         
     Returns:
         A float64 matrix.
@@ -28,10 +31,17 @@ def generate_matrix(
     if max_weight < 0:
         max_weight = 0
         
-    result = np.zeros((n, n), dtype=np.int64)
+    if float_weights:
+        result = np.zeros((n, n), dtype=np.float64)
+    else:
+        result = np.zeros((n, n), dtype=np.int64)
     
     for _ in range(int(k)):
-        w = int(rng.integers(0, max_weight + 1))
+        if float_weights:
+            w = rng.uniform(0, max_weight)
+        else:
+            w = int(rng.integers(0, int(max_weight) + 1))
+            
         p = rng.permutation(n)
         result[np.arange(n), p] += w
         

@@ -33,7 +33,8 @@ def build_config(args) -> ExperimentConfig:
         num_matrices=args.samples,
         k=args.k,
         is_parallel=False,
-        max_weight=args.max_weight
+        max_weight=args.max_weight,
+        float_weights=args.float_weights
     )
 
 def main() -> None:
