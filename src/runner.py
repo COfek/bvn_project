@@ -52,11 +52,13 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
             
         num_permutations_bvn = len(bvn_components)
+        bvn_matching_used = bvn_engine
     else:
         bvn_components = []
         runtime_bvn = None
         cycle_length_bvn = None
         num_permutations_bvn = 0
+        bvn_matching_used = None
 
     # --- 3. Radix Decomposition ---
     radix_multi_data = {}
@@ -77,8 +79,9 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     for engine in target_engines:
         if isinstance(config.radix_bases, list):
             for base in config.radix_bases:
-                # Standard radix decomposition returns (components, simulated_max_plane_runtime)
-                radix_components, simulated_max_runtime = decompose_radix(
+                # Standard radix decomposition returns
+                # (components, simulated_max_plane_runtime, num_non_empty_planes)
+                radix_components, simulated_max_runtime, num_planes = decompose_radix(
                     matrix=matrix,
                     base=base,
                     matching_method=engine,
@@ -93,14 +96,15 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
                 n_perm = len(radix_components)
             
                 key = f"{engine}_{base}"
-                radix_multi_data[key] = (radix_runtime, c_len, n_perm)
+                radix_multi_data[key] = (radix_runtime, c_len, n_perm, num_planes)
 
     return DecompositionStats(
         matrix_index=index,
         num_permutations_bvn=num_permutations_bvn,
         cycle_length_bvn=cycle_length_bvn,
         runtime_bvn=runtime_bvn,
-        radix_multi_results=radix_multi_data
+        radix_multi_results=radix_multi_data,
+        bvn_matching=bvn_matching_used,
     )
 
 

@@ -41,7 +41,7 @@ def test_decomposition_correctness():
                                err_msg="BVN decomposition should mathematically reconstruct the original matrix.")
     
     # Radix Decomposition
-    radix_components, simulated_runtime = decompose_radix(original_matrix, base=2, matching_method="wfa", max_workers=1)
+    radix_components, simulated_runtime, _num_planes = decompose_radix(original_matrix, base=2, matching_method="wfa", max_workers=1)
     
     reconstructed_radix = np.zeros_like(original_matrix)
     for comp in radix_components:
@@ -60,7 +60,7 @@ def test_metrics_cycle_and_permutations():
     matrix = generate_matrix(n, k, max_weight, rng)
     
     # Check Radix
-    radix_components, max_runtime = decompose_radix(matrix, base=2, matching_method="wfa", max_workers=1)
+    radix_components, max_runtime, _num_planes = decompose_radix(matrix, base=2, matching_method="wfa", max_workers=1)
     
     # Evaluated exactly as runner.py evaluates them
     cycle_length = float(sum(comp.weight for comp in radix_components))
@@ -81,7 +81,7 @@ def test_parallelism_preserves_correctness():
     # decompose_radix handles it sequentially (since multi-threading was removed)
     # The max_workers argument doesn't functionally spawn threads anymore,
     # but the decomposition logic should still be sound.
-    radix_seq, _ = decompose_radix(matrix, base=4, matching_method="wfa", max_workers=1)
+    radix_seq, _, _ = decompose_radix(matrix, base=4, matching_method="wfa", max_workers=1)
     
     rebuilt_seq = np.zeros_like(matrix)
     for c in radix_seq: rebuilt_seq += c.matrix

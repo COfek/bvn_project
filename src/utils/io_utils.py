@@ -21,20 +21,23 @@ def write_stats_to_csv(stats_list: List[DecompositionStats], path: Path) -> None
             all_keys.update(s.radix_multi_results.keys())
         sorted_keys = sorted(list(all_keys))
 
-        header = ["matrix_index", "bvn_perms", "bvn_cycle", "bvn_runtime"]
+        header = ["matrix_index", "bvn_perms", "bvn_cycle", "bvn_runtime", "bvn_matching"]
         for key in sorted_keys:
             # key is like "wfa_2" or "heavy_8"
-            header += [f"{key}_time", f"{key}_cycle", f"{key}_perms"]
+            header += [f"{key}_time", f"{key}_cycle", f"{key}_perms", f"{key}_planes"]
 
         writer.writerow(header)
 
         for s in stats_list:
-            row = [s.matrix_index, s.num_permutations_bvn, s.cycle_length_bvn, s.runtime_bvn]
+            row = [s.matrix_index, s.num_permutations_bvn, s.cycle_length_bvn, s.runtime_bvn,
+                   s.bvn_matching]
             for key in sorted_keys:
                 if key in s.radix_multi_results:
-                    row += list(s.radix_multi_results[key])
+                    res = s.radix_multi_results[key]
+                    # Pad to 4 fields in case an older 3-tuple sneaks in
+                    row += list(res) + [None] * (4 - len(res))
                 else:
-                    row += [None, None, None]
+                    row += [None, None, None, None]
             writer.writerow(row)
 
 
@@ -51,11 +54,20 @@ def parse_stats_from_csv(csv_path: Path) -> List[DecompositionStats]:
             bvn_cycle = row.get("bvn_cycle")
             bvn_runtime = row.get("bvn_runtime")
             
+            # Optional column added later; older CSVs won't have it.
+            bvn_matching_raw = row.get("bvn_matching")
+            bvn_matching = (
+                bvn_matching_raw
+                if bvn_matching_raw and bvn_matching_raw not in ("", "None")
+                else None
+            )
+
             ds = DecompositionStats(
                 matrix_index=idx,
                 num_permutations_bvn=int(float(bvn_perms)) if bvn_perms and float(bvn_perms) > 0 else 0,
                 cycle_length_bvn=float(bvn_cycle) if bvn_cycle and bvn_cycle != "" and bvn_cycle != "None" else None,
-                runtime_bvn=float(bvn_runtime) if bvn_runtime and bvn_runtime != "" and bvn_runtime != "None" else None
+                runtime_bvn=float(bvn_runtime) if bvn_runtime and bvn_runtime != "" and bvn_runtime != "None" else None,
+                bvn_matching=bvn_matching,
             )
             
             # Dynamic keys
@@ -69,9 +81,14 @@ def parse_stats_from_csv(csv_path: Path) -> List[DecompositionStats]:
                 t = row.get(f"{key}_time")
                 c = row.get(f"{key}_cycle")
                 p = row.get(f"{key}_perms")
-                
+                pl = row.get(f"{key}_planes")  # Optional; older CSVs won't have this column
+
                 if t and c and p and t != "None":
-                    ds.radix_multi_results[key] = (float(t), float(c), int(float(p)))
+                    if pl and pl != "None" and pl != "":
+                        planes = int(float(pl))
+                    else:
+                        planes = 0  # sentinel: plane count unknown for legacy CSVs
+                    ds.radix_multi_results[key] = (float(t), float(c), int(float(p)), planes)
             
             stats_list.append(ds)
     return stats_list

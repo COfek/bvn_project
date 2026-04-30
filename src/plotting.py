@@ -55,6 +55,22 @@ def _prepare_plot_dir(out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
 
 
+def _bvn_legend_label(stats: List[DecompositionStats], default: str = "BVN") -> str:
+    """
+    Returns the legend label to use for the BVN baseline series.
+
+    When stats include a recorded matching algorithm (new CSVs), the label
+    becomes e.g. "WFA-BVN" - parallel to the radix labels like "WFA-B2".
+    Falls back to plain "BVN" for legacy CSVs that predate the bvn_matching
+    field, so old runs still re-plot cleanly.
+    """
+    for s in stats:
+        m = getattr(s, "bvn_matching", None)
+        if m:
+            return f"{m.upper()}-{default}"
+    return default
+
+
 def _moving_average(values, window):
     values = np.array(values, dtype=float)
     if len(values) < window: return values
@@ -212,8 +228,10 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
             vals = [getattr(s, field) for s in stats]
             
         c = COLORS_BASE.get(name, '#333333')
-        h, l = _plot_pdf_cdf_on_ax(axes_list[idx], vals, name, color=c)
-        axes_list[idx].set_title(f"{name} {title}")
+        # Display the matching algo on the BVN baseline (e.g. "WFA-BVN")
+        display_name = _bvn_legend_label(stats) if name == "BVN" else name
+        h, l = _plot_pdf_cdf_on_ax(axes_list[idx], vals, display_name, color=c)
+        axes_list[idx].set_title(f"{display_name} {title}")
         axes_list[idx].grid(True, which='both', linestyle='--', alpha=0.5)
         axes_list[idx].minorticks_on()
         idx += 1
@@ -223,7 +241,7 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
         parts = str(key).split('_')
         if len(parts) == 2:
             eng, b = parts
-            label = f"{eng.upper()} (B-{b})"
+            label = f"{eng.upper()}-B{b}"
         else:
             label = f"Result ({key})"
         
@@ -281,8 +299,10 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
              
         if all(v is None for v in vals): continue
         c = COLORS_BASE.get(name, '#000000')
+        # Display the matching algo on the BVN baseline (e.g. "WFA-BVN")
+        display_name = _bvn_legend_label(stats) if name == "BVN" else name
         x_s, y_s = _smooth(xs, vals, window)
-        plt.plot(x_s, y_s, label=name, linewidth=3.0, color=c)
+        plt.plot(x_s, y_s, label=display_name, linewidth=3.0, color=c)
 
     # Engines
     keys = _get_all_keys(stats)
@@ -290,7 +310,7 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
         parts = str(key).split('_')
         if len(parts) == 2:
             eng, b = parts
-            label = f"{eng.upper()} (B-{b})"
+            label = f"{eng.upper()}-B{b}"
         else:
             label = f"Result ({key})"
             
@@ -362,21 +382,22 @@ def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Pat
 def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = "", k: int = 1):
     """
     Plots Average Runtime against the Average Cycle Length with Error Bars.
-    Includes Pareto Frontier and WFA Trend Line.
+    Includes a Pareto Frontier connecting the non-dominated points.
     """
     _prepare_plot_dir(out_dir)
 
     plt.figure(figsize=(12, 8))
     
     all_points = [] # (x, y) for pareto
-    wfa_points = [] # (base, x, y) for trend line
 
     # Add vertical line for Optimal Cycle = 1.0 (if relevant for the x-axis)
     # plt.axvline(x=1.0, color='gray', linestyle='--', linewidth=1.5, label="Optimal Cycle", alpha=0.8, zorder=1)
 
-    # 1. Plot Baselines (BVN)
+    # 1. Plot Baselines (BVN). Label dynamically reflects which matching
+    # algorithm BVN actually used - e.g. "WFA-BVN" - parallel to radix labels.
+    bvn_label = _bvn_legend_label(stats)
     baselines = {
-        "BVN": ("runtime_bvn", "cycle_length_bvn", COLORS_BASE['BVN'], "o")
+        bvn_label: ("runtime_bvn", "cycle_length_bvn", COLORS_BASE['BVN'], "o")
     }
 
     for name, (rt_f, cyc_f, color, marker) in baselines.items():
@@ -408,53 +429,56 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
             parts = str(key).split('_')
             c = _get_color_for_key(key, i, len(keys))
             
-            base_data = [] # stores (runtime, cycle_len, perms, bvn_cycle)
+            base_data = []  # stores (runtime, cycle_len, bvn_cycle, planes)
             for s in stats:
                 if key in s.radix_multi_results:
                      res = s.radix_multi_results[key]
                      bvn = s.cycle_length_bvn if s.cycle_length_bvn and s.cycle_length_bvn > 0 else k
-                     base_data.append((res[0], res[1], bvn))
-            
+                     planes = res[3] if len(res) >= 4 else 0
+                     base_data.append((res[0], res[1], bvn, planes))
+
             if base_data:
                 base_rts = np.array([d[0] for d in base_data])
                 base_cycs = np.array([d[1] / d[2] for d in base_data])
-                
+                base_planes = np.array([d[3] for d in base_data])
+
                 mean_rt = np.mean(base_rts)
                 std_rt = np.std(base_rts)
                 mean_cyc = np.mean(base_cycs)
                 std_cyc = np.std(base_cycs)
-                
+
                 all_points.append((mean_cyc, mean_rt))
-                
+
                 label = f"Result ({key})"
                 marker_style = 'v'
-                
+                base_str = None
+
                 if len(parts) == 2:
                     eng, b = parts
-                    label = f"{eng.upper()} (B-{b})"
-                    
-                    if eng == 'wfa':
-                        try:
-                            wfa_points.append((int(b), mean_cyc, mean_rt))
-                        except ValueError:
-                            pass
+                    label = f"{eng.upper()}-B{b}"
+                    base_str = b
 
                 plt.errorbar(mean_cyc, mean_rt, xerr=std_cyc, yerr=std_rt,
-                             fmt=marker_style, markersize=9, label=label, color=c, 
+                             fmt=marker_style, markersize=9, label=label, color=c,
                              alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
 
-    # 3. Draw WFA Trend Line
-    if wfa_points:
-        wfa_points.sort(key=lambda x: x[0]) # Sort by base
-        wx = [p[1] for p in wfa_points]
-        wy = [p[2] for p in wfa_points]
-        plt.plot(wx, wy, '--', color='gray', alpha=0.5, label="WFA Trend", linewidth=1.5, zorder=3)
-        
-        # Annotate bases
-        for b, x, y in wfa_points:
-            plt.annotate(f"B{b}", (x, y), xytext=(5, 5), textcoords='offset points', fontsize=8, alpha=0.7)
+                # Annotate marker with "B{base}, {N}p" for accessibility (color
+                # alone isn't enough for color-blind readers). Falls back to just
+                # "B{base}" on legacy CSVs that have no plane count.
+                annot_parts = []
+                if base_str is not None:
+                    annot_parts.append(f"B{base_str}")
+                if base_planes.size > 0 and base_planes.max() > 0:
+                    min_p = int(base_planes.min())
+                    max_p = int(base_planes.max())
+                    annot_parts.append(f"{min_p}p" if min_p == max_p else f"{min_p}-{max_p}p")
+                if annot_parts:
+                    plt.annotate(", ".join(annot_parts), (mean_cyc, mean_rt),
+                                 xytext=(6, 6), textcoords='offset points',
+                                 fontsize=8, color=c, alpha=0.95, zorder=6,
+                                 fontweight='bold')
 
-    # 4. Draw Pareto Frontier
+    # 3. Draw Pareto Frontier
     if all_points:
         frontier = _get_pareto_frontier(all_points)
         fx, fy = zip(*frontier)
@@ -476,17 +500,17 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
 def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = ""):
     """
     Plots Average Runtime against the Average Number of Permutations with Error Bars.
-    Includes Pareto Frontier and WFA Trend Line.
+    Includes a Pareto Frontier connecting the non-dominated points.
     """
     _prepare_plot_dir(out_dir)
 
     plt.figure(figsize=(12, 8))
     
     all_points = []
-    wfa_points = []
 
+    bvn_label = _bvn_legend_label(stats)
     baselines = {
-        "BVN": ("runtime_bvn", "num_permutations_bvn", COLORS_BASE['BVN'], "o")
+        bvn_label: ("runtime_bvn", "num_permutations_bvn", COLORS_BASE['BVN'], "o")
     }
 
     for name, (rt_f, perm_f, color, marker) in baselines.items():
@@ -515,41 +539,46 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
             base_data = [s.radix_multi_results[key] for s in stats if key in s.radix_multi_results]
             if base_data:
                 base_rts = np.array([d[0] for d in base_data])
-                base_perms = np.array([d[2] for d in base_data]) # Index 2 is permutations
-                
+                base_perms = np.array([d[2] for d in base_data])  # Index 2 is permutations
+                # Plane count is index 3; tolerate legacy 3-tuples by defaulting to 0.
+                base_planes = np.array([d[3] if len(d) >= 4 else 0 for d in base_data])
+
                 mean_rt = np.mean(base_rts)
                 std_rt = np.std(base_rts)
                 mean_perms = np.mean(base_perms)
                 std_perms = np.std(base_perms)
-                
+
                 all_points.append((mean_perms, mean_rt))
 
                 label = f"Result ({key})"
                 marker_style = 'v'
+                base_str = None
                 if len(parts) == 2:
                     eng, b = parts
-                    label = f"{eng.upper()} (B-{b})"
-                    
-                    if eng == 'wfa':
-                        try:
-                            wfa_points.append((int(b), mean_perms, mean_rt))
-                        except ValueError:
-                            pass
-                
+                    label = f"{eng.upper()}-B{b}"
+                    base_str = b
+
                 plt.errorbar(mean_perms, mean_rt, xerr=std_perms, yerr=std_rt,
-                             fmt=marker_style, markersize=9, label=label, color=c, 
+                             fmt=marker_style, markersize=9, label=label, color=c,
                              alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
 
-    # 3. Draw WFA Trend Line
-    if wfa_points:
-        wfa_points.sort(key=lambda x: x[0])
-        wx = [p[1] for p in wfa_points]
-        wy = [p[2] for p in wfa_points]
-        plt.plot(wx, wy, '--', color='gray', alpha=0.5, label="WFA Trend", linewidth=1.5, zorder=3)
-        for b, x, y in wfa_points:
-            plt.annotate(f"B{b}", (x, y), xytext=(5, 5), textcoords='offset points', fontsize=8, alpha=0.7)
+                # Annotate marker with "B{base}, {N}p" for accessibility (color
+                # alone isn't enough for color-blind readers). Falls back to just
+                # "B{base}" on legacy CSVs that have no plane count.
+                annot_parts = []
+                if base_str is not None:
+                    annot_parts.append(f"B{base_str}")
+                if base_planes.size > 0 and base_planes.max() > 0:
+                    min_p = int(base_planes.min())
+                    max_p = int(base_planes.max())
+                    annot_parts.append(f"{min_p}p" if min_p == max_p else f"{min_p}-{max_p}p")
+                if annot_parts:
+                    plt.annotate(", ".join(annot_parts), (mean_perms, mean_rt),
+                                 xytext=(6, 6), textcoords='offset points',
+                                 fontsize=8, color=c, alpha=0.95, zorder=6,
+                                 fontweight='bold')
 
-    # 4. Draw Pareto Frontier
+    # 3. Draw Pareto Frontier
     if all_points:
         frontier = _get_pareto_frontier(all_points)
         fx, fy = zip(*frontier)

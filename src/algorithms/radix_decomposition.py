@@ -47,7 +47,7 @@ def decompose_radix(
         max_workers: int | None = None,
         step_strategy: str = "min",
         matching_method: str = "heavy"
-) -> Tuple[List[RadixComponent], float]:
+) -> Tuple[List[RadixComponent], float, int]:
     """
     Decomposes an integer matrix into weighted permutations using a Radix approach.
     Simulates hardware parallelism by computing planes sequentially and returning
@@ -61,10 +61,15 @@ def decompose_radix(
         matching_method: "heavy", "wfa", or "maximum".
         float_precision_bits: Bits of precision for Sinkhorn/Float matrices.
         normalize_input: If True, scale float matrix to int space (Sinkhorn mode).
+
+    Returns:
+        Tuple of (components, simulated_max_plane_runtime, num_non_empty_planes).
+        num_non_empty_planes is the count of digit planes that contained
+        at least one non-zero entry and were therefore actually decomposed.
     """
     max_val = np.max(matrix)
     if max_val == 0:
-        return [], 0.0
+        return [], 0.0, 0
 
     planes: List[Tuple[float, np.ndarray]] = []
 
@@ -125,7 +130,7 @@ def decompose_radix(
         except Exception as exc:
             print(f"Radix plane sequential worker failed: {exc}")
 
-    return all_components, max_plane_runtime
+    return all_components, max_plane_runtime, len(planes)
 
 
 def _decompose_digit_plane(
