@@ -39,3 +39,19 @@ def test_generate_matrix_default_weights():
     # If we pass max_weight 0, it defaults to weight of 0 but bounded to 0.
     matrix = generate_matrix(n, k, 0, rng)
     assert check_k_regularity(matrix, 0)
+
+def test_generate_matrix_float_weights():
+    n = 10
+    k = 5
+    max_weight = 10.0
+    rng = np.random.default_rng(42)
+    
+    matrix = generate_matrix(n, k, max_weight, rng, float_weights=True)
+    
+    expected_sum = float(np.sum(matrix[0, :]))
+    assert check_k_regularity(matrix, expected_sum)
+    assert np.all(matrix >= 0)
+    assert matrix.dtype == np.float64
+    
+    # Check that there are actually non-integer values
+    assert not np.all(matrix == matrix.astype(np.int64))
