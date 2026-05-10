@@ -44,5 +44,9 @@ class ExperimentConfig:
     is_parallel: bool = False
     
     # --- Matrix Weights ---
-    max_weight: float = 1.0
+    max_weight: float = 15.0
     float_weights: bool = False
+    # Scales the generated matrix by this factor after construction.
+    # Use powers of the radix base (1, 16, 256, ...) to place the matrix at a
+    # specific digit-plane significance level while keeping raw values in [0, max_weight].
+    unit_weight: float = 1.0

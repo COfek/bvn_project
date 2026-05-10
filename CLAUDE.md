@@ -1,0 +1,1 @@
+A modular Python framework for decomposing K-regular / doubly-stochastic traffic matrices into weighted permutation matrices for crossbar switch scheduling. The suite benchmarks several bipartite matching engines and two decomposition strategies (classical BvN and Radix / digit-plane) against a three-way tradeoff between Permutation Count, Cycle Length, and Algorithmic Runtime.

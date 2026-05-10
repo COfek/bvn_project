@@ -31,7 +31,14 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     rng_seed = config.random_seed + index if config.random_seed is not None else None
     rng = np.random.default_rng(rng_seed)
 
-    matrix = generate_matrix(n=config.n, k=config.k, max_weight=config.max_weight, rng=rng, float_weights=config.float_weights)
+    matrix = generate_matrix(
+        n=config.n,
+        k=config.k,
+        max_weight=config.max_weight,
+        rng=rng,
+        float_weights=config.float_weights,
+        unit_weight=config.unit_weight,
+    )
 
     # --- 2. BVN decomposition (Optimal Baseline) ---
     # Determine BVN engine
@@ -50,7 +57,20 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         runtime_bvn = time.perf_counter() - t0
         
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
-            
+
+        # Sanity check: BVN cycle length must equal the matrix scale factor S
+        row_sums = matrix.sum(axis=1)
+        col_sums = matrix.sum(axis=0)
+        S = float(row_sums[0])
+        # if not np.allclose(row_sums, S, atol=1e-6):
+        #     raise ValueError(f"Matrix index {index}: row sums vary "
+        #                      f"(min={row_sums.min():.6g}, max={row_sums.max():.6g}).")
+        # if not np.allclose(col_sums, S, atol=1e-6):
+        #     raise ValueError(f"Matrix index {index}: col sums differ from row sums.")
+        # if not np.isclose(cycle_length_bvn, S, atol=1e-6):
+        #     raise ValueError(f"Matrix index {index}: BVN cycle length "
+        #                      f"{cycle_length_bvn:.6f} != scale factor S={S:.6f}.")
+
         num_permutations_bvn = len(bvn_components)
         bvn_matching_used = bvn_engine
     else:
@@ -76,27 +96,31 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     else:
         target_engines = [config.engine]
 
+    radix_strategy = getattr(config, 'radix_strategy', 'min')
+    strategies = ["min", "median", "max"] if radix_strategy == "all" else [radix_strategy]
+
     for engine in target_engines:
         if isinstance(config.radix_bases, list):
             for base in config.radix_bases:
-                # Standard radix decomposition returns
-                # (components, simulated_max_plane_runtime, num_non_empty_planes)
-                radix_components, simulated_max_runtime, num_planes = decompose_radix(
-                    matrix=matrix,
-                    base=base,
-                    matching_method=engine,
-                    max_workers=config.max_workers,
-                    step_strategy=getattr(config, 'radix_strategy', 'min')
-                )
+                for strategy in strategies:
+                    # Standard radix decomposition returns
+                    # (components, simulated_max_plane_runtime, num_non_empty_planes)
+                    radix_components, simulated_max_runtime, num_planes = decompose_radix(
+                        matrix=matrix,
+                        base=base,
+                        matching_method=engine,
+                        max_workers=config.max_workers,
+                        step_strategy=strategy
+                    )
+                    
+                    # The runtime is now the simulated hardware parallel runtime (max plane time)
+                    radix_runtime = simulated_max_runtime
+    
+                    c_len = float(sum(comp.weight for comp in radix_components))
+                    n_perm = len(radix_components)
                 
-                # The runtime is now the simulated hardware parallel runtime (max plane time)
-                radix_runtime = simulated_max_runtime
-
-                c_len = float(sum(comp.weight for comp in radix_components))
-                n_perm = len(radix_components)
-            
-                key = f"{engine}_{base}"
-                radix_multi_data[key] = (radix_runtime, c_len, n_perm, num_planes)
+                    key = f"{engine}_{strategy}_{base}" if len(strategies) > 1 else f"{engine}_{base}"
+                    radix_multi_data[key] = (radix_runtime, c_len, n_perm, num_planes)
 
     return DecompositionStats(
         matrix_index=index,

@@ -34,7 +34,9 @@ def build_config(args) -> ExperimentConfig:
         k=args.k,
         is_parallel=False,
         max_weight=args.max_weight,
-        float_weights=args.float_weights
+        unit_weight=args.unit_weight,
+        float_weights=args.float_weights,
+        radix_strategy=args.step_strategy
     )
 
 def main() -> None:

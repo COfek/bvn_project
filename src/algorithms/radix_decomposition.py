@@ -19,17 +19,24 @@ class RadixComponent:
 
 def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
     """
-    Wrapper for Scipy's Hungarian algorithm.
-    Finds the maximum weight matching.
+    Wrapper for Scipy's Hungarian algorithm restricted to active rows.
+    Running n x n Hungarian when only m rows are non-zero wastes O(n^3) work
+    each iteration. By extracting the m x n submatrix of active rows we pay
+    O(m * n^2) instead, which is a meaningful saving when m < n (e.g. as rows
+    are progressively drained during digit-plane decomposition).
     """
-    # Use maximize=True for direct maximization
-    row_ind, col_ind = linear_sum_assignment(matrix, maximize=True)
+    tol = 1e-9
+    active_rows = np.where(matrix.max(axis=1) > tol)[0]
+    if len(active_rows) == 0:
+        return []
 
-    # Filter out zero-weight matches to ensure we only return valid edges
+    sub = matrix[active_rows, :]
+    row_ind, col_ind = linear_sum_assignment(sub, maximize=True)
+
     matches = []
     for r, c in zip(row_ind, col_ind):
-        if matrix[r, c] > 0:
-            matches.append((r, c))
+        if sub[r, c] > tol:
+            matches.append((int(active_rows[r]), int(c)))
     return matches
 
 

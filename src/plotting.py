@@ -94,11 +94,11 @@ def _get_all_keys(stats: List[DecompositionStats]) -> List[str]:
     # Sort nicely: try to sort by engine then base if possible
     def sort_key(k):
         parts = k.split('_')
-        if len(parts) == 2:
+        if len(parts) >= 2:
             try:
-                return (parts[0], int(parts[1]))
+                return (parts[0], int(parts[-1]))
             except ValueError:
-                return (parts[0], parts[1])
+                return (parts[0], parts[-1])
         return (k, 0)
     
     return sorted(list(keys), key=sort_key)
@@ -242,6 +242,9 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
         if len(parts) == 2:
             eng, b = parts
             label = f"{eng.upper()}-B{b}"
+        elif len(parts) == 3:
+            eng, strat, b = parts
+            label = f"{eng.upper()}-{strat.upper()}-B{b}"
         else:
             label = f"Result ({key})"
         
@@ -311,6 +314,9 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
         if len(parts) == 2:
             eng, b = parts
             label = f"{eng.upper()}-B{b}"
+        elif len(parts) == 3:
+            eng, strat, b = parts
+            label = f"{eng.upper()}-{strat.upper()}-B{b}"
         else:
             label = f"Result ({key})"
             
@@ -389,6 +395,8 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
     plt.figure(figsize=(12, 8))
     
     all_points = [] # (x, y) for pareto
+    points_by_group = {} # strat -> list of (x, y)
+    baseline_points = [] # (x, y) baselines
 
     # Add vertical line for Optimal Cycle = 1.0 (if relevant for the x-axis)
     # plt.axvline(x=1.0, color='gray', linestyle='--', linewidth=1.5, label="Optimal Cycle", alpha=0.8, zorder=1)
@@ -421,6 +429,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
                          fmt=marker, markersize=10, label=name, color=color, 
                          alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
             all_points.append((mean_cyc, mean_rt))
+            baseline_points.append((mean_cyc, mean_rt))
 
     # 2. Plot Radix Bases
     keys = _get_all_keys(stats)
@@ -452,11 +461,25 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
                 label = f"Result ({key})"
                 marker_style = 'v'
                 base_str = None
+                strat_str = None
 
                 if len(parts) == 2:
                     eng, b = parts
                     label = f"{eng.upper()}-B{b}"
                     base_str = b
+                elif len(parts) == 3:
+                    eng, strat, b = parts
+                    label = f"{eng.upper()}-{strat.upper()}-B{b}"
+                    base_str = b
+                    strat_str = strat
+                    if strat == "min": marker_style = 'v'
+                    elif strat == "median": marker_style = 's'
+                    elif strat == "max": marker_style = 'o'
+                
+                group = strat_str if strat_str else "default"
+                if group not in points_by_group:
+                    points_by_group[group] = []
+                points_by_group[group].append((mean_cyc, mean_rt))
 
                 plt.errorbar(mean_cyc, mean_rt, xerr=std_cyc, yerr=std_rt,
                              fmt=marker_style, markersize=9, label=label, color=c,
@@ -479,7 +502,21 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
                                  fontweight='bold')
 
     # 3. Draw Pareto Frontier
-    if all_points:
+    if points_by_group and list(points_by_group.keys()) != ["default"]:
+        for group, g_points in points_by_group.items():
+            if g_points:
+                frontier = _get_pareto_frontier(g_points + baseline_points)
+                if len(frontier) > 0:
+                    fx, fy = zip(*frontier)
+                    
+                    if group == "min": ls, lc = '-', 'tab:blue'
+                    elif group == "median": ls, lc = '--', 'tab:orange'
+                    elif group == "max": ls, lc = '-.', 'tab:green'
+                    else: ls, lc = '-', 'black'
+                    
+                    lbl = f"Pareto ({group})"
+                    plt.plot(fx, fy, linestyle=ls, color=lc, alpha=0.6, linewidth=2, label=lbl, zorder=4)
+    elif all_points:
         frontier = _get_pareto_frontier(all_points)
         fx, fy = zip(*frontier)
         plt.plot(fx, fy, '-', color='black', alpha=0.6, linewidth=2, label="Pareto Frontier", zorder=4)
@@ -507,6 +544,8 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
     plt.figure(figsize=(12, 8))
     
     all_points = []
+    points_by_group = {} # strat -> list of (x, y)
+    baseline_points = [] # (x, y) baselines
 
     bvn_label = _bvn_legend_label(stats)
     baselines = {
@@ -529,6 +568,7 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
                          fmt=marker, markersize=10, label=name, color=color, 
                          alpha=0.9, capsize=5, elinewidth=1.5, zorder=5)
             all_points.append((mean_perm, mean_rt))
+            baseline_points.append((mean_perm, mean_rt))
 
     keys = _get_all_keys(stats)
     if keys:
@@ -553,10 +593,24 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
                 label = f"Result ({key})"
                 marker_style = 'v'
                 base_str = None
+                strat_str = None
                 if len(parts) == 2:
                     eng, b = parts
                     label = f"{eng.upper()}-B{b}"
                     base_str = b
+                elif len(parts) == 3:
+                    eng, strat, b = parts
+                    label = f"{eng.upper()}-{strat.upper()}-B{b}"
+                    base_str = b
+                    strat_str = strat
+                    if strat == "min": marker_style = 'v'
+                    elif strat == "median": marker_style = 's'
+                    elif strat == "max": marker_style = 'o'
+
+                group = strat_str if strat_str else "default"
+                if group not in points_by_group:
+                    points_by_group[group] = []
+                points_by_group[group].append((mean_perms, mean_rt))
 
                 plt.errorbar(mean_perms, mean_rt, xerr=std_perms, yerr=std_rt,
                              fmt=marker_style, markersize=9, label=label, color=c,
@@ -579,7 +633,21 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
                                  fontweight='bold')
 
     # 3. Draw Pareto Frontier
-    if all_points:
+    if points_by_group and list(points_by_group.keys()) != ["default"]:
+        for group, g_points in points_by_group.items():
+            if g_points:
+                frontier = _get_pareto_frontier(g_points + baseline_points)
+                if len(frontier) > 0:
+                    fx, fy = zip(*frontier)
+                    
+                    if group == "min": ls, lc = '-', 'tab:blue'
+                    elif group == "median": ls, lc = '--', 'tab:orange'
+                    elif group == "max": ls, lc = '-.', 'tab:green'
+                    else: ls, lc = '-', 'black'
+                    
+                    lbl = f"Pareto ({group})"
+                    plt.plot(fx, fy, linestyle=ls, color=lc, alpha=0.6, linewidth=2, label=lbl, zorder=4)
+    elif all_points:
         frontier = _get_pareto_frontier(all_points)
         fx, fy = zip(*frontier)
         plt.plot(fx, fy, '-', color='black', alpha=0.6, linewidth=2, label="Pareto Frontier", zorder=4)

@@ -22,8 +22,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-plot", action="store_true",
                         help="Disable automatic plot generation.")
     # Matrix Generation Weights
-    parser.add_argument("--max-weight", type=float, default=1.0,
-                        help="The maximum weight (W) to randomly sample from [0, W] when generating permutations.")
+    parser.add_argument("--max-weight", type=float, default=15.0,
+                        help="Maximum per-permutation weight sampled from [0, W]. "
+                             "Keep at B-1 (e.g. 15 for base-16) so raw matrix values "
+                             "stay in one digit and --unit-weight controls significance.")
+    parser.add_argument("--unit-weight", type=float, default=1.0,
+                        help="Scale factor applied to the matrix after generation. "
+                             "Use powers of the radix base (1, 16, 256, ...) to run "
+                             "the same digit-structure matrix at different significance levels.")
     parser.add_argument("--float-weights", action="store_true",
                         help="Generate float weights instead of integer weights.")
 
@@ -37,5 +43,8 @@ def parse_args() -> argparse.Namespace:
     # Plotting utilities
     parser.add_argument("--plot-from-csv", type=str, default=None,
                         help="Path to results CSV file. If set, generates plots for this CSV and exits.")
+    
+    parser.add_argument("--step-strategy", type=str, default="min", choices=["min", "max", "median", "all"],
+                        help="Strategy for choosing step size in Radix Decomposition: min, max, median, or all.")
 
     return parser.parse_args()
