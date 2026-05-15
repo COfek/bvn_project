@@ -10,6 +10,7 @@ import numpy as np
 from rich.console import Console
 
 from .algorithms.bvn import bvn_decomposition
+from .algorithms.euler_splitting import euler_decomposition
 from .algorithms.radix_decomposition import decompose_radix
 from .config import ExperimentConfig
 from src.utils.matrix_generator import generate_matrix
@@ -55,6 +56,8 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         bvn_engine = "heavy_noaug"
     elif config.engine == "heavy_static_noaug_bvn":
         bvn_engine = "heavy_static_noaug"
+    elif config.engine == "euler_bvn":
+        bvn_engine = "euler"
 
     if config.engine in [
         "all", "wfa_bvn", "shuffled",
@@ -62,10 +65,14 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         "maximum_bvn", "maximum",
         "minimum_bvn",
         "heavy_noaug_bvn", "heavy_static_noaug_bvn",
+        "euler_bvn",
     ]:
         t0 = time.perf_counter()
-        
-        bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
+
+        if bvn_engine == "euler":
+            bvn_components = euler_decomposition(matrix=matrix)
+        else:
+            bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
         runtime_bvn = time.perf_counter() - t0
         
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
@@ -111,6 +118,8 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         target_engines = ["heavy_noaug"]
     elif config.engine == "heavy_static_noaug_bvn":
         target_engines = ["heavy_static_noaug"]
+    elif config.engine == "euler_bvn":
+        target_engines = []   # Euler splitting is a pure BVN mode; no Radix planes
     else:
         target_engines = [config.engine]
 

@@ -18,6 +18,7 @@ def parse_args() -> argparse.Namespace:
                             "wfa_bvn", "heavy_bvn", "heavy_static_bvn",
                             "maximum_bvn", "minimum_bvn",
                             "heavy_noaug_bvn", "heavy_static_noaug_bvn",
+                            "euler_bvn",
                         ],
                         help=(
                             "Matching algorithm / compound mode. "
