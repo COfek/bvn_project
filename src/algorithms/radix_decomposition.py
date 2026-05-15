@@ -7,7 +7,14 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 # Local imports - ensuring paths match your project structure
-from .sorted_array_matching import sorted_array_matching, _jit_decompose_sorted_static, _jit_decompose_sorted_dynamic
+from .sorted_array_matching import (
+    sorted_array_matching,
+    sorted_array_matching_noaug,
+    _jit_decompose_sorted_static,
+    _jit_decompose_sorted_dynamic,
+    _jit_decompose_sorted_dynamic_noaug,
+    _jit_decompose_sorted_static_noaug,
+)
 from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
 
 
@@ -15,6 +22,31 @@ from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
 class RadixComponent:
     matrix: np.ndarray
     weight: float
+
+
+def minimum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
+    """
+    Wrapper for scipy's Hungarian algorithm using *minimize* cost
+    (maximize=False, the scipy default).  Finds the minimum-weight
+    perfect matching over the active rows of the digit plane.
+    """
+    tol = 1e-9
+    active_rows = np.where(matrix.max(axis=1) > tol)[0]
+    if len(active_rows) == 0:
+        return []
+
+    sub = matrix[active_rows, :]
+    # Use a large finite penalty for zero entries so the assignment is always
+    # feasible; zero-weight matches are filtered out afterwards.
+    big = float(np.max(sub) * 1e6 + 1.0)
+    cost = np.where(sub > tol, sub, big)
+    row_ind, col_ind = linear_sum_assignment(cost)
+
+    matches = []
+    for r, c in zip(row_ind, col_ind):
+        if sub[r, c] > tol:
+            matches.append((int(active_rows[r]), int(c)))
+    return matches
 
 
 def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
@@ -43,8 +75,11 @@ def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
 # Global registry of available matching algorithms
 MATCHING_ALGORITHMS: Dict[str, Callable[[np.ndarray], List[Tuple[int, int]]]] = {
     "heavy": sorted_array_matching,
+    "heavy_noaug": sorted_array_matching_noaug,
+    "heavy_static_noaug": sorted_array_matching_noaug,  # static sort only matters inside JIT fast-path
     "wfa": wavefront_matching_vectorized,
-    "maximum": maximum_matching_wrapper
+    "maximum": maximum_matching_wrapper,
+    "minimum": minimum_matching_wrapper,
 }
 
 
@@ -156,11 +191,15 @@ def _decompose_digit_plane(
     # Only for "min" strategy which is the standard decomposition
     if strategy == "min":
         # Check matching method
-        if matching_method in ["heavy", "heavy_static"]:
+        if matching_method in ["heavy", "heavy_static", "heavy_noaug", "heavy_static_noaug"]:
             if matching_method == "heavy":
                 weights, all_matches_list = _jit_decompose_sorted_dynamic(x, tol=tol)
-            else:
+            elif matching_method == "heavy_static":
                 weights, all_matches_list = _jit_decompose_sorted_static(x, tol=tol)
+            elif matching_method == "heavy_noaug":
+                weights, all_matches_list = _jit_decompose_sorted_dynamic_noaug(x, tol=tol)
+            else:  # heavy_static_noaug
+                weights, all_matches_list = _jit_decompose_sorted_static_noaug(x, tol=tol)
             
             for w, matches in zip(weights, all_matches_list):
                 actual_weight = w * unit_weight

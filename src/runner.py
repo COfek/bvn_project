@@ -49,8 +49,20 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         bvn_engine = "heavy"
     elif config.engine == "heavy_static_bvn":
         bvn_engine = "heavy_static"
-    
-    if config.engine in ["all", "wfa_bvn", "shuffled", "heavy_bvn", "heavy_static_bvn", "maximum_bvn", "maximum"]:
+    elif config.engine == "minimum_bvn":
+        bvn_engine = "minimum"
+    elif config.engine == "heavy_noaug_bvn":
+        bvn_engine = "heavy_noaug"
+    elif config.engine == "heavy_static_noaug_bvn":
+        bvn_engine = "heavy_static_noaug"
+
+    if config.engine in [
+        "all", "wfa_bvn", "shuffled",
+        "heavy_bvn", "heavy_static_bvn",
+        "maximum_bvn", "maximum",
+        "minimum_bvn",
+        "heavy_noaug_bvn", "heavy_static_noaug_bvn",
+    ]:
         t0 = time.perf_counter()
         
         bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
@@ -93,6 +105,12 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         target_engines = ["heavy_static"]
     elif config.engine == "maximum_bvn":
         target_engines = ["maximum"]
+    elif config.engine == "minimum_bvn":
+        target_engines = ["minimum"]
+    elif config.engine == "heavy_noaug_bvn":
+        target_engines = ["heavy_noaug"]
+    elif config.engine == "heavy_static_noaug_bvn":
+        target_engines = ["heavy_static_noaug"]
     else:
         target_engines = [config.engine]
 

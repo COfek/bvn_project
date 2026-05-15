@@ -357,3 +357,156 @@ def _jit_decompose_sorted_static(
         all_matches.append(formatted_matches)
 
     return weights, all_matches
+
+
+# ------------------------------------------------------------------
+# No-augment variants (greedy Phase 1 only — partial / weak matchings)
+# ------------------------------------------------------------------
+
+def sorted_array_matching_noaug(matrix: np.ndarray) -> List[Tuple[int, int]]:
+    """
+    Single matching step: sort all non-zero edges descending, then run
+    greedy-only (no augmenting paths). Returns a *maximal* but not
+    necessarily *perfect* matching — similar in character to WFA.
+    """
+    n = matrix.shape[0]
+    rows, cols = np.nonzero(matrix)
+    if len(rows) == 0:
+        return []
+
+    vals = matrix[rows, cols]
+    sort_idx = np.argsort(-vals)
+    s_vals = vals[sort_idx]
+    s_rows = rows[sort_idx]
+    s_cols = cols[sort_idx]
+
+    return _jit_greedy_match_loop(s_vals, s_rows, s_cols, n)
+
+
+@jit(nopython=True, nogil=True)
+def _jit_decompose_sorted_dynamic_noaug(
+    matrix: np.ndarray, tol: float = 1e-9
+) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
+    """
+    JIT-compiled BvN decomposition with dynamic sorted-array matching,
+    **without** augmenting paths.  Each iteration re-sorts non-zero edges
+    and runs a greedy-only sweep (Phase 1), producing partial matchings.
+    Cycle length will exceed S (weak decomposition).
+    """
+    n = matrix.shape[0]
+    weights = []
+    all_matches = []
+
+    while True:
+        rows, cols = np.nonzero(matrix > tol)
+        if len(rows) == 0:
+            break
+
+        vals = np.empty(len(rows), dtype=matrix.dtype)
+        for k in range(len(rows)):
+            vals[k] = matrix[rows[k], cols[k]]
+
+        sort_idx = np.argsort(-vals)
+        s_rows = rows[sort_idx]
+        s_cols = cols[sort_idx]
+        s_vals = vals[sort_idx]
+
+        # Phase 1 only — greedy, no BFS augmentation
+        matches = _jit_greedy_match_loop(s_vals, s_rows, s_cols, n)
+
+        if len(matches) == 0:
+            break
+
+        min_w = np.inf
+        for r, c in matches:
+            val = matrix[r, c]
+            if val < min_w:
+                min_w = val
+
+        if min_w <= tol:
+            break
+
+        formatted_matches = []
+        for r, c in matches:
+            matrix[r, c] = max(0.0, matrix[r, c] - min_w)
+            formatted_matches.append((int(r), int(c)))
+
+        weights.append(min_w)
+        all_matches.append(formatted_matches)
+
+    return weights, all_matches
+
+
+@jit(nopython=True, nogil=True)
+def _jit_decompose_sorted_static_noaug(
+    matrix: np.ndarray, tol: float = 1e-9
+) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
+    """
+    JIT-compiled BvN decomposition with static sorted-array matching,
+    **without** augmenting paths.  Non-zero edges are sorted once; each
+    iteration runs a greedy-only sweep over the (refreshed-value, fixed-order)
+    edge list.  Produces partial matchings — weak decomposition.
+    """
+    n = matrix.shape[0]
+    weights = []
+    all_matches = []
+
+    rows, cols = np.nonzero(matrix > tol)
+    if len(rows) == 0:
+        return weights, all_matches
+
+    vals = np.empty(len(rows), dtype=matrix.dtype)
+    for k in range(len(rows)):
+        vals[k] = matrix[rows[k], cols[k]]
+
+    sort_idx = np.argsort(-vals)
+    s_rows = rows[sort_idx]
+    s_cols = cols[sort_idx]
+    s_vals = vals[sort_idx]
+    num_edges = len(s_vals)
+
+    while True:
+        # Phase 1 only: greedy sweep on the (possibly stale) sorted list
+        row_to_col = np.full(n, -1, dtype=np.int64)
+        col_to_row = np.full(n, -1, dtype=np.int64)
+
+        for i in range(num_edges):
+            if s_vals[i] > tol:
+                r = int(s_rows[i])
+                c = int(s_cols[i])
+                if row_to_col[r] == -1 and col_to_row[c] == -1:
+                    row_to_col[r] = c
+                    col_to_row[c] = r
+
+        total_greedy = 0
+        for r in range(n):
+            if row_to_col[r] != -1:
+                total_greedy += 1
+        if total_greedy == 0:
+            break
+
+        min_w = np.inf
+        for r in range(n):
+            c = int(row_to_col[r])
+            if c != -1:
+                val = matrix[r, c]
+                if val < min_w:
+                    min_w = val
+
+        if min_w <= tol:
+            break
+
+        formatted_matches = []
+        for r in range(n):
+            c = int(row_to_col[r])
+            if c != -1:
+                matrix[r, c] = max(0.0, matrix[r, c] - min_w)
+                formatted_matches.append((int(r), c))
+
+        for i in range(num_edges):
+            s_vals[i] = matrix[s_rows[i], s_cols[i]]
+
+        weights.append(min_w)
+        all_matches.append(formatted_matches)
+
+    return weights, all_matches

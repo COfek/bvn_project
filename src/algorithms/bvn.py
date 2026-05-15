@@ -6,7 +6,13 @@ from typing import List, Optional, Dict
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import linear_sum_assignment
-from .sorted_array_matching import sorted_array_matching, _jit_decompose_sorted_static, _jit_decompose_sorted_dynamic
+from .sorted_array_matching import (
+    sorted_array_matching,
+    _jit_decompose_sorted_static,
+    _jit_decompose_sorted_dynamic,
+    _jit_decompose_sorted_dynamic_noaug,
+    _jit_decompose_sorted_static_noaug,
+)
 from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
 
 FloatMatrix = NDArray[np.float64]
@@ -56,6 +62,43 @@ def bvn_decomposition(
             # ensuring we pick edges that actually exist in the K-regular graph.
             cost = -work
             row_ind, col_ind = linear_sum_assignment(cost)
+
+        elif matching_algorithm == "minimum":
+            # Minimum-weight perfect matching over positive edges only.
+            # Zero entries get a large finite penalty so the problem stays
+            # feasible; any zero-weight matches are filtered naturally by the
+            # lambda_value <= 1e-12 check below.
+            big = float(np.max(work) * 1e6 + 1.0)
+            cost = np.where(work > 1e-9, work, big)
+            row_ind, col_ind = linear_sum_assignment(cost)
+
+        elif matching_algorithm == "heavy_noaug":
+            # GW Dynamic without augmenting paths — weak (partial-matching) decomposition
+            weights, all_matches = _jit_decompose_sorted_dynamic_noaug(work, 1e-9)
+
+            for w, matches in zip(weights, all_matches):
+                if w <= 1e-12:
+                    continue
+                permutation = np.zeros_like(work)
+                if matches:
+                    rows, cols = zip(*matches)
+                    permutation[rows, cols] = 1.0
+                components.append(DecompositionComponent(permutation=permutation, weight=w))
+            return components
+
+        elif matching_algorithm == "heavy_static_noaug":
+            # GW Static without augmenting paths — weak (partial-matching) decomposition
+            weights, all_matches = _jit_decompose_sorted_static_noaug(work, 1e-9)
+
+            for w, matches in zip(weights, all_matches):
+                if w <= 1e-12:
+                    continue
+                permutation = np.zeros_like(work)
+                if matches:
+                    rows, cols = zip(*matches)
+                    permutation[rows, cols] = 1.0
+                components.append(DecompositionComponent(permutation=permutation, weight=w))
+            return components
 
         elif matching_algorithm == "heavy":
             # Optimization: Use JIT-compiled full decomposition for dynamic Heavy
