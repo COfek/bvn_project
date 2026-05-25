@@ -1,7 +1,8 @@
-numpy>=1.24
-scipy>=1.10
-matplotlib>=3.7
-networkx>=3.1
-rich
-pytest
-numba>=0.57
+numpy>=2.0
+scipy>=1.17
+matplotlib>=3.10
+networkx>=3.6
+rich>=14.0
+pytest>=9.0
+numba>=0.63
+pandas>=2.0

@@ -272,7 +272,7 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
 
     plt.suptitle(f"Distribution Comparison: {title}", fontsize=16)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(out_dir / filename, dpi=200)
+    plt.savefig(out_dir / filename)
     plt.close()
 
 
@@ -344,24 +344,24 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
     plt.grid(True, which='both', linestyle='--', alpha=0.5)
     plt.minorticks_on()
     plt.tight_layout()
-    plt.savefig(out_dir / filename, dpi=200)
+    plt.savefig(out_dir / filename)
     plt.close()
 
 
 def plot_final_cycle_length(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = "", k: int = 1):
-    _plot_trend(stats, out_dir, "cycle_length_all_methods.png", 
+    _plot_trend(stats, out_dir, "cycle_length_all_methods.pdf",
                 f"Cycle Length Trends (Smoothed) {title_suffix}", "Cycle Length (Normalized)",
                 {"BVN": "cycle_length_bvn"}, 1, hline=1.0, k=k)
 
 
 def plot_final_num_permutations(stats: List[DecompositionStats], n: int, bits: int, out_dir: Path, title_suffix: str = ""):
-    _plot_trend(stats, out_dir, "permutation_count_all_methods.png", 
+    _plot_trend(stats, out_dir, "permutation_count_all_methods.pdf",
                 f"Permutation Count Trends (Smoothed) {title_suffix}", "Number of Permutations",
                 {"BVN": "num_permutations_bvn"}, 2, hline=None)
 
 
 def plot_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
-    _plot_trend(stats, out_dir, "runtime_comparison.png", 
+    _plot_trend(stats, out_dir, "runtime_comparison.pdf",
                 f"Runtime Trends (Smoothed) {title_suffix}", "Runtime (seconds)",
                 {"BVN": "runtime_bvn"}, 0)
 
@@ -372,17 +372,17 @@ def plot_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: s
 
 def plot_distribution_runtime(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     b_map = {"BVN": "runtime_bvn"}
-    _plot_dynamic_grid(stats, out_dir, "runtime_pdf_cdf_subplots.png", f"Runtime {title_suffix}", b_map, 0)
+    _plot_dynamic_grid(stats, out_dir, "runtime_pdf_cdf_subplots.pdf", f"Runtime {title_suffix}", b_map, 0)
 
 
 def plot_cycle_length_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = "", k: int = 1):
     bvn_map = {"BVN": "cycle_length_bvn"}
-    _plot_dynamic_grid(stats, out_dir, "cycle_length_pdf_cdf.png", f"Cycle Length (Normalized) {title_suffix}", bvn_map, 1, k=k)
+    _plot_dynamic_grid(stats, out_dir, "cycle_length_pdf_cdf.pdf", f"Cycle Length (Normalized) {title_suffix}", bvn_map, 1, k=k)
 
 
 def plot_permutation_distributions(stats: List[DecompositionStats], out_dir: Path, title_suffix: str = ""):
     b_map = {"BVN": "num_permutations_bvn"}
-    _plot_dynamic_grid(stats, out_dir, "permutation_pdf_cdf.png", f"Permutations {title_suffix}", b_map, 2)
+    _plot_dynamic_grid(stats, out_dir, "permutation_pdf_cdf.pdf", f"Permutations {title_suffix}", b_map, 2)
 
 
 def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: Path, matching_name: str, metadata: str = "", k: int = 1):
@@ -530,7 +530,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
     plt.tight_layout()
     # plt.xscale('log') # Removed as requested
     # plt.yscale('log') # Removed as requested
-    plt.savefig(out_dir / f"runtime_vs_cycle_{matching_name}.png", dpi=200)
+    plt.savefig(out_dir / f"runtime_vs_cycle_{matching_name}.pdf")
     plt.close()
 
 
@@ -661,7 +661,7 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
     plt.tight_layout()
     # plt.xscale('log') # Removed as requested
     # plt.yscale('log') # Removed as requested
-    plt.savefig(out_dir / f"runtime_vs_permutations_{matching_name}.png", dpi=200)
+    plt.savefig(out_dir / f"runtime_vs_permutations_{matching_name}.pdf")
     plt.close()
 
 

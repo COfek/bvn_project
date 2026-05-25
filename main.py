@@ -23,11 +23,12 @@ def build_config(args) -> ExperimentConfig:
     return ExperimentConfig(
         engine=engine,
         radix_bases=args.radix_bases,
+        euler_depths=args.euler_depths,
         random_seed=args.random_seed,
         max_workers=args.max_workers,
         output_dir=args.output,
         plot=not args.no_plot,
-        
+
         # Matrix generation
         n=args.n,
         num_matrices=args.samples,

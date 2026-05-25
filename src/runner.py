@@ -10,7 +10,7 @@ import numpy as np
 from rich.console import Console
 
 from .algorithms.bvn import bvn_decomposition
-from .algorithms.euler_splitting import euler_decomposition
+from .algorithms.euler_splitting import euler_decomposition, decompose_euler_framework
 from .algorithms.radix_decomposition import decompose_radix
 from .config import ExperimentConfig
 from src.utils.matrix_generator import generate_matrix
@@ -70,11 +70,14 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         t0 = time.perf_counter()
 
         if bvn_engine == "euler":
-            bvn_components = euler_decomposition(matrix=matrix)
+            # Legacy full-split (depth=S); here we just run a depth=0 BvN
+            # for the "BvN baseline" row — Euler framework results go into
+            # radix_multi_data below (keyed by depth).
+            bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm="heavy")
         else:
             bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
         runtime_bvn = time.perf_counter() - t0
-        
+
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
 
         # Sanity check: BVN cycle length must equal the matrix scale factor S
@@ -119,7 +122,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     elif config.engine == "heavy_static_noaug_bvn":
         target_engines = ["heavy_static_noaug"]
     elif config.engine == "euler_bvn":
-        target_engines = []   # Euler splitting is a pure BVN mode; no Radix planes
+        target_engines = []   # Euler framework calls handled separately below
     else:
         target_engines = [config.engine]
 
@@ -139,15 +142,33 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
                         max_workers=config.max_workers,
                         step_strategy=strategy
                     )
-                    
+
                     # The runtime is now the simulated hardware parallel runtime (max plane time)
                     radix_runtime = simulated_max_runtime
-    
+
                     c_len = float(sum(comp.weight for comp in radix_components))
                     n_perm = len(radix_components)
-                
+
                     key = f"{engine}_{strategy}_{base}" if len(strategies) > 1 else f"{engine}_{base}"
                     radix_multi_data[key] = (radix_runtime, c_len, n_perm, num_planes)
+
+    # --- Euler Splitting Framework (euler_bvn engine) ---
+    if config.engine == "euler_bvn":
+        euler_depths = getattr(config, 'euler_depths', [1])
+        euler_matching = "heavy"   # BvN matching engine for leaves
+        for depth in euler_depths:
+            for split_method in ("euler", "greedy"):
+                comps, max_rt, n_leaves = decompose_euler_framework(
+                    matrix=matrix,
+                    matching_method=euler_matching,
+                    depth=depth,
+                    split_method=split_method,
+                    max_workers=config.max_workers,
+                )
+                c_len = float(sum(comp.weight for comp in comps))
+                n_perm = len(comps)
+                key = f"euler_{split_method}_depth{depth}"
+                radix_multi_data[key] = (max_rt, c_len, n_perm, n_leaves)
 
     return DecompositionStats(
         matrix_index=index,

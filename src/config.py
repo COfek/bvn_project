@@ -30,9 +30,13 @@ class ExperimentConfig:
     # List of bases to test.
     radix_bases: List[int] = field(default_factory=lambda: [2])
 
-
     # Strategy: "min", "max", "median"
     radix_strategy: str = "min"
+
+    # --- Euler Splitting Framework Parameters ---
+    # List of split depths to test (depth=d → 2^d leaf matrices).
+    # depth=0 is plain BvN (no splitting); depth=1 gives 2 leaves, etc.
+    euler_depths: List[int] = field(default_factory=lambda: [1])
 
     engine: str = field(default="bvn", metadata={"help": "Decomposition engine: 'bvn', 'wfa', 'heavy', 'maximum', 'all', 'wfa_bvn'"})
 

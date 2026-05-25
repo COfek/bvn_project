@@ -58,19 +58,36 @@ def bvn_decomposition(
 
         # Select matching algorithm
         if matching_algorithm == "maximum":
-            # We use -work as cost to find the "heaviest" matching,
-            # ensuring we pick edges that actually exist in the K-regular graph.
-            cost = -work
-            row_ind, col_ind = linear_sum_assignment(cost)
+            # Only consider rows that still have at least one positive entry.
+            # Penalty cost forces the Hungarian to avoid zero-valued columns:
+            # zero entries get a large positive cost (= avoid in minimisation
+            # of -weight), so every active row gets assigned to a positive cell.
+            tol = 1e-9
+            active_rows = np.where(work.max(axis=1) > tol)[0]
+            if len(active_rows) == 0:
+                break
+            sub = work[np.ix_(active_rows, np.arange(n))]
+            big = float(sub.max() + 1.0) * n   # penalty > any real weight
+            cost = np.where(sub > tol, -sub, big)  # minimise → prefer large weights
+            sub_row_ind, col_ind_sub = linear_sum_assignment(cost)
+            row_ind = active_rows[sub_row_ind]
+            col_ind = col_ind_sub
 
         elif matching_algorithm == "minimum":
             # Minimum-weight perfect matching over positive edges only.
             # Zero entries get a large finite penalty so the problem stays
             # feasible; any zero-weight matches are filtered naturally by the
             # lambda_value <= 1e-12 check below.
-            big = float(np.max(work) * 1e6 + 1.0)
-            cost = np.where(work > 1e-9, work, big)
-            row_ind, col_ind = linear_sum_assignment(cost)
+            tol = 1e-9
+            active_rows = np.where(work.max(axis=1) > tol)[0]
+            if len(active_rows) == 0:
+                break
+            sub = work[np.ix_(active_rows, np.arange(n))]
+            big = float(np.max(sub) * 1e6 + 1.0)
+            cost = np.where(sub > tol, sub, big)
+            sub_row_ind, col_ind_sub = linear_sum_assignment(cost)
+            row_ind = active_rows[sub_row_ind]
+            col_ind = col_ind_sub
 
         elif matching_algorithm == "heavy_noaug":
             # GW Dynamic without augmenting paths — weak (partial-matching) decomposition

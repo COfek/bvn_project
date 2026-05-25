@@ -46,6 +46,10 @@ def parse_args() -> argparse.Namespace:
     # Advanced / Legacy Arguments
     parser.add_argument("--radix-bases", type=int, nargs='*', default=[2,4,8,16,32],
                         help="Radix bases to test (defaults to [2] i.e., bitplane).")
+    parser.add_argument("--euler-depths", type=int, nargs='*', default=[1],
+                        help="Euler splitting depths to test (depth=d gives 2^d leaf matrices). "
+                             "depth=0 is plain BvN with no splitting. "
+                             "Defaults to [1] (one split → 2 leaves).")
 
     parser.add_argument("--random-seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--max-workers", type=int, default=None, help="Workers for Radix planes.")
