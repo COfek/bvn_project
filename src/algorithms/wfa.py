@@ -80,54 +80,62 @@ def _jit_wfa_kernel(
 
 
 @jit(nopython=True, nogil=True)
-def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
+def _jit_decompose_wfa(matrix: np.ndarray, n: int, tol: float, strategy_int: int = 0) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
     """
     Perform the entire iterative decomposition in Numba to release the GIL.
-    
+
     Args:
         matrix (np.ndarray): The N x N float matrix to decompose. Modified in-place.
         n (int): Dimension of the matrix.
         tol (float): Tolerance for treating values as zero.
+        strategy_int (int): Step-size strategy: 0=min (standard), 1=median, 2=max.
 
     Returns:
-        Tuple[List[float], List[List[Tuple[int, int]]]]: 
+        Tuple[List[float], List[List[Tuple[int, int]]]]:
             - A list of weights (lambda values).
             - A list of matching lists (list of (row, col) tuples).
     """
     weights = []
     all_matches = []
-    
+
     while True:
-        # Optimization: Skip separate mask creation and has_elements check.
-        # Run kernel directly. If no matches found, we are effectively done 
-        # (or matrix is zero).
-        
         matches = _jit_wfa_kernel(matrix, n, tol)
-        
+
         if len(matches) == 0:
             break
-            
-        # 2. Find min weight (Lambda)
-        lam = np.inf
-        for k in range(len(matches)):
+
+        # Find step λ according to strategy
+        m = len(matches)
+        matched_w = np.empty(m, dtype=np.float64)
+        for k in range(m):
             i, j = matches[k]
-            val = matrix[i, j]
-            if val < lam:
-                lam = val
-                
+            matched_w[k] = matrix[i, j]
+
+        if strategy_int == 2:  # max
+            lam = 0.0
+            for k in range(m):
+                if matched_w[k] > lam:
+                    lam = matched_w[k]
+        elif strategy_int == 1:  # median
+            sorted_w = np.sort(matched_w)
+            lam = sorted_w[m // 2]
+        else:  # min (default, strategy_int == 0)
+            lam = np.inf
+            for k in range(m):
+                if matched_w[k] < lam:
+                    lam = matched_w[k]
+
         if lam <= tol:
             break
-            
-        # 3. Subtract
-        for k in range(len(matches)):
+
+        # Subtract λ (clip at 0 for safety with max/median over-serving)
+        for k in range(m):
             i, j = matches[k]
-            matrix[i, j] -= lam
-            if matrix[i, j] <= tol:
-                matrix[i, j] = 0.0
-                
+            matrix[i, j] = max(0.0, matrix[i, j] - lam)
+
         weights.append(lam)
         all_matches.append(matches)
-        
+
     return weights, all_matches
 
 

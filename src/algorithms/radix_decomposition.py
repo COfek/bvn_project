@@ -182,63 +182,53 @@ def _decompose_digit_plane(
         matching_method: str = "heavy"
 ) -> List[RadixComponent]:
     # Work on a float copy for precision
-    x = plane.astype(np.float64) # Ensure float for clipping
+    x = plane.astype(np.float64)
     components: List[RadixComponent] = []
-    iterations = 0
-    tol = 1e-9 # Tolerance for checking if matrix elements are effectively zero
+    tol = 1e-9
 
-    # Fast path: Use JIT-compiled decomposition if possible (Releases GIL)
-    # Only for "min" strategy which is the standard decomposition
-    if strategy == "min":
-        # Check matching method
-        if matching_method in ["heavy", "heavy_static", "heavy_noaug", "heavy_static_noaug"]:
-            if matching_method == "heavy":
-                weights, all_matches_list = _jit_decompose_sorted_dynamic(x, tol=tol)
-            elif matching_method == "heavy_static":
-                weights, all_matches_list = _jit_decompose_sorted_static(x, tol=tol)
-            elif matching_method == "heavy_noaug":
-                weights, all_matches_list = _jit_decompose_sorted_dynamic_noaug(x, tol=tol)
-            else:  # heavy_static_noaug
-                weights, all_matches_list = _jit_decompose_sorted_static_noaug(x, tol=tol)
-            
-            for w, matches in zip(weights, all_matches_list):
-                actual_weight = w * unit_weight
-                
-                # Reconstruct generic permutation matrix (sparse-ish)
-                # We could optimize this by storing matching directly, 
-                # but RadixComponent expects a matrix.
-                p = np.zeros_like(x)
-                for (i, j) in matches:
-                    p[i, j] = 1.0
-                    
-                components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
-                
-            return components
-            
-        elif matching_method == "wfa":
-             # Using Wavefront Matching (JIT)
-            n = x.shape[0]
-            weights, all_matches_list = _jit_decompose_wfa(x, n, tol=1e-9)
-            
-            for w, matches in zip(weights, all_matches_list):
-                actual_weight = w * unit_weight
-                p = np.zeros_like(x)
-                for (i, j) in matches:
-                    p[i, j] = 1.0
-                components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
-            
-            return components
+    # Map strategy string → int for JIT functions (0=min, 1=median, 2=max)
+    _strategy_map = {"min": 0, "median": 1, "max": 2}
+    strategy_int = _strategy_map.get(strategy, 0)
 
-    # Slow path: Python loop (Holds GIL)
+    # JIT fast path: covers heavy / heavy_static / wfa for all three strategies
+    if matching_method in ["heavy", "heavy_static", "heavy_noaug", "heavy_static_noaug"]:
+        if matching_method == "heavy":
+            weights, all_matches_list = _jit_decompose_sorted_dynamic(
+                x, strategy_int=strategy_int, tol=tol)
+        elif matching_method == "heavy_static":
+            weights, all_matches_list = _jit_decompose_sorted_static(
+                x, strategy_int=strategy_int, tol=tol)
+        elif matching_method == "heavy_noaug":
+            weights, all_matches_list = _jit_decompose_sorted_dynamic_noaug(x, tol=tol)
+        else:  # heavy_static_noaug
+            weights, all_matches_list = _jit_decompose_sorted_static_noaug(x, tol=tol)
+
+        for w, matches in zip(weights, all_matches_list):
+            actual_weight = w * unit_weight
+            p = np.zeros_like(x)
+            for (i, j) in matches:
+                p[i, j] = 1.0
+            components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
+        return components
+
+    elif matching_method == "wfa":
+        n = x.shape[0]
+        weights, all_matches_list = _jit_decompose_wfa(
+            x, n, tol=tol, strategy_int=strategy_int)
+        for w, matches in zip(weights, all_matches_list):
+            actual_weight = w * unit_weight
+            p = np.zeros_like(x)
+            for (i, j) in matches:
+                p[i, j] = 1.0
+            components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
+        return components
+
+    # Slow path: Python loop for Hungarian (maximum/minimum) which has no JIT version
     match_func = MATCHING_ALGORITHMS.get(matching_method, sorted_array_matching)
-
-    # Use a small epsilon to prevent infinite loops from float drift
     epsilon = 1e-9
 
     while np.any(x > epsilon):
-        # Now passing numeric x so Maximum Matching and Heavy Node work correctly
         matches = match_func(x)
-
         if not matches:
             break
 
@@ -247,38 +237,20 @@ def _decompose_digit_plane(
         if strategy == "max":
             digit_step = max(match_values)
         elif strategy == "median":
-            digit_step = np.median(match_values)
-        else:  # "min" strategy (Standard BVN-style)
+            digit_step = float(np.median(match_values))
+        else:
             digit_step = min(match_values)
 
-        # Safety: if the step is too small, we stop to avoid infinite cycles
         if digit_step < 1e-12:
             break
 
         actual_weight = digit_step * unit_weight
-        
-        # Optimize: Convert matches to arrays for vectorized update
-        # matches is list of (r, c)
-        if len(matches) > 0:
-            rows, cols = zip(*matches)
-            rows = np.array(rows)
-            cols = np.array(cols)
-            
-            p = np.zeros_like(x)
-            p[rows, cols] = 1.0
-            
-            if strategy == "max":
-                # For max strategy, we subtract digit_step but clip at 0
-                # We only need to update the matched indices
-                current_vals = x[rows, cols]
-                # If using 'max', digit_step = max(current_vals). 
-                # So we subtract max. Some entries might go negative without clipping.
-                x[rows, cols] = np.maximum(0.0, current_vals - digit_step)
-            else:
-                 # For min strategy, digit_step <= all current_vals, so simple subtraction is safe
-                 # usually. But let's use maximum(0) to be safe against float drift.
-                 x[rows, cols] = np.maximum(0.0, x[rows, cols] - digit_step)
-        
+        rows_arr, cols_arr = zip(*matches)
+        rows_arr = np.array(rows_arr)
+        cols_arr = np.array(cols_arr)
+        p = np.zeros_like(x)
+        p[rows_arr, cols_arr] = 1.0
+        x[rows_arr, cols_arr] = np.maximum(0.0, x[rows_arr, cols_arr] - digit_step)
         components.append(RadixComponent(matrix=actual_weight * p, weight=actual_weight))
 
     return components

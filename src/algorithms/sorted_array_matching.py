@@ -165,7 +165,7 @@ def run_full_decomposition(matrix: np.ndarray):
 
 @jit(nopython=True, nogil=True)
 def _jit_decompose_sorted_dynamic(
-    matrix: np.ndarray, tol: float = 1e-9
+    matrix: np.ndarray, strategy_int: int = 0, tol: float = 1e-9
 ) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
     """
     JIT-compiled BvN decomposition with dynamic sorted-array matching.
@@ -173,7 +173,8 @@ def _jit_decompose_sorted_dynamic(
     At every iteration:
       1. Extract non-zero entries and sort them descending.
       2. Run greedy + BFS augmenting paths to get a full size-n matching.
-      3. Peel the minimum weight λ from all matched entries.
+      3. Peel λ from all matched entries; λ is min/median/max of matched
+         weights according to strategy_int (0=min, 1=median, 2=max).
 
     Re-sorting every iteration keeps match quality high (≈ Hungarian iterations)
     while each matching step is O(n² log n) instead of O(n³).
@@ -203,23 +204,37 @@ def _jit_decompose_sorted_dynamic(
         if len(matches) == 0:
             break
 
-        # 3. Find minimum weight (λ) in the matching
-        min_w = np.inf
-        for r, c in matches:
-            val = matrix[r, c]
-            if val < min_w:
-                min_w = val
+        # 3. Find step size λ according to strategy
+        m = len(matches)
+        matched_w = np.empty(m, dtype=np.float64)
+        for idx in range(m):
+            r, c = matches[idx]
+            matched_w[idx] = matrix[r, c]
 
-        if min_w <= tol:
+        if strategy_int == 2:  # max
+            step = 0.0
+            for idx in range(m):
+                if matched_w[idx] > step:
+                    step = matched_w[idx]
+        elif strategy_int == 1:  # median
+            sorted_w = np.sort(matched_w)
+            step = sorted_w[m // 2]
+        else:  # min (default, strategy_int == 0)
+            step = np.inf
+            for idx in range(m):
+                if matched_w[idx] < step:
+                    step = matched_w[idx]
+
+        if step <= tol:
             break
 
-        # 4. Subtract λ from all matched entries
+        # 4. Subtract λ from all matched entries (clip at 0 for safety)
         formatted_matches = []
         for r, c in matches:
-            matrix[r, c] = max(0.0, matrix[r, c] - min_w)
+            matrix[r, c] = max(0.0, matrix[r, c] - step)
             formatted_matches.append((int(r), int(c)))
 
-        weights.append(min_w)
+        weights.append(step)
         all_matches.append(formatted_matches)
 
     return weights, all_matches
@@ -227,7 +242,7 @@ def _jit_decompose_sorted_dynamic(
 
 @jit(nopython=True, nogil=True)
 def _jit_decompose_sorted_static(
-    matrix: np.ndarray, tol: float = 1e-9
+    matrix: np.ndarray, strategy_int: int = 0, tol: float = 1e-9
 ) -> Tuple[List[float], List[List[Tuple[int, int]]]]:
     """
     JIT-compiled BvN decomposition with static sorted-array matching.
@@ -238,6 +253,7 @@ def _jit_decompose_sorted_static(
     potentially stale ordering as the matrix evolves.
 
     Each iteration still obtains a maximum matching via greedy + augmenting paths.
+    strategy_int: 0=min (standard BvN), 1=median, 2=max.
     """
     n = matrix.shape[0]
     weights = []
@@ -326,17 +342,35 @@ def _jit_decompose_sorted_static(
                     c = prev_c
 
         # ----------------------------------------------------------
-        # Find min weight (λ) using actual matrix values for all matches
+        # Find step λ using actual matrix values; strategy determines
+        # whether we take min / median / max of matched weights.
         # ----------------------------------------------------------
-        min_w = np.inf
+        matched_w = np.empty(n, dtype=np.float64)
+        m = 0
         for r in range(n):
             c = int(row_to_col[r])
             if c != -1:
-                val = matrix[r, c]
-                if val < min_w:
-                    min_w = val
+                matched_w[m] = matrix[r, c]
+                m += 1
 
-        if min_w <= tol:
+        if m == 0:
+            break
+
+        if strategy_int == 2:  # max
+            step = 0.0
+            for idx in range(m):
+                if matched_w[idx] > step:
+                    step = matched_w[idx]
+        elif strategy_int == 1:  # median
+            sorted_w = np.sort(matched_w[:m])
+            step = sorted_w[m // 2]
+        else:  # min (default, strategy_int == 0)
+            step = np.inf
+            for idx in range(m):
+                if matched_w[idx] < step:
+                    step = matched_w[idx]
+
+        if step <= tol:
             break
 
         # ----------------------------------------------------------
@@ -346,14 +380,14 @@ def _jit_decompose_sorted_static(
         for r in range(n):
             c = int(row_to_col[r])
             if c != -1:
-                matrix[r, c] = max(0.0, matrix[r, c] - min_w)
+                matrix[r, c] = max(0.0, matrix[r, c] - step)
                 formatted_matches.append((int(r), c))
 
         # Refresh s_vals from matrix so stale entries decay to zero
         for i in range(num_edges):
             s_vals[i] = matrix[s_rows[i], s_cols[i]]
 
-        weights.append(min_w)
+        weights.append(step)
         all_matches.append(formatted_matches)
 
     return weights, all_matches
