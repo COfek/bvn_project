@@ -1,0 +1,157 @@
+HANDOFF: Why is decomposition cycle length C equal for GW Static and GW Dynamic?
+==================================================================================
+
+PROJECT OVERVIEW
+----------------
+MSc thesis on circuit switch reconfiguration. The core idea: given a traffic demand
+matrix D (k-regular integer matrix, all row/col sums = k), decompose it into a
+weighted sum of permutation matrices: D = sum(phi_i * P_i).
+
+Two metrics matter:
+  N = number of permutations (switch reconfigurations)
+  C = sum of all phi_i (total cycle length = transmission time)
+
+The code lives at: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\src\algorithms\
+
+
+THE SPECIFIC PROBLEM
+--------------------
+There are two matching algorithms for BvN decomposition:
+
+  GW Dynamic (sorted_array_matching, _jit_decompose_sorted_dynamic):
+    - At EACH iteration: re-sort all non-zero entries by weight descending
+    - Run greedy Phase 1 + BFS augmenting path Phase 2
+    - Use minimum matched weight as step size lambda
+
+  GW Static (_jit_decompose_sorted_static):
+    - Sort non-zero entries ONCE at the start
+    - Reuse that sort order across all iterations (values updated but not re-sorted)
+    - Same Phase 1 greedy + Phase 2 BFS augmenting paths
+    - Same min step strategy
+
+Empirical observation (from experiments with n=256, k=256, max_weight=64):
+  - N is VERY DIFFERENT: Dynamic N=1,123 vs Static N=7,613
+  - C is ALWAYS IDENTICAL: both = 8,174
+
+This holds not just for plain BvN but also for ALL Radix bases (B=2,4,8,16,32).
+The N values for Radix are often equal too (since digit plane entries are small).
+
+
+WHAT WE KNOW
+------------
+For PLAIN BvN on k-regular matrix D:
+  - Both algorithms find PERFECT matchings at every step (provable)
+  - Proof: k-regular matrix satisfies Hall's condition -> perfect matching exists.
+    After subtracting lambda * (perfect matching), residual is (k-lambda)-regular,
+    still satisfies Hall's condition. By induction, every step is a perfect matching.
+  - Conservation law: each step drains exactly lambda_i from every row (perfect
+    matching = one entry per row). Total drained from row r = sum(lambda_i) = C = k.
+    This holds regardless of WHICH perfect matchings are chosen.
+  - Therefore C = k for BOTH algorithms, no matter how different their matchings are.
+
+For RADIX digit planes:
+  - Digit planes Delta_d are NOT regular. Example: row sums [3,3,1,3,5,3,5,3] for B=2.
+  - Some steps produce PARTIAL matchings (not every row gets matched).
+  - The conservation law argument does NOT cleanly apply.
+  - Yet empirically C is still equal between Dynamic and Static.
+  - We do NOT have a clean theoretical explanation.
+
+
+WHAT WE DON'T UNDERSTAND
+-------------------------
+Why is C equal for Radix digit planes despite:
+  1. Digit planes not being regular
+  2. Matchings not always being perfect
+  3. N sometimes differing between the two algorithms even for digit planes
+
+Hypothesis 1: C = max_rowsum(Delta_d) for both algorithms.
+  - Empirically verified: B=2 plane with row sums [3,3,1,3,5,3,5,3] -> C=5 for both.
+  - B=4 plane with row sums [8,8,4,7,7,12,7,3] -> C=12 (= max) for both.
+  - Theoretical basis: the max-rowsum row gets matched at every step (since it has
+    the heaviest entries, greedy Phase 1 picks it first). Total drain from that row
+    = sum(lambda_i) = C = max_rowsum.
+  - BUT: is the max-rowsum row ALWAYS matchable? Not obviously guaranteed.
+
+Hypothesis 2: It's coincidental for our specific experimental parameters.
+  - With n=256, k=256: digit planes are approximately regular (concentration of
+    256 random weights). For approximately regular planes, C ~= rowsum ~= max_rowsum.
+
+Hypothesis 3: There's a bug where both algorithms accidentally use the same code path.
+  - We verified: for binary digit planes (B=2, entries only 0/1), both algorithms
+    produce IDENTICAL output (same N, same matchings, same C) because sorting
+    among equal values is a no-op. So C equality for B=2 is trivial.
+  - For B=4+ with non-uniform entries: N CAN differ (verified on n=8 test), but C
+    is still the same. So it's not just a bug for B>=4.
+
+
+RELEVANT CODE FILES
+-------------------
+Main algorithms:
+  src/algorithms/sorted_array_matching.py
+    - _jit_decompose_sorted_dynamic(): GW Dynamic decomposition (JIT)
+    - _jit_decompose_sorted_static(): GW Static decomposition (JIT)
+    - _jit_greedy_augmented_match(): shared Phase 2 BFS augmenting path kernel
+
+  src/algorithms/radix_decomposition.py
+    - decompose_radix(): extracts digit planes, calls _decompose_digit_plane() per plane
+    - _decompose_digit_plane(): routes to JIT functions based on matching_method
+
+Matrix generation:
+  src/utils/matrix_generator.py
+    - generate_matrix(n, k, max_weight, rng): sum of k random weighted permutations
+
+Tests:
+  tests/test_decomposition_correctness.py  (existing correctness tests)
+  tests/test_euler_splitting.py            (recently added, unrelated)
+
+Python environment: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\.venv\Scripts\python.exe
+Run tests: .venv\Scripts\python.exe -m pytest tests/ -v
+
+
+SUGGESTED INVESTIGATIONS
+------------------------
+1. Write a simulation that:
+   - Generates small non-regular matrices (NOT k-regular, to isolate the effect)
+   - Runs both Dynamic and Static on them
+   - Checks if C is STILL equal
+   - If yes: the equal C is a general property of the min-step BvN algorithm,
+     not specific to digit planes or k-regular matrices
+   - If no: it's specific to the structure of digit planes
+
+2. Test whether C = max_rowsum(M) holds universally for min-step BvN on
+   arbitrary non-regular matrices, or only for our specific digit planes.
+
+3. Check if the BFS augmenting path order (columns 0,...,n-1 in fixed order)
+   causes both algorithms to find the same CANONICAL maximum matching at each step,
+   regardless of Phase 1 greedy differences. If so, N would also be the same, which
+   contradicts the data (N=1,123 vs N=7,613 for plain BvN).
+
+4. Look for a theoretical proof that for min-step BvN on ANY matrix:
+   C = max_rowsum(M), independent of matching algorithm.
+   If this is true, equal C is trivially explained.
+
+5. Check the actual lambda sequences for small cases to see if the sequences are
+   equal or just their sums are equal.
+
+
+KEY EMPIRICAL DATA (from n=256, k=256, max_weight=64 experiments)
+-----------------------------------------------------------------
+Plain BvN:
+  GW Dynamic:  N=1,123  C=8,174
+  GW Static:   N=7,613  C=8,174   <- same C, very different N
+
+Radix B=2:
+  GW Dynamic:  N=657    C=9,807  (both algorithms: identical N and C)
+  GW Static:   N=657    C=9,807
+
+Radix B=4:
+  GW Dynamic:  N=695    C=9,893  (both: identical)
+  GW Static:   N=695    C=9,893
+
+Radix B=8:
+  GW Dynamic:  N=678    C=9,806  (both: identical)
+  GW Static:   N=678    C=9,806
+
+Small n=8 test (non-regular B=4 digit plane, row sums [8,8,4,7,7,12,7,3]):
+  GW Dynamic:  N=11    C=12.0
+  GW Static:   N=12    C=12.0   <- N differs! But C is still the same = max_rowsum=12

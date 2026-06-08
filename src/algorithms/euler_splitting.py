@@ -1,21 +1,30 @@
 """
 Euler Splitting decomposition framework for S-regular integer matrices.
 
-Two split strategies are available:
+Three split strategies are available:
 
-  "euler"  — Classic Euler-tour 2-colouring (Cole & Hopcroft 1982 / Alon 2003).
-             Alternates Red/Blue along each Euler circuit → each sub-matrix has
-             the same non-zero *positions* as the original, with values halved.
-             Guaranteed doubly stochastic in O(N·S) time.
+  "euler"     — Classic Euler-tour 2-colouring (Cole & Hopcroft 1982 / Alon 2003).
+                Alternates Red/Blue along each Euler circuit → each sub-matrix has
+                the same non-zero *positions* as the original, with values halved.
+                Guaranteed doubly stochastic in O(N·S) time.
 
-  "greedy" — Greedy integral split (new heuristic).
-             Sorts all (i,j) blocks by weight descending and assigns each block
-             *entirely* to Red or Blue, tracking row/col budgets of S/2.  A
-             second pass fills residual row/col deficits.  Falls back to Euler
-             2-colouring only if the greedy cannot complete a valid assignment
-             (which happens for uniform matrices with no concentrated entries).
-             When it succeeds, the sub-matrices have fewer non-zero entries,
-             making subsequent BvN decomposition cheaper per leaf.
+  "greedy"    — Greedy integral split.
+                Sorts all (i,j) blocks by weight descending and assigns each block
+                *entirely* to Red or Blue, tracking row/col budgets of S/2.  Falls
+                back to Euler 2-colouring when it cannot complete a valid assignment.
+                When it succeeds, the sub-matrices have fewer non-zero entries.
+
+  "heuristic" — Same-direction Euler split.
+                Builds the bipartite multigraph (M[i,j] parallel edges between row i
+                and col j) and runs a modified Hierholzer Euler circuit where:
+                  • Traversal row→col is always RED,  col→row is always BLUE.
+                  • At each step we prefer edges whose direction is already locked
+                    for that (i,j) pair — keeping all copies the same colour.
+                  • "Smallest first": among equal-priority choices, prefer smaller
+                    M[i,j] to close cheap entries before moving on.
+                Goal: each (i,j) pair lands entirely in one sub-matrix → genuinely
+                sparser halves.  The split is always doubly stochastic (each half
+                has row/col sums = S/2) by the structure of the Euler circuit.
 
 Public API
 ----------
@@ -242,6 +251,195 @@ def _greedy_split(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 # ===========================================================================
+# Split strategy C: same-direction Euler heuristic
+# ===========================================================================
+
+def _choose_next_neighbor(
+    v: int,
+    n: int,
+    adj: AdjType,
+    target_dir: Dict[Tuple[int, int], Optional[str]],
+    original_count: Dict[Tuple[int, int], int],
+) -> Optional[int]:
+    """
+    Heuristic edge selector for the Euler circuit.
+
+    DIRECTION CONVENTION
+    --------------------
+    The bipartite graph has row nodes (0..n-1) on the left and col nodes
+    (n..2n-1) on the right.  Traversal direction determines colour:
+
+        row  →  col   (left  → right)  =  RED
+        col  →  row   (right → left)   =  BLUE
+
+    Because the graph is bipartite, the colour is entirely determined by
+    which side the CURRENT node v is on — no parity counting needed.
+
+    PRIORITY (from "prefer edges already going the same direction"):
+    ----------------------------------------------------------------
+    Tier 1 – target_dir[(i,j)] already matches current direction.
+             "We've been going this way for (i,j) before — stay consistent."
+    Tier 2 – target_dir[(i,j)] is None (first visit to this pair).
+             "Free choice; we'll lock it to the current direction now."
+    Tier 3 – target_dir[(i,j)] conflicts.
+             "Forced ruin — only taken when no other option exists."
+
+    SMALLEST FIRST: within each tier, prefer edges with the smallest
+    original M[i,j].  Small entries are easiest to close in one colour.
+    """
+    is_row = v < n
+    current_dir = 'red' if is_row else 'blue'
+
+    tier1: List[Tuple[int, int]] = []   # same direction already locked
+    tier2: List[Tuple[int, int]] = []   # direction not yet decided (free)
+    tier3: List[Tuple[int, int]] = []   # direction conflict (forced ruin)
+
+    for u in adj[v]:
+        # Map graph nodes back to the matrix (i, j) pair
+        #   row node v  + col node u=n+j  →  key (v, u-n)
+        #   col node v  + row node u      →  key (u, v-n)
+        key = (v, u - n) if is_row else (u, v - n)
+
+        td   = target_dir.get(key)           # None / 'red' / 'blue'
+        orig = original_count.get(key, 1)    # original M[i,j]
+
+        if td == current_dir:
+            tier1.append((orig, u))   # Tier 1: keep all copies same colour
+        elif td is None:
+            tier2.append((orig, u))   # Tier 2: first traversal — free
+        else:
+            tier3.append((orig, u))   # Tier 3: unavoidable conflict
+
+    # Sort each tier by original M[i,j] — smallest entries first
+    for tier in (tier1, tier2, tier3):
+        tier.sort()
+        if tier:
+            return tier[0][1]   # return the chosen neighbor node
+
+    return None   # no edges left from v
+
+
+def _hierholzer_heuristic(
+    adj: AdjType,
+    start: int,
+    n: int,
+    target_dir: Dict[Tuple[int, int], Optional[str]],
+    original_count: Dict[Tuple[int, int], int],
+) -> List[Tuple[int, int]]:
+    """
+    Hierholzer's Euler circuit algorithm with the same-direction heuristic.
+
+    Returns the circuit as a list of directed (u, v) edge tuples.
+
+    KEY STEP — direction locking
+    ----------------------------
+    Every time we traverse an edge for the first time we lock in the
+    direction for that (i,j) pair:
+
+        target_dir[(i,j)] = 'red'   if we went row_i → col_j
+        target_dir[(i,j)] = 'blue'  if we went col_j → row_i
+
+    All future copies of that pair will be Tier-1 candidates in
+    _choose_next_neighbor, so the heuristic naturally keeps them all
+    going the same way.  If the circuit ever forces a conflict the pair
+    is "split" between sub-matrices — we accept that and move on.
+    """
+    stack = [start]
+    path: List[int] = []
+
+    while stack:
+        v = stack[-1]
+        u = _choose_next_neighbor(v, n, adj, target_dir, original_count)
+
+        if u is not None:
+            # ── Traverse edge v → u ──────────────────────────────────
+            adj[v][u] -= 1
+            if adj[v][u] == 0:
+                del adj[v][u]
+            adj[u][v] -= 1
+            if adj[u][v] == 0:
+                del adj[u][v]
+
+            # Lock direction on first traversal of this (i,j) pair
+            is_row = v < n
+            key = (v, u - n) if is_row else (u, v - n)
+            if target_dir.get(key) is None:
+                target_dir[key] = 'red' if is_row else 'blue'
+
+            stack.append(u)
+        else:
+            # No edges left from v — this node is done
+            path.append(stack.pop())
+
+    path.reverse()
+    return [(path[k], path[k + 1]) for k in range(len(path) - 1)]
+
+
+def _euler_split_heuristic(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Euler 2-colouring with the same-direction heuristic.
+
+    GRAPH CONSTRUCTION
+    ------------------
+    Represent M as a bipartite multigraph:
+        Left  nodes  0 … n-1    =  matrix rows
+        Right nodes  n … 2n-1   =  matrix columns
+        M[i,j] parallel edges between node i and node n+j
+
+    COLOUR CONVENTION
+    -----------------
+        Row → Col  (left  → right)  =  RED   →  red[i,j]  += 1
+        Col → Row  (right → left)   =  BLUE  →  blue[i,j] += 1
+
+    DOUBLY STOCHASTIC GUARANTEE
+    ----------------------------
+    In a bipartite Euler circuit every row node is entered (BLUE in) and
+    exited (RED out) exactly S/2 times each.  Therefore:
+        red.sum(axis=1)  ==  S/2  for every row   (row sums balanced)
+        red.sum(axis=0)  ==  S/2  for every col   (col sums balanced)
+    This holds for ANY Euler circuit, regardless of the heuristic order.
+
+    SPARSITY GOAL
+    -------------
+    By keeping all copies of (i,j) the same direction, each (i,j) pair
+    lands entirely in one sub-matrix (either red[i,j]=M[i,j], blue[i,j]=0
+    or vice versa).  This reduces the number of non-zeros in each half
+    compared with the plain alternating split which distributes every pair
+    across both sub-matrices.
+    """
+    n = int_matrix.shape[0]
+    M = np.round(int_matrix).astype(np.int64)
+
+    adj = _build_adj(M)
+
+    # Initialise per-(i,j) direction tracking and original-weight lookup
+    target_dir: Dict[Tuple[int, int], Optional[str]] = {}
+    original_count: Dict[Tuple[int, int], int] = {}
+    for i in range(n):
+        for j in range(n):
+            k = int(M[i, j])
+            if k > 0:
+                target_dir[(i, j)] = None    # direction not yet decided
+                original_count[(i, j)] = k   # kept for "smallest first"
+
+    red  = np.zeros((n, n), dtype=np.int64)
+    blue = np.zeros((n, n), dtype=np.int64)
+
+    # Process each connected component of the multigraph
+    for start in range(2 * n):
+        if not adj[start]:
+            continue
+        edges = _hierholzer_heuristic(adj, start, n, target_dir, original_count)
+        for (u, v) in edges:
+            if u < n:               # row → col  →  RED
+                red[u, v - n] += 1
+            else:                   # col → row  →  BLUE
+                blue[v, u - n] += 1
+
+    return red, blue
+
+
+# ===========================================================================
 # Public: one-level split (both strategies)
 # ===========================================================================
 
@@ -255,7 +453,9 @@ def euler_split_once(
 
     Args:
         matrix:       n×n non-negative integer matrix with equal row/col sums S.
-        split_method: "euler" (Euler 2-colouring) or "greedy" (integral split).
+        split_method: "euler"     — classic alternating Euler 2-colouring.
+                      "greedy"    — greedy integral split (falls back to euler).
+                      "heuristic" — same-direction Euler split (new strategy).
 
     Returns:
         (red, blue) — two integer matrices each with row/col sums ⌊S/2⌋.
@@ -276,7 +476,9 @@ def euler_split_once(
 
     if split_method == "greedy":
         red, blue = _greedy_split(int_matrix)
-    else:  # default: euler
+    elif split_method == "heuristic":
+        red, blue = _euler_split_heuristic(int_matrix)
+    else:  # default: "euler"
         red, blue = _euler_split(int_matrix)
 
     if extra_perm is not None:
