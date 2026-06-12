@@ -104,6 +104,28 @@ def _get_all_keys(stats: List[DecompositionStats]) -> List[str]:
     return sorted(list(keys), key=sort_key)
 
 
+def _key_label(key: str) -> str:
+    """
+    Human-readable legend label for a result key.
+
+    Radix keys:  "wfa_2"            -> "WFA-B2"
+                 "heavy_min_8"      -> "HEAVY-MIN-B8"
+    Euler keys:  "euler_heuristic_depth1" -> "EULER-HEURISTIC-D1"
+    """
+    parts = str(key).split('_')
+    if parts[0] == "euler" and parts[-1].startswith("depth"):
+        depth = parts[-1][len("depth"):]
+        middle = "-".join(p.upper() for p in parts[1:-1])
+        return f"EULER-{middle}-D{depth}" if middle else f"EULER-D{depth}"
+    if len(parts) == 2:
+        eng, b = parts
+        return f"{eng.upper()}-B{b}"
+    if len(parts) == 3:
+        eng, strat, b = parts
+        return f"{eng.upper()}-{strat.upper()}-B{b}"
+    return f"Result ({key})"
+
+
 def _get_color_for_key(key: str, index: int, total: int):
     """
     Generate distinct colors for dynamic keys.
@@ -238,15 +260,7 @@ def _plot_dynamic_grid(stats, out_dir, filename, title, baseline_map, radix_inde
 
     # 2. Plot All Radix Bases
     for i, key in enumerate(keys):
-        parts = str(key).split('_')
-        if len(parts) == 2:
-            eng, b = parts
-            label = f"{eng.upper()}-B{b}"
-        elif len(parts) == 3:
-            eng, strat, b = parts
-            label = f"{eng.upper()}-{strat.upper()}-B{b}"
-        else:
-            label = f"Result ({key})"
+        label = _key_label(key)
         
         c = _get_color_for_key(key, i, len(keys))
             
@@ -310,15 +324,7 @@ def _plot_trend(stats, out_dir, filename, title, y_label, baseline_map, radix_in
     # Engines
     keys = _get_all_keys(stats)
     for i, key in enumerate(keys):
-        parts = str(key).split('_')
-        if len(parts) == 2:
-            eng, b = parts
-            label = f"{eng.upper()}-B{b}"
-        elif len(parts) == 3:
-            eng, strat, b = parts
-            label = f"{eng.upper()}-{strat.upper()}-B{b}"
-        else:
-            label = f"Result ({key})"
+        label = _key_label(key)
             
         c = _get_color_for_key(key, i, len(keys))
 
@@ -458,24 +464,26 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
 
                 all_points.append((mean_cyc, mean_rt))
 
-                label = f"Result ({key})"
+                label = _key_label(key)
                 marker_style = 'v'
                 base_str = None
                 strat_str = None
+                is_euler = parts[0] == "euler" and parts[-1].startswith("depth")
 
-                if len(parts) == 2:
+                if is_euler:
+                    marker_style = 'D'
+                    base_str = f"D{parts[-1][len('depth'):]}"
+                elif len(parts) == 2:
                     eng, b = parts
-                    label = f"{eng.upper()}-B{b}"
-                    base_str = b
+                    base_str = f"B{b}"
                 elif len(parts) == 3:
                     eng, strat, b = parts
-                    label = f"{eng.upper()}-{strat.upper()}-B{b}"
-                    base_str = b
+                    base_str = f"B{b}"
                     strat_str = strat
                     if strat == "min": marker_style = 'v'
                     elif strat == "median": marker_style = 's'
                     elif strat == "max": marker_style = 'o'
-                
+
                 group = strat_str if strat_str else "default"
                 if group not in points_by_group:
                     points_by_group[group] = []
@@ -490,7 +498,7 @@ def plot_runtime_vs_cycle_efficiency(stats: List[DecompositionStats], out_dir: P
                 # "B{base}" on legacy CSVs that have no plane count.
                 annot_parts = []
                 if base_str is not None:
-                    annot_parts.append(f"B{base_str}")
+                    annot_parts.append(base_str)
                 if base_planes.size > 0 and base_planes.max() > 0:
                     min_p = int(base_planes.min())
                     max_p = int(base_planes.max())
@@ -590,18 +598,21 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
 
                 all_points.append((mean_perms, mean_rt))
 
-                label = f"Result ({key})"
+                label = _key_label(key)
                 marker_style = 'v'
                 base_str = None
                 strat_str = None
-                if len(parts) == 2:
+                is_euler = parts[0] == "euler" and parts[-1].startswith("depth")
+
+                if is_euler:
+                    marker_style = 'D'
+                    base_str = f"D{parts[-1][len('depth'):]}"
+                elif len(parts) == 2:
                     eng, b = parts
-                    label = f"{eng.upper()}-B{b}"
-                    base_str = b
+                    base_str = f"B{b}"
                 elif len(parts) == 3:
                     eng, strat, b = parts
-                    label = f"{eng.upper()}-{strat.upper()}-B{b}"
-                    base_str = b
+                    base_str = f"B{b}"
                     strat_str = strat
                     if strat == "min": marker_style = 'v'
                     elif strat == "median": marker_style = 's'
@@ -621,7 +632,7 @@ def plot_runtime_vs_permutation_efficiency(stats: List[DecompositionStats], out_
                 # "B{base}" on legacy CSVs that have no plane count.
                 annot_parts = []
                 if base_str is not None:
-                    annot_parts.append(f"B{base_str}")
+                    annot_parts.append(base_str)
                 if base_planes.size > 0 and base_planes.max() > 0:
                     min_p = int(base_planes.min())
                     max_p = int(base_planes.max())
@@ -674,7 +685,7 @@ def plot_results(
         generator: str
 ):
     num_samples = len(stats_list)
-    title_suffix = f"(N={n}, Samples={num_samples}, Gen={generator})"
+    title_suffix = f"(N={n}, k={bits}, Samples={num_samples}, Gen={generator})"
 
     plot_final_cycle_length(stats_list, out_dir, title_suffix)
     plot_final_num_permutations(stats_list, n, bits, out_dir, title_suffix)
