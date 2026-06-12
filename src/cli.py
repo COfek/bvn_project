@@ -54,7 +54,7 @@ def parse_args() -> argparse.Namespace:
                              "depth=0 is plain BvN with no splitting. "
                              "Defaults to [1] (one split → 2 leaves).")
     parser.add_argument("--euler-split-method", type=str, default="heuristic",
-                        choices=["heuristic", "euler", "euler_grouped", "greedy"],
+                        choices=["heuristic", "heuristic_scan", "euler", "euler_grouped", "greedy"],
                         help="Split strategy for the Euler framework. 'heuristic' "
                              "(same-direction split, sparser leaves) is the default; "
                              "'euler' is the classic alternating 2-colouring.")
