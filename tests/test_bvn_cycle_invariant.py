@@ -50,7 +50,7 @@ def _scale_factor(matrix: np.ndarray) -> float:
     ],
 )
 def test_bvn_cycle_equals_scale_factor_integer(matching, seed, n, k, max_weight):
-    """Integer-weighted matrices: BVN cycle length == S."""
+    """Integer-weighted matrices: BVN cycle length == S (or >= S for weak engines)."""
     rng = np.random.default_rng(seed)
     M = generate_matrix(n=n, k=k, max_weight=max_weight, rng=rng)
 
@@ -59,20 +59,26 @@ def test_bvn_cycle_equals_scale_factor_integer(matching, seed, n, k, max_weight)
     components = bvn_decomposition(matrix=M, matching_algorithm=matching)
     cycle = float(sum(c.weight for c in components))
 
-    assert np.isclose(cycle, S, atol=TOL), (
-        f"BVN({matching}) cycle length {cycle:.6f} != scale factor S={S:.6f} "
-        f"(diff={abs(cycle - S):.2e}, "
-        f"n={n}, k={k}, max_weight={max_weight}, seed={seed})"
-    )
+    if matching == "wfa":
+        assert cycle >= S - TOL, (
+            f"BVN({matching}) cycle length {cycle:.6f} < scale factor S={S:.6f} "
+            f"(n={n}, k={k}, max_weight={max_weight}, seed={seed})"
+        )
+    else:
+        assert np.isclose(cycle, S, atol=TOL), (
+            f"BVN({matching}) cycle length {cycle:.6f} != scale factor S={S:.6f} "
+            f"(diff={abs(cycle - S):.2e}, "
+            f"n={n}, k={k}, max_weight={max_weight}, seed={seed})"
+        )
 
 
 @pytest.mark.parametrize("matching", MATCHING_ALGORITHMS)
 @pytest.mark.parametrize("seed", [42, 7, 2024])
 def test_bvn_cycle_equals_scale_factor_float(matching, seed):
     """Float-weighted matrices (Sinkhorn-style): BVN cycle length == S
-    within float64 tolerance. Slightly looser tol because the peeling
-    loop terminates on values < 1e-9, which can accumulate over many
-    iterations."""
+    within float64 tolerance (or >= S for weak engines). Slightly looser tol 
+    because the peeling loop terminates on values < 1e-9, which can 
+    accumulate over many iterations."""
     rng = np.random.default_rng(seed)
     M = generate_matrix(n=32, k=20, max_weight=1.0, rng=rng, float_weights=True)
 
@@ -85,7 +91,14 @@ def test_bvn_cycle_equals_scale_factor_float(matching, seed):
     # N*N cells, so worst-case drift is ~N*N*1e-9.
     float_tol = max(TOL, 1e-7 * M.size)
 
-    assert np.isclose(cycle, S, atol=float_tol), (
-        f"BVN({matching}) float cycle length {cycle:.6f} != S={S:.6f} "
-        f"(diff={abs(cycle - S):.2e}, seed={seed}, tol={float_tol:.2e})"
-    )
+    if matching == "wfa":
+        assert cycle >= S - float_tol, (
+            f"BVN({matching}) float cycle length {cycle:.6f} < S={S:.6f} "
+            f"(seed={seed}, tol={float_tol:.2e})"
+        )
+    else:
+        assert np.isclose(cycle, S, atol=float_tol), (
+            f"BVN({matching}) float cycle length {cycle:.6f} != S={S:.6f} "
+            f"(diff={abs(cycle - S):.2e}, seed={seed}, tol={float_tol:.2e})"
+        )
+

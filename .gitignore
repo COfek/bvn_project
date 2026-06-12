@@ -84,3 +84,5 @@ config.json
 *.bak
 *.swp
 *.swo
+*.log
+*.err

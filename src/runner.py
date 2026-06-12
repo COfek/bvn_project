@@ -57,7 +57,10 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     elif config.engine == "heavy_static_noaug_bvn":
         bvn_engine = "heavy_static_noaug"
     elif config.engine == "euler_bvn":
-        bvn_engine = "euler"
+        # Baseline uses the SAME engine as the Euler leaves so that
+        # "BvN on the original matrix" vs "BvN on each leaf" is a fair
+        # comparison (Task 1: does splitting cut matching-extraction time?).
+        bvn_engine = getattr(config, "euler_leaf_engine", "heavy_static")
 
     if config.engine in [
         "all", "wfa_bvn", "shuffled",
@@ -68,14 +71,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         "euler_bvn",
     ]:
         t0 = time.perf_counter()
-
-        if bvn_engine == "euler":
-            # Legacy full-split (depth=S); here we just run a depth=0 BvN
-            # for the "BvN baseline" row — Euler framework results go into
-            # radix_multi_data below (keyed by depth).
-            bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm="heavy")
-        else:
-            bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
+        bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
         runtime_bvn = time.perf_counter() - t0
 
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
@@ -122,7 +118,11 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     elif config.engine == "heavy_static_noaug_bvn":
         target_engines = ["heavy_static_noaug"]
     elif config.engine == "euler_bvn":
-        target_engines = []   # Euler framework calls handled separately below
+        # Radix runs with the same engine as the Euler leaves, over the
+        # requested --radix-bases (pass an empty --radix-bases to skip Radix
+        # and benchmark the Euler framework alone). This makes Task 2
+        # (Euler leaves vs digit planes, same matching engine) a single run.
+        target_engines = [getattr(config, "euler_leaf_engine", "heavy_static")]
     else:
         target_engines = [config.engine]
 
@@ -155,20 +155,28 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     # --- Euler Splitting Framework (euler_bvn engine) ---
     if config.engine == "euler_bvn":
         euler_depths = getattr(config, 'euler_depths', [1])
-        euler_matching = "heavy"   # BvN matching engine for leaves
+        euler_matching = getattr(config, 'euler_leaf_engine', 'heavy_static')
+        # Default split is "heuristic" (same-direction): by keeping all
+        # M[i,j] copies of a pair on one side whenever possible it produces
+        # SPARSER leaves than the plain/grouped alternating split, which is
+        # what makes the per-leaf BvN cheaper. Other strategies remain
+        # selectable via --euler-split-method for comparison runs.
+        split_method = getattr(config, 'euler_split_method', 'heuristic')
         for depth in euler_depths:
-            for split_method in ("euler", "greedy"):
-                comps, max_rt, n_leaves = decompose_euler_framework(
-                    matrix=matrix,
-                    matching_method=euler_matching,
-                    depth=depth,
-                    split_method=split_method,
-                    max_workers=config.max_workers,
-                )
-                c_len = float(sum(comp.weight for comp in comps))
-                n_perm = len(comps)
-                key = f"euler_{split_method}_depth{depth}"
-                radix_multi_data[key] = (max_rt, c_len, n_perm, n_leaves)
+            comps, split_rt, max_rt, n_leaves = decompose_euler_framework(
+                matrix=matrix,
+                matching_method=euler_matching,
+                depth=depth,
+                split_method=split_method,
+                max_workers=config.max_workers,
+            )
+            c_len = float(sum(comp.weight for comp in comps))
+            n_perm = len(comps)
+            key = f"euler_{split_method}_depth{depth}"
+            # 5-tuple: the trailing split_rt is the sequential time of the
+            # splitting phase only; max_rt is the max single-leaf BvN time
+            # (simulated parallel matching extraction).
+            radix_multi_data[key] = (max_rt, c_len, n_perm, n_leaves, split_rt)
 
     return DecompositionStats(
         matrix_index=index,

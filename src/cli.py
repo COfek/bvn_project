@@ -50,6 +50,17 @@ def parse_args() -> argparse.Namespace:
                         help="Euler splitting depths to test (depth=d gives 2^d leaf matrices). "
                              "depth=0 is plain BvN with no splitting. "
                              "Defaults to [1] (one split → 2 leaves).")
+    parser.add_argument("--euler-split-method", type=str, default="heuristic",
+                        choices=["heuristic", "euler", "euler_grouped", "greedy"],
+                        help="Split strategy for the Euler framework. 'heuristic' "
+                             "(same-direction split, sparser leaves) is the default; "
+                             "'euler' is the classic alternating 2-colouring.")
+    parser.add_argument("--euler-leaf-engine", type=str, default="heavy_static",
+                        choices=["heavy", "heavy_static", "wfa", "maximum", "minimum"],
+                        help="BvN matching engine for the Euler leaves. Also used for "
+                             "the BvN baseline and Radix planes when --engine euler_bvn, "
+                             "so all three frameworks are compared with the same engine "
+                             "(e.g. 'maximum' reproduces the Euler-vs-bitplane comparison).")
 
     parser.add_argument("--random-seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--max-workers", type=int, default=None, help="Workers for Radix planes.")

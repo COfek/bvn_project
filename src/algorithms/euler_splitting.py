@@ -29,7 +29,7 @@ Three split strategies are available:
 Public API
 ----------
 euler_split_once(matrix, split_method)          → (red, blue)
-decompose_euler_framework(matrix, ...)          → (components, max_rt, n_leaves)
+decompose_euler_framework(matrix, ...)          → (components, split_time, max_rt, n_leaves)
 euler_decomposition(matrix)                     → List[DecompositionComponent]  # legacy
 """
 
@@ -39,6 +39,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+from numba import jit
 from numpy.typing import NDArray
 
 from .bvn import DecompositionComponent, bvn_decomposition
@@ -179,6 +180,140 @@ def _euler_split(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 # ---------------------------------------------------------------------------
+# Split strategy A2: Euler 2-colouring via GROUPED (bulk) edge traversal
+# ---------------------------------------------------------------------------
+#
+# The bipartite multigraph puts M[i, j] *parallel* unit-edges between row
+# node i and column node n+j.  `_euler_split` (and the heuristic variants)
+# walk every one of those `sum(M)` unit-edges individually -- O(n * S) work,
+# which dominates runtime on "dense-weight" matrices (large S, modest nnz).
+#
+# Key observation: because the graph is BIPARTITE, every step of *any*
+# Eulerian circuit alternates row-side <-> col-side, so the colour of a
+# crossing is fully determined by which side it departs from:
+#
+#     row -> col  =  RED
+#     col -> row  =  BLUE
+#
+# That means if we fully drain a freshly-encountered (i, j) group of c
+# parallel copies via a back-and-forth detour i <-> j right when we first
+# reach it, the colours of those c crossings are simply a strict
+# alternation starting with the colour of the departure side -- computable
+# in closed form as (ceil(c/2), floor(c/2)) without walking a single one of
+# them.  And after the detour we are back at the start vertex if c is even,
+# or at the other endpoint if c is odd -- so the outer DFS can resume
+# exactly as if the unit-by-unit walk had happened.
+#
+# This is a valid Hierholzer execution order (Hierholzer's algorithm is
+# selection-order agnostic: it always completes a full Eulerian circuit
+# regardless of which available edge is chosen at each step, as long as the
+# graph is connected and every vertex has even degree -- both properties
+# depend only on aggregate degree / connectivity, which grouping leaves
+# untouched).  It therefore carries the exact same balance guarantee as the
+# textbook alternating colouring (every vertex visit pairs one in-edge with
+# one out-edge in adjacent -- hence opposite-coloured -- circuit positions),
+# just computed in O(nnz) bulk steps instead of O(sum(M)) unit steps.
+# ---------------------------------------------------------------------------
+
+def _euler_tour_grouped(
+    adj: AdjType,
+    start: int,
+    n: int,
+    red: np.ndarray,
+    blue: np.ndarray,
+) -> None:
+    """
+    Hierholzer traversal that bulk-consumes each freshly-chosen parallel-edge
+    group in one O(1) step and accumulates `red`/`blue` directly (no
+    intermediate edge list, no separate colouring pass).
+
+    Mutates `adj`, `red`, `blue` in place.
+    """
+    stack = [start]
+    while stack:
+        v = stack[-1]
+        nbrs = adj[v]
+        if not nbrs:
+            stack.pop()
+            continue
+
+        u = next(iter(nbrs))
+        c = nbrs[u]
+
+        # Remove the *entire* parallel-edge group at once (symmetric / undirected)
+        del adj[v][u]
+        del adj[u][v]
+
+        is_row = v < n
+        if is_row:
+            i, j = v, u - n
+            first, second = red, blue     # row -> col departs RED first
+        else:
+            i, j = u, v - n
+            first, second = blue, red     # col -> row departs BLUE first
+
+        first[i, j]  += (c + 1) // 2      # ceil(c/2)  copies of the departure colour
+        second[i, j] += c // 2            # floor(c/2) copies of the other colour
+
+        # c alternating crossings starting at v: end back at v if c is even
+        # (equal numbers of round trips), or at u if c is odd (one extra hop).
+        if c % 2 == 1:
+            stack.append(u)
+        # else: stay at v -- adj[v][u] is now gone, loop re-evaluates v's neighbours
+
+
+def _euler_split_grouped_py(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Euler 2-colouring via grouped (bulk) edge traversal — pure-Python
+    reference implementation.
+
+    Same contract and guarantees as `_euler_split` (lossless, each half
+    (S/2)-regular -- "This holds for ANY Euler circuit, regardless of the
+    heuristic order"), but each distinct (i, j) pair is coloured in one
+    O(1) closed-form step instead of `M[i, j]` individual unit-edge steps.
+    Cost drops from O(sum(M)) = O(n * S) to O(nnz(M)), the number of
+    distinct non-zero entries -- a large win whenever entries are "heavy"
+    (large S relative to nnz), e.g. the high-max-weight "dense" configs.
+
+    See the module-level comment above `_euler_tour_grouped` for the full
+    correctness argument (selection-order-agnostic Hierholzer + bipartite
+    departure-side colouring).
+
+    Kept as a readable reference / cross-check for `_euler_split_grouped`,
+    which runs the same algorithm compiled with Numba (see
+    `_euler_split_grouped_jit` further down) for another large constant-
+    factor speedup on top of the O(nnz) algorithmic win.
+    """
+    n = int_matrix.shape[0]
+    M = np.round(int_matrix).astype(np.int64)
+    adj = _build_adj(M)
+    red  = np.zeros((n, n), dtype=np.int64)
+    blue = np.zeros((n, n), dtype=np.int64)
+    for start in range(2 * n):
+        if adj[start]:
+            _euler_tour_grouped(adj, start, n, red, blue)
+    return red, blue
+
+
+def _euler_split_grouped(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Euler 2-colouring via grouped (bulk) edge traversal — JIT-compiled.
+
+    Thin wrapper around `_euler_split_grouped_jit` (Numba nopython), which
+    ports the dict-of-dicts traversal in `_euler_split_grouped_py` /
+    `_euler_tour_grouped` to a flat int64 adjacency-count matrix (mirroring
+    `_build_adj_jit`).  Same O(nnz(M)) algorithmic complexity, plus the
+    usual Numba constant-factor win from removing Python dict/object
+    overhead from the hot loop — this is the version actually dispatched
+    for split_method == "euler_grouped".
+    """
+    n = int_matrix.shape[0]
+    M = np.round(int_matrix).astype(np.int64)
+    red, blue = _euler_split_grouped_jit(M, n)
+    return red, blue
+
+
+# ---------------------------------------------------------------------------
 # Split strategy B: Greedy integral split
 # ---------------------------------------------------------------------------
 
@@ -251,8 +386,386 @@ def _greedy_split(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 # ===========================================================================
-# Split strategy C: same-direction Euler heuristic
+# Split strategy C: same-direction Euler heuristic  (JIT fast path)
 # ===========================================================================
+#
+# The four @jit functions below implement the full heuristic Hierholzer
+# traversal in Numba nopython mode.  They replace the pure-Python
+# _choose_next_neighbor / _hierholzer_heuristic pair whose bottleneck was
+# walking ~2 M edges one-by-one through Python dicts and dynamically
+# allocated tier lists.
+#
+# Data-structure mapping  (Python → JIT)
+# ----------------------------------------
+#   adj[u][v] dict-of-dicts  →  adj_mat[2n,2n] int64  (edge counts)
+#   target_dir[(i,j)] str/None  →  dir_arr[n,n] int8   (0=free,1=red,2=blue)
+#   original_count[(i,j)]  →  M[i,j] directly (the matrix itself)
+#   Python list stack/path  →  pre-allocated int64 arrays
+# ===========================================================================
+
+
+@jit(nopython=True, nogil=True, cache=True)
+def _build_adj_jit(M, n):
+    """
+    Build a (2n x 2n) integer adjacency-count matrix from the demand matrix M.
+
+    Row nodes  0 … n-1  correspond to matrix rows.
+    Col nodes  n … 2n-1 correspond to matrix columns.
+    adj_mat[i, n+j] = adj_mat[n+j, i] = M[i, j]  (parallel-edge count).
+    """
+    adj = np.zeros((2 * n, 2 * n), dtype=np.int64)
+    for i in range(n):
+        for j in range(n):
+            k = M[i, j]
+            if k > 0:
+                adj[i, n + j] = k
+                adj[n + j, i] = k
+    return adj
+
+
+@jit(nopython=True, nogil=True, cache=True)
+def _choose_next_jit(v, n, adj, dir_arr, M):
+    """
+    JIT neighbour selector for the heuristic Hierholzer traversal.
+
+    Replaces _choose_next_neighbor (Python).  A single O(2n) scan over all
+    potential neighbours picks the best candidate without building lists or
+    calling list.sort().
+
+    Priority (unchanged from the Python version):
+      Tier 1 – dir_arr[i,j] == current direction (direction already locked).
+      Tier 2 – dir_arr[i,j] == 0              (first visit — free choice).
+      Tier 3 – dir_arr[i,j] conflicts         (unavoidable split).
+    Within each tier: smallest original M[i,j] is preferred.
+
+    Direction encoding: 0 = free, 1 = red (row→col), 2 = blue (col→row).
+    Returns the chosen neighbour node index, or -1 when v has no edges left.
+    """
+    # Bipartite structure: row nodes (0..n-1) only connect to col nodes (n..2n-1)
+    # and vice versa.  Scanning the other half is always zero — restrict the
+    # range to the live half only, halving the inner loop.
+    is_row = v < n
+    current_dir = 1 if is_row else 2
+
+    best_t1_u = np.int64(-1)
+    best_t1_w = np.int64(-1)
+    best_t2_u = np.int64(-1)
+    best_t2_w = np.int64(-1)
+    best_t3_u = np.int64(-1)
+    best_t3_w = np.int64(-1)
+
+    if is_row:
+        # v is a row node → neighbours are col nodes n..2n-1
+        i = v
+        for u in range(n, 2 * n):
+            if adj[v, u] == 0:
+                continue
+            j    = u - n
+            orig = M[i, j]
+            td   = np.int64(dir_arr[i, j])
+            if td == current_dir:
+                if best_t1_u == -1 or orig < best_t1_w:
+                    best_t1_w = orig
+                    best_t1_u = np.int64(u)
+            elif td == 0:
+                if best_t2_u == -1 or orig < best_t2_w:
+                    best_t2_w = orig
+                    best_t2_u = np.int64(u)
+            else:
+                if best_t3_u == -1 or orig < best_t3_w:
+                    best_t3_w = orig
+                    best_t3_u = np.int64(u)
+    else:
+        # v is a col node → neighbours are row nodes 0..n-1
+        j = v - n
+        for u in range(n):
+            if adj[v, u] == 0:
+                continue
+            i    = u
+            orig = M[i, j]
+            td   = np.int64(dir_arr[i, j])
+            if td == current_dir:
+                if best_t1_u == -1 or orig < best_t1_w:
+                    best_t1_w = orig
+                    best_t1_u = np.int64(u)
+            elif td == 0:
+                if best_t2_u == -1 or orig < best_t2_w:
+                    best_t2_w = orig
+                    best_t2_u = np.int64(u)
+            else:
+                if best_t3_u == -1 or orig < best_t3_w:
+                    best_t3_w = orig
+                    best_t3_u = np.int64(u)
+
+    if best_t1_u != -1:
+        return best_t1_u
+    if best_t2_u != -1:
+        return best_t2_u
+    return best_t3_u
+
+
+@jit(nopython=True, nogil=True, cache=True)
+def _hierholzer_heuristic_jit(adj, n, dir_arr, M, start, stack_buf, red, blue):
+    """
+    JIT Hierholzer Euler-circuit with the same-direction heuristic —
+    colours each edge DIRECTLY at the moment it is traversed.
+
+    Replaces _hierholzer_heuristic (Python).  Uses caller-supplied
+    stack_buf (pre-allocated int64 array) to avoid heap allocation in the
+    hot loop.  Mutates adj, dir_arr, red, blue in-place.
+
+    BUGFIX (was: build a `path_buf` via pop-and-reverse, then colour
+    adjacent pairs in a separate `_color_path_jit` pass): that
+    reconstruction can — under the same-direction heuristic's "forced
+    ruin" (Tier-3) choices — splice sub-tours in a way that places two
+    same-bipartite-side nodes adjacently in the popped sequence (e.g.
+    two column nodes back to back).  `_color_path_jit` would then treat
+    that *non-edge* pair as a traversed edge and colour it, indexing
+    red/blue with a node id ≥ n — an out-of-bounds write that Numba's
+    nopython mode does not bounds-check, corrupting the heap (observed as
+    a process-killing access violation on the dense paper config).
+
+    The fix: never reconstruct a circuit at all.  Each iteration of this
+    loop already knows EXACTLY which real edge (v, u) it is consuming and
+    which physical direction it departs — row→col is unconditionally RED,
+    col→row is unconditionally BLUE (see _euler_split_heuristic_jit
+    docstring) — so we can accumulate red/blue right here, on genuine
+    edges only, with no reconstruction step that could ever fabricate a
+    phantom edge.
+    """
+    stack_top = np.int64(0)
+
+    stack_buf[0] = np.int64(start)
+    stack_top = np.int64(1)
+
+    while stack_top > 0:
+        v = stack_buf[stack_top - 1]
+        u = _choose_next_jit(v, n, adj, dir_arr, M)
+
+        if u != -1:
+            # ── Traverse edge v → u ──────────────────────────────────────
+            adj[v, u] -= 1
+            adj[u, v] -= 1
+
+            is_row = v < n
+            if is_row:
+                i = v
+                j = u - n
+                red[i, j] += 1                       # row → col = RED
+                if dir_arr[i, j] == 0:
+                    dir_arr[i, j] = np.int8(1)        # lock to red
+            else:
+                i = u
+                j = v - n
+                blue[i, j] += 1                       # col → row = BLUE
+                if dir_arr[i, j] == 0:
+                    dir_arr[i, j] = np.int8(2)        # lock to blue
+
+            stack_buf[stack_top] = u
+            stack_top += 1
+        else:
+            # No edges left from v — node is done; nothing to record,
+            # colouring already happened on traversal.
+            stack_top -= 1
+
+
+@jit(nopython=True, nogil=True, cache=True)
+def _euler_split_heuristic_jit(M, n):
+    """
+    JIT top-level: full same-direction Euler heuristic split.
+
+    Builds the bipartite multigraph adjacency array, then runs heuristic
+    Hierholzer on each connected component — colouring red/blue directly
+    during traversal (see _hierholzer_heuristic_jit bugfix note: no
+    separate circuit-reconstruction/colouring pass exists anymore, which
+    is what makes this immune to the phantom-edge corruption that used to
+    crash the process on the dense paper config).
+
+    Stack buffer is allocated once and reused across components.
+
+    Returns (red, blue) int64 matrices each with row/col sums = S/2.
+    """
+    adj     = _build_adj_jit(M, n)
+    dir_arr = np.zeros((n, n), dtype=np.int8)
+    red     = np.zeros((n, n), dtype=np.int64)
+    blue    = np.zeros((n, n), dtype=np.int64)
+
+    # Pre-allocate the stack buffer sized to the total number of parallel
+    # edges (its depth is bounded by the total edge count + 1).
+    total_edges = np.int64(0)
+    for i in range(n):
+        for j in range(n):
+            total_edges += M[i, j]
+    buf_size = total_edges + 2
+
+    stack_buf = np.empty(buf_size, dtype=np.int64)
+
+    for start in range(2 * n):
+        # Check whether this node has any remaining edges.
+        # Exploit bipartite structure: row nodes (0..n-1) only connect to col
+        # nodes (n..2n-1) and vice versa — only scan the live half.
+        has_edges = False
+        if start < n:                        # row node → check col side
+            for u in range(n, 2 * n):
+                if adj[start, u] > 0:
+                    has_edges = True
+                    break
+        else:                                # col node → check row side
+            for u in range(n):
+                if adj[start, u] > 0:
+                    has_edges = True
+                    break
+        if not has_edges:
+            continue
+
+        _hierholzer_heuristic_jit(
+            adj, n, dir_arr, M, start, stack_buf, red, blue
+        )
+
+    return red, blue
+
+
+# ===========================================================================
+# JIT port of the grouped / bulk-edge Euler split (see _euler_tour_grouped /
+# _euler_split_grouped_py above for the readable pure-Python reference and
+# the full correctness argument).
+#
+# Data-structure mapping (Python → JIT) — identical scheme to the heuristic
+# JIT port above:
+#   adj[u][v] dict-of-dicts (edge counts)  →  adj_mat[2n,2n] int64
+#   Python list `stack`                    →  pre-allocated int64 array
+#
+# Unlike the heuristic variant, no direction-locking state (`dir_arr`) or
+# separate colouring pass is needed: colour is determined purely by which
+# bipartite side the current node departs from (row→col = RED-first,
+# col→row = BLUE-first — see the correctness comment above), so each
+# consumed edge-group is coloured and accumulated directly into red/blue
+# the moment it is traversed.
+# ===========================================================================
+
+
+@jit(nopython=True, nogil=True, cache=True)
+def _choose_any_jit(v, n, adj):
+    """
+    Return any neighbour u of v that still has a non-empty parallel-edge
+    group (adj[v, u] > 0), or -1 if v has no edges left.
+
+    Unlike `_choose_next_jit` (heuristic variant), no priority/ordering is
+    needed here: Hierholzer's algorithm is selection-order-agnostic — ANY
+    choice that empties an edge group still yields a valid single-traversal
+    Euler circuit covering every edge exactly once (see the correctness
+    argument above `_euler_tour_grouped`).  We therefore just take the
+    first live neighbour found, restricting the scan to the live bipartite
+    half (row nodes only connect to col nodes and vice versa).
+    """
+    if v < n:
+        for u in range(n, 2 * n):
+            if adj[v, u] > 0:
+                return u
+    else:
+        for u in range(n):
+            if adj[v, u] > 0:
+                return u
+    return -1
+
+
+@jit(nopython=True, nogil=True, cache=True)
+def _hierholzer_grouped_jit(adj, n, red, blue, start, stack_buf):
+    """
+    JIT Hierholzer traversal that bulk-consumes each freshly-chosen
+    parallel-edge group in a single O(1) step, accumulating red/blue
+    colour counts directly — no separate path buffer or colouring pass.
+
+    Mutates `adj`, `red`, `blue` in place.  `stack_buf` is a caller-
+    supplied pre-allocated int64 buffer.  Each push corresponds to fully
+    consuming one distinct (i, j) edge-group with an odd remaining count
+    (the even-count case stays at v without pushing), so across the whole
+    traversal of this component the number of pushes is bounded by the
+    number of distinct edge-groups touched — i.e. by nnz(M).
+
+    Colouring rule (departure side ⇒ colour, see module comment):
+        row  → col   departs RED  first  (ceil(c/2) red, floor(c/2) blue)
+        col  → row   departs BLUE first  (ceil(c/2) blue, floor(c/2) red)
+    """
+    stack_top = np.int64(0)
+    stack_buf[0] = np.int64(start)
+    stack_top = np.int64(1)
+
+    while stack_top > 0:
+        v = stack_buf[stack_top - 1]
+        u = _choose_any_jit(v, n, adj)
+
+        if u == -1:
+            stack_top -= 1
+            continue
+
+        c = adj[v, u]
+        adj[v, u] = 0
+        adj[u, v] = 0
+
+        if v < n:
+            i = v
+            j = u - n
+            red[i, j]  += (c + 1) // 2   # ceil(c/2) — row→col departs RED first
+            blue[i, j] += c // 2         # floor(c/2)
+        else:
+            i = u
+            j = v - n
+            blue[i, j] += (c + 1) // 2   # ceil(c/2) — col→row departs BLUE first
+            red[i, j]  += c // 2         # floor(c/2)
+
+        if c % 2 == 1:
+            stack_buf[stack_top] = u
+            stack_top += 1
+        # else: remain at v — its edge to u is now fully consumed, loop continues
+
+
+@jit(nopython=True, nogil=True, cache=True)
+def _euler_split_grouped_jit(M, n):
+    """
+    JIT top-level: full grouped/bulk-edge Euler split.
+
+    Builds the bipartite multigraph adjacency-count matrix, runs the
+    grouped Hierholzer traversal on each connected component (colouring
+    directly as it goes), and returns (red, blue) int64 matrices each with
+    row/col sums = S/2.
+
+    Stack buffer is sized to nnz(M) + 2: every push fully empties one
+    distinct (i, j) edge-group (adj[v,u] is zeroed on consumption), so at
+    most nnz(M) pushes can occur in total across all components.
+    """
+    adj  = _build_adj_jit(M, n)
+    red  = np.zeros((n, n), dtype=np.int64)
+    blue = np.zeros((n, n), dtype=np.int64)
+
+    nnz = np.int64(0)
+    for i in range(n):
+        for j in range(n):
+            if M[i, j] > 0:
+                nnz += 1
+    buf_size = nnz + 2
+
+    stack_buf = np.empty(buf_size, dtype=np.int64)
+
+    for start in range(2 * n):
+        has_edges = False
+        if start < n:
+            for u in range(n, 2 * n):
+                if adj[start, u] > 0:
+                    has_edges = True
+                    break
+        else:
+            for u in range(n):
+                if adj[start, u] > 0:
+                    has_edges = True
+                    break
+        if not has_edges:
+            continue
+
+        _hierholzer_grouped_jit(adj, n, red, blue, start, stack_buf)
+
+    return red, blue
+
 
 def _choose_next_neighbor(
     v: int,
@@ -406,36 +919,18 @@ def _euler_split_heuristic(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarr
     or vice versa).  This reduces the number of non-zeros in each half
     compared with the plain alternating split which distributes every pair
     across both sub-matrices.
+
+    IMPLEMENTATION
+    --------------
+    The inner Hierholzer traversal and neighbour-selection heuristic are
+    compiled with Numba (nopython=True, nogil=True) via
+    _euler_split_heuristic_jit(), which replaces the original pure-Python
+    loop that walked ~2 M edges one-by-one through Python dicts and
+    dynamically allocated tier lists (the observed 17.5 s bottleneck).
     """
     n = int_matrix.shape[0]
     M = np.round(int_matrix).astype(np.int64)
-
-    adj = _build_adj(M)
-
-    # Initialise per-(i,j) direction tracking and original-weight lookup
-    target_dir: Dict[Tuple[int, int], Optional[str]] = {}
-    original_count: Dict[Tuple[int, int], int] = {}
-    for i in range(n):
-        for j in range(n):
-            k = int(M[i, j])
-            if k > 0:
-                target_dir[(i, j)] = None    # direction not yet decided
-                original_count[(i, j)] = k   # kept for "smallest first"
-
-    red  = np.zeros((n, n), dtype=np.int64)
-    blue = np.zeros((n, n), dtype=np.int64)
-
-    # Process each connected component of the multigraph
-    for start in range(2 * n):
-        if not adj[start]:
-            continue
-        edges = _hierholzer_heuristic(adj, start, n, target_dir, original_count)
-        for (u, v) in edges:
-            if u < n:               # row → col  →  RED
-                red[u, v - n] += 1
-            else:                   # col → row  →  BLUE
-                blue[v, u - n] += 1
-
+    red, blue = _euler_split_heuristic_jit(M, n)
     return red, blue
 
 
@@ -453,9 +948,15 @@ def euler_split_once(
 
     Args:
         matrix:       n×n non-negative integer matrix with equal row/col sums S.
-        split_method: "euler"     — classic alternating Euler 2-colouring.
-                      "greedy"    — greedy integral split (falls back to euler).
-                      "heuristic" — same-direction Euler split (new strategy).
+        split_method: "euler"         — classic alternating Euler 2-colouring
+                                         (unit-by-unit edge traversal).
+                      "euler_grouped" — same alternating 2-colouring, but
+                                         walks each distinct (i,j) parallel-edge
+                                         group once in O(1) closed form instead
+                                         of M[i,j] individual unit-edge steps
+                                         (O(nnz) vs O(sum(M)) traversal cost).
+                      "greedy"        — greedy integral split (falls back to euler).
+                      "heuristic"     — same-direction Euler split (new strategy).
 
     Returns:
         (red, blue) — two integer matrices each with row/col sums ⌊S/2⌋.
@@ -478,6 +979,8 @@ def euler_split_once(
         red, blue = _greedy_split(int_matrix)
     elif split_method == "heuristic":
         red, blue = _euler_split_heuristic(int_matrix)
+    elif split_method == "euler_grouped":
+        red, blue = _euler_split_grouped(int_matrix)
     else:  # default: "euler"
         red, blue = _euler_split(int_matrix)
 
@@ -551,7 +1054,7 @@ def decompose_euler_framework(
     depth: int = 1,
     split_method: str = "euler",
     max_workers: Optional[int] = None,
-) -> Tuple[List[DecompositionComponent], float, int]:
+) -> Tuple[List[DecompositionComponent], float, float, int]:
     """
     Euler splitting framework decomposition.
 
@@ -572,11 +1075,16 @@ def decompose_euler_framework(
                         runtime simulates hardware parallelism).
 
     Returns:
-        (components, max_leaf_runtime_s, num_leaves)
+        (components, split_time_s, max_leaf_runtime_s, num_leaves)
+
+        split_time_s is the wall-clock time spent in the splitting phase only
+        (building the leaf tree), so callers can separate "cost of splitting"
+        from "cost of extracting matchings from the leaves".
     """
     int_matrix = np.round(matrix).astype(np.int64)
 
     # Build list of leaf matrices by iteratively splitting
+    t_split0 = time.perf_counter()
     leaves: List[np.ndarray] = [int_matrix]
     for _ in range(depth):
         next_leaves: List[np.ndarray] = []
@@ -589,6 +1097,7 @@ def decompose_euler_framework(
                 next_leaves.append(red)
                 next_leaves.append(blue)
         leaves = next_leaves
+    split_time = time.perf_counter() - t_split0
 
     non_empty = [lf for lf in leaves if np.any(lf > 0)]
 
@@ -601,7 +1110,7 @@ def decompose_euler_framework(
         max_leaf_runtime = max(max_leaf_runtime, leaf_rt)
         all_components.extend(comps)
 
-    return all_components, max_leaf_runtime, len(non_empty)
+    return all_components, split_time, max_leaf_runtime, len(non_empty)
 
 
 # ===========================================================================

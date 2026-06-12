@@ -88,7 +88,7 @@ def check_split_invariants(
 
 def _reconstruct_from_euler_framework(matrix, depth, split_method, matching_method="heavy"):
     """Run decompose_euler_framework and reconstruct the matrix from components."""
-    comps, _, _ = decompose_euler_framework(
+    comps, _, _, _ = decompose_euler_framework(
         matrix=matrix,
         matching_method=matching_method,
         depth=depth,
@@ -122,7 +122,7 @@ def _collect_leaves(matrix: np.ndarray, depth: int, split_method: str):
 # ===========================================================================
 
 class TestSplitCorrectness:
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     @pytest.mark.parametrize("n,k,seed", [
         (4,  4,  0),
         (8,  8,  1),
@@ -138,7 +138,7 @@ class TestSplitCorrectness:
             err_msg=f"split_method={split_method} n={n} k={k}: red+blue != original"
         )
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_split_non_negative(self, split_method):
         """Both halves must have non-negative entries."""
         mat = _make_matrix(16, 8, seed=99)
@@ -152,7 +152,7 @@ class TestSplitCorrectness:
 # ===========================================================================
 
 class TestDoublyStochastic:
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     @pytest.mark.parametrize("n,k,seed", [
         (4,  4,  10),
         (8,  8,  11),
@@ -171,7 +171,7 @@ class TestDoublyStochastic:
             f"(row sums={red.sum(axis=1)}, col sums={red.sum(axis=0)}, expected={expected})"
         )
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     @pytest.mark.parametrize("n,k,seed", [
         (4,  4,  20),
         (8,  8,  21),
@@ -189,14 +189,14 @@ class TestDoublyStochastic:
             f"(row sums={blue.sum(axis=1)}, col sums={blue.sum(axis=0)}, expected={half})"
         )
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_uniform_matrix(self, split_method):
         """Uniform matrix (all entries = S/n) — hardest case for greedy (forces fallback)."""
         n, S = 4, 4
         mat = np.full((n, n), S // n, dtype=np.int64)
         check_split_invariants(mat, *euler_split_once(mat, split_method), split_method)
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_diagonal_matrix(self, split_method):
         """Diagonal matrix: all weight concentrated on diagonal."""
         n, S = 8, 8
@@ -266,7 +266,7 @@ class TestGreedySparsity:
 # ===========================================================================
 
 class TestFrameworkReconstruction:
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     @pytest.mark.parametrize("depth", [0, 1, 2, 3])
     @pytest.mark.parametrize("n,k,seed", [
         (8,  4,  40),
@@ -281,14 +281,14 @@ class TestFrameworkReconstruction:
             err_msg=f"Reconstruction failed: split={split_method} depth={depth} n={n} k={k}"
         )
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     @pytest.mark.parametrize("depth", [1, 2])
     def test_cycle_length_equals_S(self, split_method, depth):
         """C(D) = sum of weights = S for strong decompositions on integer matrices."""
         n, k, seed = 16, 8, 50
         mat = _make_matrix(n, k, seed)
         S = float(mat.sum(axis=1).max())
-        comps, _, _ = decompose_euler_framework(
+        comps, _, _, _ = decompose_euler_framework(
             mat, matching_method="heavy", depth=depth, split_method=split_method
         )
         c_total = sum(c.weight for c in comps)
@@ -296,20 +296,20 @@ class TestFrameworkReconstruction:
             f"C(D)={c_total:.4f} != S={S:.4f} for split={split_method} depth={depth}"
         )
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_num_leaves_correct(self, split_method):
         """Number of non-empty leaves should be <= 2^depth."""
         n, k, seed = 16, 8, 60
         mat = _make_matrix(n, k, seed)
         for depth in range(4):
-            _, _, n_leaves = decompose_euler_framework(
+            _, _, _, n_leaves = decompose_euler_framework(
                 mat, depth=depth, split_method=split_method
             )
             assert n_leaves <= 2 ** depth + 1, (
                 f"n_leaves={n_leaves} > 2^depth={2**depth} for depth={depth}"
             )
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_leaves_doubly_stochastic(self, split_method):
         """All leaf matrices must have equal row and column sums."""
         n, k, depth = 16, 8, 2
@@ -334,7 +334,7 @@ class TestFrameworkReconstruction:
 # ===========================================================================
 
 class TestEdgeCases:
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_odd_S(self, split_method):
         """Odd row sum S: guaranteed by summing exactly 3 unit-weight permutations."""
         n = 8
@@ -351,16 +351,16 @@ class TestEdgeCases:
         assert _is_doubly_stochastic_int(red,  S // 2 + 1), f"odd-S red not DS ({split_method})"
         assert _is_doubly_stochastic_int(blue, S // 2),     f"odd-S blue not DS ({split_method})"
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_permutation_matrix_depth0(self, split_method):
         """A pure permutation matrix (S=1) at depth=0 should still decompose."""
         n = 8
         perm = np.eye(n, dtype=np.float64)
-        comps, _, _ = decompose_euler_framework(perm, depth=0, split_method=split_method)
+        comps, _, _, _ = decompose_euler_framework(perm, depth=0, split_method=split_method)
         reconstructed = sum(c.permutation * c.weight for c in comps)
         np.testing.assert_allclose(reconstructed, perm, atol=1e-9)
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_large_matrix_correctness(self, split_method):
         """n=64, k=16 — no crash and correct reconstruction."""
         mat = _make_matrix(64, 16, seed=90)
@@ -368,11 +368,11 @@ class TestEdgeCases:
         np.testing.assert_allclose(reconstructed, mat, atol=1e-5,
                                    err_msg=f"n=64 reconstruction failed ({split_method})")
 
-    @pytest.mark.parametrize("split_method", ["euler", "greedy"])
+    @pytest.mark.parametrize("split_method", ["euler", "euler_grouped", "greedy"])
     def test_depth0_equals_plain_bvn(self, split_method):
         """depth=0 framework should produce same cycle length as plain BvN."""
         mat = _make_matrix(16, 8, seed=100)
-        comps_fw, _, _ = decompose_euler_framework(mat, depth=0, split_method=split_method)
+        comps_fw, _, _, _ = decompose_euler_framework(mat, depth=0, split_method=split_method)
         comps_bvn = bvn_decomposition(mat, matching_algorithm="heavy")
         c_fw  = sum(c.weight for c in comps_fw)
         c_bvn = sum(c.weight for c in comps_bvn)
@@ -488,7 +488,7 @@ class TestHeuristicCorrectness:
         """
         rng = np.random.default_rng(seed + 6000)
         M   = generate_matrix(n=32, k=16, max_weight=8, rng=rng).astype(np.float64)
-        comps, _, _ = decompose_euler_framework(
+        comps, _, _, _ = decompose_euler_framework(
             M, matching_method="heavy", depth=1, split_method="heuristic"
         )
         reconstructed = sum(c.weight * c.permutation for c in comps)
@@ -507,7 +507,7 @@ class TestHeuristicCorrectness:
         rng = np.random.default_rng(seed + 7000)
         M   = generate_matrix(n=32, k=16, max_weight=8, rng=rng).astype(np.float64)
         S   = float(M.sum(axis=1).max())
-        comps, _, _ = decompose_euler_framework(
+        comps, _, _, _ = decompose_euler_framework(
             M, matching_method="heavy", depth=1, split_method="heuristic"
         )
         C = float(sum(c.weight for c in comps))

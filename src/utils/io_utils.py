@@ -23,8 +23,11 @@ def write_stats_to_csv(stats_list: List[DecompositionStats], path: Path) -> None
 
         header = ["matrix_index", "bvn_perms", "bvn_cycle", "bvn_runtime", "bvn_matching"]
         for key in sorted_keys:
-            # key is like "wfa_2" or "heavy_8"
-            header += [f"{key}_time", f"{key}_cycle", f"{key}_perms", f"{key}_planes"]
+            # key is like "wfa_2", "heavy_8" or "euler_heuristic_depth2".
+            # "_split" is the sequential split-phase time; only Euler
+            # framework keys populate it (None for radix/plain keys).
+            header += [f"{key}_time", f"{key}_cycle", f"{key}_perms",
+                       f"{key}_planes", f"{key}_split"]
 
         writer.writerow(header)
 
@@ -34,10 +37,10 @@ def write_stats_to_csv(stats_list: List[DecompositionStats], path: Path) -> None
             for key in sorted_keys:
                 if key in s.radix_multi_results:
                     res = s.radix_multi_results[key]
-                    # Pad to 4 fields in case an older 3-tuple sneaks in
-                    row += list(res) + [None] * (4 - len(res))
+                    # Pad to 5 fields (older tuples lack planes and/or split)
+                    row += list(res) + [None] * (5 - len(res))
                 else:
-                    row += [None, None, None, None]
+                    row += [None, None, None, None, None]
             writer.writerow(row)
 
 
@@ -82,13 +85,19 @@ def parse_stats_from_csv(csv_path: Path) -> List[DecompositionStats]:
                 c = row.get(f"{key}_cycle")
                 p = row.get(f"{key}_perms")
                 pl = row.get(f"{key}_planes")  # Optional; older CSVs won't have this column
+                sp = row.get(f"{key}_split")   # Optional; only Euler keys / newer CSVs
 
                 if t and c and p and t != "None":
                     if pl and pl != "None" and pl != "":
                         planes = int(float(pl))
                     else:
                         planes = 0  # sentinel: plane count unknown for legacy CSVs
-                    ds.radix_multi_results[key] = (float(t), float(c), int(float(p)), planes)
+                    if sp and sp != "None" and sp != "":
+                        ds.radix_multi_results[key] = (
+                            float(t), float(c), int(float(p)), planes, float(sp))
+                    else:
+                        ds.radix_multi_results[key] = (
+                            float(t), float(c), int(float(p)), planes)
             
             stats_list.append(ds)
     return stats_list

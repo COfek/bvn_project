@@ -38,6 +38,17 @@ class ExperimentConfig:
     # depth=0 is plain BvN (no splitting); depth=1 gives 2 leaves, etc.
     euler_depths: List[int] = field(default_factory=lambda: [1])
 
+    # Split strategy used by the Euler framework:
+    # "heuristic" (same-direction, sparser leaves), "euler" (classic
+    # alternating 2-colouring), "euler_grouped" (bulk O(nnz) variant),
+    # or "greedy" (integral block assignment with Euler fallback).
+    euler_split_method: str = "heuristic"
+
+    # BvN matching engine used on the Euler leaves AND for the BvN baseline
+    # when engine == "euler_bvn" (so baseline vs. leaves is a fair
+    # comparison): "heavy", "heavy_static", "wfa", "maximum", "minimum".
+    euler_leaf_engine: str = "heavy_static"
+
     engine: str = field(default="bvn", metadata={"help": "Decomposition engine: 'bvn', 'wfa', 'heavy', 'maximum', 'all', 'wfa_bvn'"})
 
     # --- Logging & Visualization ---
