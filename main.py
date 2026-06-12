@@ -20,10 +20,16 @@ def build_config(args) -> ExperimentConfig:
     engine = args.engine
     if engine == "max":
         engine = "maximum"
-        
+
+    # --radix-bases not given: radix engines keep their traditional default
+    # sweep; euler_bvn runs NO radix unless bases are requested explicitly.
+    radix_bases = args.radix_bases
+    if radix_bases is None:
+        radix_bases = [] if engine == "euler_bvn" else [2, 4, 8, 16, 32]
+
     return ExperimentConfig(
         engine=engine,
-        radix_bases=args.radix_bases,
+        radix_bases=radix_bases,
         euler_depths=args.euler_depths,
         euler_split_method=args.euler_split_method,
         euler_leaf_engine=args.euler_leaf_engine,

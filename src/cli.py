@@ -44,8 +44,11 @@ def parse_args() -> argparse.Namespace:
                         help="Generate float weights instead of integer weights.")
 
     # Advanced / Legacy Arguments
-    parser.add_argument("--radix-bases", type=int, nargs='*', default=[2,4,8,16,32],
-                        help="Radix bases to test (defaults to [2] i.e., bitplane).")
+    parser.add_argument("--radix-bases", type=int, nargs='*', default=None,
+                        help="Radix bases to test. For radix engines the default is "
+                             "[2, 4, 8, 16, 32]. For --engine euler_bvn, Radix does NOT "
+                             "run unless this flag is given explicitly (e.g. "
+                             "--radix-bases 2 4 8 16 to compare Euler leaves vs digit planes).")
     parser.add_argument("--euler-depths", type=int, nargs='*', default=[1],
                         help="Euler splitting depths to test (depth=d gives 2^d leaf matrices). "
                              "depth=0 is plain BvN with no splitting. "

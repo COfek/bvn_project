@@ -56,9 +56,15 @@ def write_euler_comparison_summary(
     for s in stats:
         all_keys.update(s.radix_multi_results.keys())
 
+    def _depth_of(key: str) -> int:
+        try:
+            return int(key.rsplit("depth", 1)[1])
+        except (ValueError, IndexError):
+            return 0  # unknown depth format — sort first, never crash
+
     euler_keys = sorted(
         (k for k in all_keys if k.startswith("euler_") and "depth" in k),
-        key=lambda k: int(k.rsplit("depth", 1)[1]),
+        key=_depth_of,
     )
     radix_keys = sorted(
         (k for k in all_keys if not k.startswith("euler_")),
@@ -88,7 +94,7 @@ def write_euler_comparison_summary(
     add("    'split' = sequential splitting phase, reported separately.")
     add("")
     add(f"{'config':<28} {'units':>6} {'split ms':>9} {'max-leaf ms':>11} "
-        f"{'vs baseline':>11} {'vs prev':>8} {'cycle':>9} {'perms':>7}")
+        f"{'vs baseline':>11} {'vs lvl':>8} {'cycle':>9} {'perms':>7}")
     add("-" * 96)
     if baseline_ms is not None:
         add(f"{'bvn_baseline (depth 0)':<28} {1:>6} {'-':>9} {baseline_ms:>11.2f} "
@@ -97,23 +103,31 @@ def write_euler_comparison_summary(
             f"{baseline_perms if baseline_perms is not None else float('nan'):>7.0f}")
 
     prev_ms = baseline_ms
+    prev_depth = 0
     for key in euler_keys:
         t_ms = (_key_mean(stats, key, 0) or 0.0) * 1e3
         cyc = _key_mean(stats, key, 1)
         perms = _key_mean(stats, key, 2)
         units = _key_mean(stats, key, 3)
         split = _key_mean(stats, key, 4)
+        depth = _depth_of(key)
         vs_base = t_ms / baseline_ms if baseline_ms else float("nan")
-        vs_prev = t_ms / prev_ms if prev_ms else float("nan")
+        # Per-level ratio: normalised by the number of depth levels between
+        # this row and the previous one, so the halving hypothesis reads as
+        # ~0.5 even when --euler-depths skips levels (e.g. 1 3).
+        d_levels = max(depth - prev_depth, 1)
+        vs_lvl = ((t_ms / prev_ms) ** (1.0 / d_levels)
+                  if prev_ms and t_ms > 0 else float("nan"))
         add(f"{key:<28} {units or 0:>6.1f} "
             f"{(split or 0.0) * 1e3:>9.2f} {t_ms:>11.2f} "
-            f"{vs_base:>11.3f} {vs_prev:>8.3f} "
+            f"{vs_base:>11.3f} {vs_lvl:>8.3f} "
             f"{cyc if cyc is not None else float('nan'):>9.0f} "
             f"{perms if perms is not None else float('nan'):>7.0f}")
         prev_ms = t_ms
+        prev_depth = depth
     add("")
-    add("    Halving hypothesis: 'vs prev' ~= 0.5 means each split level halves")
-    add("    the max-leaf extraction time.")
+    add("    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the")
+    add("    max-leaf extraction time (geometric per-level ratio when depths skip).")
 
     # ------------------------------------------------------------------
     # Section 2: Euler leaves vs. Radix planes (matched unit counts)
