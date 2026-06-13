@@ -1,159 +1,246 @@
 # BvN-Arbiter — Session Handoff
 
-You're picking up an MSc thesis project mid-stream. This file gets you to context-parity with the previous session in one read.
+You're picking up an MSc thesis project mid-stream. This file gets you to
+context-parity with the previous Claude Code sessions in one read. **Branch:
+`euler_splitting`** (not `master` — all the recent work is here).
 
 ---
 
 ## 1. What this project is
 
-A Python framework that decomposes **scaled doubly stochastic** demand matrices (rows and columns all sum to a common scale factor S) into weighted permutation matrices, for crossbar-switch scheduling research. It benchmarks several bipartite matching algorithms across two decomposition frameworks (classical BvN and Radix / digit-plane), measuring a three-way tradeoff:
+A Python framework that decomposes **scaled doubly stochastic** demand matrices
+(rows and columns all sum to a common scale factor S) into weighted permutation
+matrices, for **reconfigurable datacenter network / optical circuit switch
+scheduling** research. Each permutation = one switch configuration; its weight =
+how long that configuration is held.
+
+It benchmarks four bipartite matching engines across **three** decomposition
+frameworks (classical BvN, Radix / digit-plane, and **Euler splitting**),
+measuring a three-way tradeoff:
 
 - **Permutation count (N)** — number of switch reconfigurations
-- **Cycle length (∑ϕᵢ)** — total transmission duration
+- **Cycle length (C = ∑ϕᵢ)** — total transmission duration (optimum is S)
 - **Algorithmic runtime (T_calc)** — wall-clock decomposition time
 
-These feed the real cost function the project actually cares about — **Demand Completion Time**:
+These feed the real cost function the project cares about — **Demand Completion
+Time**:
 
-$$DCT = T_{calc} + (N \times T_{config}) + \left(\sum_{i=1}^{N} \phi_i \times T_{unit}\right)$$
+  DCT = T_calc + N·T_config + C·T_unit
 
-where T_config is hardware reconfiguration delay and T_unit is per-unit transmission time. Different (matching, framework) combos win on different (T_config, T_unit) hardware profiles. The current README focuses on the three input metrics; the DCT framing lives in `project background.pdf` (uploaded but not yet folded into the README).
+where T_config is the hardware reconfiguration delay ("latency tax") and T_unit
+is per-unit transmission time. Different (matching, framework) combos win on
+different (T_config, T_unit) hardware profiles.
 
 ---
 
-## 2. Layout
+## 2. The accompanying paper (NOT in git)
+
+There is an LaTeX thesis paper at `C:\Users\ofekc\Desktop\Msc\Thesis\paper\file.tex`
+(sibling of this repo). **It is deliberately NOT version-controlled and lives
+only on the original machine** — so a session on another station won't have it.
+This handoff captures its state so you have the context regardless.
+
+Paper structure (as of last session): Abstract → §1 Introduction (motivated by
+Avin & Schmid, *Revolutionizing Datacenter Networks via Reconfigurable
+Topologies*, CACM 2025 — Chen Avin is the advisor) → §2 Background → §3 Strategies
+→ §4 DCT → §5 Matrix Generation → §6 Sub-optimal Strategies → §7 Radix Framework
+→ §8 **Euler Splitting Framework** (new) → §9 Results (incl. §9.8 Euler all-engines
+results, §9.9 Euler-vs-Radix) → §10 Summary (incl. §10.6 DCT vs T_config).
+
+**Paper status:** body is complete and consistent (both frameworks × dense/sparse
+× 4 engines, all figures 4-panel, Table-2-consistent). Front matter (abstract +
+intro) added. **The one remaining gap: a Conclusion / Limitations / Future Work
+section** — the paper currently ends abruptly at the DCT analysis → bibliography.
+If asked to "finish the paper," that's the missing piece. Limitations to state:
+simulated (not measured) parallelism; Euler runs use 100 samples vs radix's 1000;
+single synthetic traffic model; no real optical-switch validation.
+
+---
+
+## 3. Layout
 
 ```
 bvn_project/
-├── main.py                       # entry point
+├── main.py                       # entry point (→ cli → runner → plotting + analysis)
 ├── src/
-│   ├── cli.py                    # argparse
+│   ├── cli.py                    # argparse (all flags incl. --euler-*)
 │   ├── config.py                 # ExperimentConfig dataclass
 │   ├── runner.py                 # per-matrix worker + experiment driver
-│   ├── plotting.py               # matplotlib (heavy file, ~620 lines)
+│   ├── plotting.py               # matplotlib (_key_label handles euler keys)
 │   ├── algorithms/
-│   │   ├── bvn.py                # classical BvN decomposition
+│   │   ├── bvn.py                # classical BvN
 │   │   ├── radix_decomposition.py# digit-plane decomposition
+│   │   ├── euler_splitting.py    # EULER FRAMEWORK (the main recent work)
 │   │   ├── wfa.py                # Wavefront Arbiter (Numba JIT)
-│   │   └── sorted_array_matching.py  # heavy / heavy_static (Numba JIT)
+│   │   └── sorted_array_matching.py # heavy / heavy_static (Numba JIT, BFS augment)
 │   └── utils/
-│       ├── matrix_generator.py   # K-regular generator
-│       ├── io_utils.py           # CSV read/write
-│       ├── stats.py              # DecompositionStats dataclass
-│       ├── run_utils.py          # run-folder + config persistence
-│       └── logging_utils.py
-├── tests/                        # pytest correctness tests
-├── agent_scripts/                # scratch sweeps, analysis, debug
-├── run/                          # timestamped per-run outputs
-├── summary/                      # headline 16-experiment grid
+│       ├── matrix_generator.py   # K-regular generator (sum of k weighted perms)
+│       ├── analysis.py           # post-run euler_comparison_summary.txt
+│       ├── io_utils.py, stats.py, run_utils.py, logging_utils.py
+├── tests/                        # pytest (962 tests incl. paper-scale)
+├── agent_scripts/                # GITIGNORED scratch (task1/2/3, DCT plot script)
+├── final_runs/                   # canonical Table-2 batch lives here (see §6)
 └── .venv/                        # Windows venv (Scripts/python.exe)
 ```
 
-Engines: `wfa`, `maximum` (scipy Hungarian), `heavy` (greedy sorted-edge, dynamic re-sort), `heavy_static` (greedy sorted-edge, sort-once). Compound modes `wfa_bvn`, `heavy_bvn`, `heavy_static_bvn`, `maximum_bvn`, `all` run BvN and Radix on the same matrices for direct comparison. See README for the full CLI table.
+**Engines:** `wfa`, `maximum` (scipy Hungarian), `heavy` (= GW Dynamic, greedy
+re-sorted every iter), `heavy_static` (= GW Static, sort-once). The first three
+are "strong" (BFS augmenting paths → perfect matchings → C = S); WFA is "weak"
+(maximal-not-perfect → C ≥ S). Also: `minimum` (min-weight Hungarian) and
+`*_noaug` (greedy without augmentation) — diagnostics only.
 
 ---
 
-## 3. What was just done in the last session
+## 4. The Euler splitting framework (the core recent work)
 
-### A. README rewritten to match real code
-- Directory tree, CLI flags, all 4 matching engines + compound modes, new "Decomposition Strategies" section, fixed broken code fences. Don't believe any older description that mentions `heavy_point.py` (file was renamed to `sorted_array_matching.py`) or a `--density` flag (it's `--k`).
+`euler_splitting.py`. Splits an S-regular matrix into two (S/2)-regular halves
+via an Euler-tour 2-colouring of its bipartite multigraph; depth d → 2^d
+doubly-stochastic leaves, each BvN-decomposed independently (parallelism
+simulated as max-leaf time). **Every leaf stays doubly stochastic, so C = S
+exactly at any depth** for strong engines — the key differentiator vs Radix
+(whose digit planes inflate C) and Split-Tree (dropped).
 
-### B. Plane count threaded through to plots
-- `decompose_radix` now returns `(components, runtime, num_non_empty_planes)`.
-- Runner stores a 4-tuple `(runtime, cycle, perms, planes)` in `radix_multi_results`.
-- CSV gains `{key}_planes` columns. Reader tolerates older CSVs missing the column (defaults to 0 sentinel).
+Split methods (`euler_split_once`, selectable via `--euler-split-method`):
+- **`heuristic`** (default) — same-direction traversal keeps each entry's copies
+  in one half → **sparser leaves** → faster extraction. THE one we use.
+  Implemented with O(1)-amortized tier-stack selection (`_euler_split_heuristic_fast_jit`),
+  ~30× faster than the original O(n)-scan (`heuristic_scan`, kept as reference).
+- `euler` — plain alternating 2-colouring (splits every entry ~50/50, no sparsity).
+- `euler_grouped` — O(nnz) bulk version of plain euler.
+- `greedy` — whole-block assignment, falls back to euler.
 
-### C. BVN matching algorithm now recorded
-- `DecompositionStats.bvn_matching: Optional[str]` field added.
-- Runner sets it to whatever matching BVN actually used (`wfa`, `heavy`, `heavy_static`, or `maximum`).
-- CSV gains `bvn_matching` column. Reader tolerates older CSVs missing it.
+`decompose_euler_framework(matrix, matching_method, depth, split_method)` returns
+`(components, split_time, max_leaf_runtime, n_leaves)`. The splits within each
+tree level run concurrently on threads (`ThreadPoolExecutor`; the JIT kernels are
+nogil), so `split_time` is parallel wall-clock.
 
-### D. Plot legend convention is now consistent: `<matching>-<framework>`
-- Radix labels: `WFA-B2`, `HEAVY-B4`, `MAX-B16`, etc. (was `WFA (B-2)` etc.)
-- BVN baseline: `WFA-BVN`, `MAX-BVN`, etc. via a new `_bvn_legend_label(stats)` helper.
-- Helper falls back to plain `BVN` when `bvn_matching` is missing (legacy CSVs).
-- Applied uniformly across the two efficiency plots, the time-series `_plot_trend`, and the distribution `_plot_dynamic_grid`.
-
-### E. Per-point annotations on efficiency plots (color-blind safety)
-- Each radix point on `runtime_vs_cycle_*` and `runtime_vs_permutations_*` is annotated with `B<base>, <N>p` (e.g. `B2, 8p`) in the marker color, bold, fontsize 8.
-- Falls back to `B<base>` if plane data is missing, or `B<base>, <min>-<max>p` if plane count varies across samples.
-
-### F. WFA Trend line removed from both efficiency plots
-- It was only wired up for WFA (no equivalent for other engines) and looped on itself when the base→performance relationship wasn't monotonic. The Pareto Frontier remains as the sole overlay.
-
-### G. Tests updated
-- `tests/test_simulation_correctness.py`: 3 call sites updated to unpack the new 3-tuple from `decompose_radix`.
-
-### H. Typo fix (user-applied)
-- `src/algorithms/__init__,py` → `__init__.py` (the comma was preventing the package from being a clean module).
+**Run it via the pipeline:** `-e euler_bvn` with `--euler-depths`,
+`--euler-split-method`, `--euler-leaf-engine`. Under `euler_bvn`, the BvN
+baseline, Radix planes, and Euler leaves all use `--euler-leaf-engine` (fair
+comparison). Empty `--radix-bases` → no Radix (Euler-only).
 
 ---
 
-## 4. Open threads / things in flight
+## 5. Key findings (so the next session doesn't re-derive them)
 
-### Sanity check for BVN cycle length
-A snippet was drafted but not yet inserted. It verifies for each generated matrix that:
-1. All rows sum to the same value S.
-2. All columns sum to S.
-3. `cycle_length_bvn ≈ S` (within 1e-6).
+These came from the professor's three tasks:
 
-The intended placement is in `src/runner.py` inside `_compute_for_index`, immediately after the BVN block (after `bvn_matching_used = bvn_engine`). Hard-fail with `raise ValueError`. Skip the cycle check on the `else` branch where BVN doesn't run.
+1. **Does splitting reduce matching-extraction time?** YES — each depth halves
+   max-leaf time (~0.5 per level). First dense split is better-than-half (0.43×)
+   because the heuristic also makes leaves sparser. (Paper §9.8, Table 4/5.)
+2. **Euler leaves vs Radix digit planes (matched parallelism, Hungarian):**
+   Euler wins at low parallelism (≤3 units), Radix at 4-9 units; Euler alone
+   past 9. Radix pays 8-54% cycle inflation; Euler holds C=S. (§9.9, Table 7.)
+3. **Split bottleneck:** was `_choose_next_jit` O(n) re-scan per unit edge
+   (O(n²S) total). Fixed with O(1) tier-stacks + parallel levels → split is now
+   <4% of extraction time it saves. (§8.3.)
 
-```python
-row_sums = matrix.sum(axis=1)
-col_sums = matrix.sum(axis=0)
-S = float(row_sums[0])
-if not np.allclose(row_sums, S, atol=1e-6):
-    raise ValueError(f"Matrix index {index}: row sums vary "
-                     f"(min={row_sums.min():.6g}, max={row_sums.max():.6g}).")
-if not np.allclose(col_sums, S, atol=1e-6):
-    raise ValueError(f"Matrix index {index}: col sums differ from row sums.")
-if not np.isclose(cycle_length_bvn, S, atol=1e-6):
-    raise ValueError(f"Matrix index {index}: BVN cycle length "
-                     f"{cycle_length_bvn:.6f} != scale factor S={S:.6f}.")
+**Strong/weak dichotomy:** the three strong engines hold C = S at every depth;
+**WFA breaks it** (each weak leaf inflates independently: 11873→12903 dense). This
+is a genuine finding — Euler's C=S guarantee is conditional on a strong engine.
+
+**Headline DCT result:** Hungarian Euler depth-4 is the **lowest-DCT config in
+the study for T_config ≲ 80µs** (the optical-switch regime) — its C·T_unit
+optimum (81.7ms vs 113.5ms for Radix B=2) outweighs its modestly higher T_calc.
+Euler complements Radix: cycle-optimal on fast hardware.
+
+**Engine ranking on Euler (dense extraction):** Hungarian fastest (~1.5× ahead of
+GW Static at every depth — opposite of the Radix story where GW Static B=2 wins,
+because Euler leaves stay dense so iteration count dominates).
+
+---
+
+## 6. Canonical experiment data — IMPORTANT for figure consistency
+
+The paper's **Table 2 (dense summary)** was produced by the batch
+`final_runs/20260522_*` — one run per engine, verified exact-match to the table:
+- `20260522_121704` → heavy_static_bvn (GW Static)
+- `20260522_131035` → heavy_bvn (GW Dynamic)
+- `20260522_144633` → wfa_bvn (WFA)
+- `20260522_155907` → maximum_bvn (Hungarian)
+
+Config: n=256, k=256, max_weight=64, 1000 matrices, radix-bases [2,4,8,16],
+generator "unified". The paper's radix figure panels are sourced from these.
+**If you regenerate radix figures, use this batch** so figures stay consistent
+with Table 2.
+
+Euler experiment runs live under `euler_exp/` (GITIGNORED — won't transfer to
+another station; re-run via the pipeline if needed). The `eng_{maximum,wfa,heavy}_*`
+and `final_task*` folders there feed the Euler tables/figures (100 samples each).
+
+---
+
+## 7. How to run experiments (reproduces the paper)
+
+```powershell
+# Setup (fresh station) — see README for full version
+python -m venv .venv ; .\.venv\Scripts\Activate.ps1 ; pip install -r requirements.txt
+
+# Task 1 (Euler-only, halving): dense + sparse
+python main.py -e euler_bvn -n 256 -k 256 --max-weight 64 -s 105 --euler-depths 1 2 3 -o euler_exp/t1_dense
+python main.py -e euler_bvn -n 256 -k 16  --max-weight 64 -s 105 --euler-depths 1 2 3 -o euler_exp/t1_sparse
+
+# Task 2 / all-engines (set --euler-leaf-engine to maximum|wfa|heavy|heavy_static)
+python main.py -e euler_bvn -n 256 -k 256 --max-weight 64 -s 105 --euler-leaf-engine maximum \
+    --euler-depths 1 2 3 4 --radix-bases 2 4 8 16 -o euler_exp/t2_dense
 ```
 
-### Possible follow-ups (not committed to)
-- **Split-Tree decomposition framework** — referenced in `project background.pdf` but not yet implemented in `src/algorithms/`. Heuristics it'd need: Sparsity Target, Max Depth, CV Threshold, Minimum Matching Fraction.
-- **DCT-aware comparison plot** — a fourth efficiency plot that plots actual DCT under user-specified (T_config, T_unit) hardware profiles, since that's the real metric. The three current efficiency plots (runtime, perms, cycle) are inputs to DCT, not DCT itself.
-- **README**: add the DCT formulation and scaled-doubly-stochastic framing to the "Mathematical Context" section. Currently it says "doubly stochastic" but the input is really *scaled* (rows/cols sum to S, not 1). The user already understands this distinction (came up explicitly in the last session); README just doesn't reflect it yet.
+Each run writes `results_stats.csv`, plots, and (for euler_bvn)
+`euler_comparison_summary.txt` to the timestamped run folder.
 
 ---
 
-## 5. Things to know (gotchas)
+## 8. Gotchas (read before long runs)
+
+### ⚠️ Long runs die if the machine sleeps
+Background runs >~30 min were **killed twice** by the machine sleeping/closing.
+Before any 1000-sample or multi-engine run, disable sleep
+(`powercfg /change standby-timeout-ac 0` or Settings → Power → Never). A dead run
+leaves a partial folder with NO `results_stats.csv` (CSV is written only at 100%).
 
 ### Venv is Windows-only
-`.venv/Scripts/python.exe` with Windows-built numpy wheels (`_delvewheel` shims). Don't try to run it from a Linux shell. Pytest and the actual `main.py` invocations need to be run from PowerShell:
-
-```powershell
-.venv\Scripts\python.exe -m pytest tests/ -v
-.venv\Scripts\python.exe main.py -n 64 -k 32 -e wfa_bvn -s 30 --radix-bases 2 4 8 16
-```
-
-### Files use CRLF line endings
-Most files are CRLF (`\r\n`). Some recent rewrites are LF — that's fine for Python but watch for spurious git diffs if your editor auto-converts.
-
-### `agent_scripts/` is scratch
-Many of the scripts there assign `decompose_radix(...)` to a single variable (don't unpack the tuple). They were already in that broken state before any recent refactor; they're not part of the main flow. Don't bother fixing unless you actually want to run them.
+`.venv/Scripts/python.exe` with Windows numpy wheels. Run from PowerShell. On a
+new station, recreate the venv (`python -m venv .venv ; pip install -r requirements.txt`).
 
 ### Numba JIT warm-up
-First few samples in any run get inflated timings from JIT compilation. The plotting code already drops the first 5 samples (`stats_list[5:]` in `main.py`). When debugging, prefer `--samples 30+` so the warm-up samples aren't a big fraction of the data.
+First samples have inflated timings. Every run drops the first 5 samples. Use
+`-s` ≥ ~100 for clean means; the paper uses 100 (euler) / 995 (radix).
+
+### `agent_scripts/` and `*.csv` are gitignored
+The standalone task scripts and the DCT-figure generator
+(`agent_scripts/plot_dct_vs_tconfig.py`) do NOT transfer via git. The main
+pipeline (`main.py`) reproduces every experiment, so this is fine for running —
+but the DCT *figure* generator would need to be recreated if you re-make that plot.
 
 ### Matrix generation is scaled doubly stochastic, not unit
-The generator (`generate_matrix`) sums `k` random permutations with random integer or float weights. Row/col sums are S = sum of those k weights — *not* 1. So `cycle_length_bvn` in the CSV equals S, not 1. The plots show "Average Cycle Length (Normalized)" because each cycle is divided by `cycle_length_bvn` before plotting (BVN divided by BVN = 1.0; Radix shows up as a ratio above 1). This was a point of confusion in the last session — don't get tripped up by it.
+Row/col sums = S = sum of k weights, not 1. So `bvn_cycle` in CSVs equals S.
+Plots show "Normalized Cycle Length" = C / bvn_cycle (BvN = 1.0; Radix > 1).
 
-### Hardcoded `5e-1` warmup drop
-The "drop first 5 samples" logic is hardcoded in two places (`main.py` and `--plot-from-csv` mode). If `--samples < 10`, all samples are kept. This is fine but worth knowing if a small-sample run produces weirdly different plots than a large-sample one.
+### Figure placement in the paper
+Use `\begin{figure}[htbp]`, NOT `[H]`, for anything taller than ~⅓ page — `[H]`
+forces exact placement and creates large white-space gaps when a tall figure
+can't share a page. (Already fixed throughout, but keep in mind for new figures.)
+
+### Alon's algorithm is NOT used
+The Euler split uses Hierholzer + alternating colouring. Alon (2003) was removed
+from the paper because we never implemented his specific algorithm. Cole-Hopcroft
+(the foundational result) stays.
 
 ---
 
-## 6. Suggested first move in the new session
+## 9. Suggested first move in a new session
 
-State your intent up front. If you're picking up the BVN sanity-check work, say so and reference section 4 above. If you're starting something new, give a one-liner about what.
+State your intent up front. Likely next tasks:
+- **Finish the paper**: write the Conclusion / Limitations / Future Work section
+  (§2 above) — but note the paper isn't in git, so this only works on the
+  original machine.
+- **More experiments**: bump Euler runs to 1000 samples to match radix (expensive,
+  ~hours; disable sleep first).
+- **Code**: everything is committed on `euler_splitting`. `git log --oneline -10`
+  for recent history.
 
-Useful diagnostic commands (PowerShell, project root):
-
+Diagnostics (PowerShell, project root):
 ```powershell
-git status
-git log --oneline -10
-.venv\Scripts\python.exe -m pytest tests/ -v
+git status ; git log --oneline -10
+.\.venv\Scripts\python.exe -m pytest tests/ -q -k "not visual"
 ```
