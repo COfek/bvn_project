@@ -1,10 +1,12 @@
 # BvN-Arbiter: High-Performance Matrix Decomposition Suite
 
-A modular Python framework for decomposing K-regular / doubly-stochastic traffic matrices into weighted permutation matrices for crossbar switch scheduling. The suite benchmarks several bipartite matching engines and two decomposition strategies (classical BvN and Radix / digit-plane) against a **three-way tradeoff** between **Permutation Count**, **Cycle Length**, and **Algorithmic Runtime**.
+A modular Python framework for decomposing K-regular / doubly-stochastic traffic matrices into weighted permutation matrices for crossbar switch scheduling. The suite benchmarks several bipartite matching engines and **three** decomposition frameworks — classical BvN, Radix / digit-plane, and **Euler splitting** — against a **three-way tradeoff** between **Permutation Count**, **Cycle Length**, and **Algorithmic Runtime**.
 
 ---
 
 ## Table of Contents
+* [Setup](#setup)
+* [Quick Start](#quick-start)
 * [Overview](#overview)
 * [The Tradeoff Model](#the-tradeoff-model)
 * [Directory Structure](#directory-structure)
@@ -14,6 +16,58 @@ A modular Python framework for decomposing K-regular / doubly-stochastic traffic
 * [Outputs & Plots](#outputs--plots)
 * [Tests](#tests)
 * [Mathematical Context](#mathematical-context)
+
+---
+
+## Setup
+
+Requires **Python 3.11+**. From a fresh clone:
+
+```bash
+# 1. Clone and enter the project
+git clone <repo-url> bvn_project
+cd bvn_project
+
+# 2. Create and activate a virtual environment
+python -m venv .venv
+
+#    Windows (PowerShell):
+.\.venv\Scripts\Activate.ps1
+#    macOS / Linux:
+source .venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Verify the install (runs the fast test subset)
+pytest -q -k "not visual"
+```
+
+> **First-run note:** the matching kernels are JIT-compiled with Numba on first
+> use, so the first matrix of any run is slow. Every experiment already discards
+> the first 5 samples to exclude this warm-up.
+
+If you don't use the venv wrapper, substitute your interpreter for `python`
+(e.g. `./.venv/Scripts/python.exe` on Windows, `./.venv/bin/python` on Unix).
+
+---
+
+## Quick Start
+
+```bash
+# Compare all four matching engines (BvN + Radix) on dense traffic
+python main.py -n 256 -k 256 --max-weight 64 -e all -s 100
+
+# Euler splitting framework: BvN baseline vs Euler leaves, depths 1-3
+python main.py -n 256 -k 256 --max-weight 64 -e euler_bvn --euler-depths 1 2 3 -s 100
+
+# Euler vs Radix at matched parallelism, Hungarian leaves
+python main.py -n 256 -k 256 --max-weight 64 -e euler_bvn \
+    --euler-leaf-engine maximum --euler-depths 1 2 3 4 --radix-bases 2 4 8 16 -s 100
+```
+
+Each run writes a timestamped folder under `--output` (default `run/`) with the
+config, log, `results_stats.csv`, and plots. See [Outputs & Plots](#outputs--plots).
 
 ---
 
@@ -44,11 +98,13 @@ bvn_project/
 │   ├── algorithms/
 │   │   ├── bvn.py                       # Classical BvN decomposition
 │   │   ├── radix_decomposition.py       # Radix / digit-plane decomposition
+│   │   ├── euler_splitting.py           # Euler splitting framework (JIT)
 │   │   ├── wfa.py                       # Wavefront Arbiter (JIT)
 │   │   └── sorted_array_matching.py     # Greedy sorted-edge matching (JIT)
 │   └── utils/
 │       ├── matrix_generator.py          # K-regular matrix generation
 │       ├── io_utils.py                  # CSV read/write helpers
+│       ├── analysis.py                  # Post-run Euler comparison summary
 │       ├── run_utils.py                 # Run-folder + config persistence
 │       ├── logging_utils.py             # Rich logging + timed sections
 │       └── stats.py                     # DecompositionStats dataclass
@@ -65,14 +121,15 @@ bvn_project/
 
 ## Decomposition Strategies
 
-The runner can produce two decompositions per matrix and compare them side-by-side.
+The runner can produce several decompositions per matrix and compare them side-by-side.
 
 | Strategy | Description |
 | :--- | :--- |
 | **Classical BvN** | Iteratively peel a permutation out of the matrix, subtract its minimum weight $\lambda$, and repeat until the matrix is zero. Implemented in `src/algorithms/bvn.py`. |
 | **Radix (Digit-Plane)** | Split the matrix into digit planes in some integer base $b$ (e.g. $b \in \{2, 4, 8, 16, 32\}$), decompose each plane independently with a chosen matching engine, and combine. Reported runtime is the **max** plane runtime, simulating ideal hardware parallelism. Implemented in `src/algorithms/radix_decomposition.py`. |
+| **Euler Splitting** | Recursively split the $S$-regular matrix into two $(S/2)$-regular halves via an Euler-tour 2-colouring of its bipartite multigraph; depth $d$ yields $2^d$ doubly-stochastic leaves, each decomposed independently. Unlike Radix, every leaf stays doubly stochastic, so the cycle length stays at the optimum $C = S$. Reported runtime is the **max** leaf runtime; the split phase is timed separately. Implemented in `src/algorithms/euler_splitting.py`. |
 
-The compound engine modes (`wfa_bvn`, `heavy_bvn`, `heavy_static_bvn`, `maximum_bvn`) run BvN and Radix on the same matrix using the same matching algorithm, enabling apples-to-apples comparison.
+The compound engine modes (`wfa_bvn`, `heavy_bvn`, `heavy_static_bvn`, `maximum_bvn`) run BvN and Radix on the same matrix using the same matching algorithm, enabling apples-to-apples comparison. The `euler_bvn` mode additionally runs the Euler splitting framework (see [CLI Configuration](#cli-configuration)).
 
 ---
 
@@ -87,6 +144,8 @@ All four engines are heavily optimized with Numba JIT (`nopython=True, nogil=Tru
 | `heavy` | Greedy sorted-edge matching, **resorted every iteration** | $O(L \log L)$ per iter | Targets cycle length / throughput. |
 | `heavy_static` | Greedy sorted-edge matching, **sorted once at startup** | $O(L \log L)$ once | Faster variant of `heavy`; trades some optimality for speed. |
 
+There are also two `maximum` variants used for diagnostics: `minimum` (minimum-weight Hungarian) and the `*_noaug` greedy engines (greedy **without** BFS augmenting paths, producing weak / partial matchings with cycle length > S).
+
 ### Compound modes
 | Engine flag | What it runs |
 | :--- | :--- |
@@ -94,6 +153,9 @@ All four engines are heavily optimized with Numba JIT (`nopython=True, nogil=Tru
 | `heavy_bvn` | BvN with `heavy` + Radix with `heavy` |
 | `heavy_static_bvn` | BvN with `heavy_static` + Radix with `heavy_static` |
 | `maximum_bvn` | BvN with `maximum` + Radix with `maximum` |
+| `minimum_bvn` | BvN + Radix with minimum-weight Hungarian |
+| `heavy_noaug_bvn`, `heavy_static_noaug_bvn` | Greedy without augmenting paths (weak decomposition, diagnostic) |
+| `euler_bvn` | BvN baseline + **Euler splitting** (+ optional Radix); leaf engine set by `--euler-leaf-engine` |
 | `all` | BvN with `maximum` + Radix with all four engines |
 
 ---
@@ -114,28 +176,47 @@ python main.py --size 256 --k 256 --engine all --samples 100
 | `--samples` | `-s` | `int` | Number of random matrices to test. | `10` |
 | `--output` | `-o` | `str` | Root directory for run folders. | `run` |
 | `--no-plot` | — | flag | Disable automatic plot generation. | off |
-| `--max-weight` | — | `float` | Max weight $W$ when sampling permutation weights from $[0, W]$. | `1.0` |
+| `--max-weight` | — | `float` | Max weight $W$ when sampling permutation weights from $[0, W]$. | `15.0` |
+| `--unit-weight` | — | `float` | Scale factor applied to the matrix after generation (use powers of the radix base to shift digit-plane significance). | `1.0` |
 | `--float-weights` | — | flag | Sample real-valued weights instead of integers. | off |
-| `--radix-bases` | — | `int*` | List of radix bases to test. | `[2 4 8 16 32]` |
+| `--radix-bases` | — | `int*` | List of radix bases to test. Not given → `[2 4 8 16 32]` for radix engines, **none** for `euler_bvn` (pass explicitly to add Radix to an Euler run). | (per engine) |
+| `--step-strategy` | — | `str` | Radix step-size: `min` / `max` / `median` / `all`. | `min` |
 | `--random-seed` | — | `int` | Base seed (each sample uses `seed + index`). | `42` |
-| `--max-workers` | — | `int` | Worker count for parallel plane processing (currently sequential for HW simulation). | `None` |
+| `--max-workers` | — | `int` | Worker count for parallel plane/leaf processing. | `None` |
 | `--plot-from-csv` | — | `str` | Path to an existing `results_stats.csv`; regenerates plots only and exits. | `None` |
+
+#### Euler-splitting flags (used with `-e euler_bvn`)
+
+| Flag | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| `--euler-depths` | `int*` | Split depths to test (depth $d$ → $2^d$ leaves; depth 0 = plain BvN). | `[1]` |
+| `--euler-split-method` | `str` | `heuristic` (same-direction, sparser leaves), `euler` (plain 2-colouring), `euler_grouped` (O(nnz) bulk), `greedy`. | `heuristic` |
+| `--euler-leaf-engine` | `str` | Matching engine for the leaves **and** the BvN baseline/Radix planes in this run: `heavy`, `heavy_static`, `wfa`, `maximum`, `minimum`. | `heavy_static` |
 
 ### Execution Examples
 
 ```bash
-# Compare all engines on a 256x256 matrix, 100 samples
-python main.py -n 256 -k 256 -e all -s 100
+# Compare all engines on a 256x256 dense matrix, 100 samples
+python main.py -n 256 -k 256 --max-weight 64 -e all -s 100
 
 # WFA + BvN comparison with multiple radix bases
-python main.py -n 256 -e wfa_bvn -s 1000 --radix-bases 2 4 8 16
+python main.py -n 256 --max-weight 64 -e wfa_bvn -s 1000 --radix-bases 2 4 8 16
 
-# Float-weight (Sinkhorn-style) experiment
-python main.py -n 128 -k 100 -e heavy_bvn --float-weights --max-weight 1.0 -s 100
+# Euler splitting only (no Radix): BvN baseline vs depths 1-3, GW Static leaves
+python main.py -n 256 -k 256 --max-weight 64 -e euler_bvn --euler-depths 1 2 3 -s 100
+
+# Euler vs Radix at matched parallelism, Hungarian on every unit
+python main.py -n 256 -k 256 --max-weight 64 -e euler_bvn \
+    --euler-leaf-engine maximum --euler-depths 1 2 3 4 --radix-bases 2 4 8 16 -s 100
+
+# Sparse-traffic scenario (k=16)
+python main.py -n 256 -k 16 --max-weight 64 -e euler_bvn --euler-depths 1 2 3 -s 100
 
 # Regenerate plots from an existing run
 python main.py --plot-from-csv run/20260227_113213/results_stats.csv
 ```
+
+For `euler_bvn` runs, a human-readable `euler_comparison_summary.txt` is also written to the run folder (extraction-time-vs-baseline ratios and the Euler-vs-Radix table).
 
 ---
 
@@ -176,12 +257,15 @@ run/
 Run the correctness suite with:
 
 ```bash
-pytest
+pytest -q -k "not visual"     # fast: skips the heatmap/graph rendering tests
+pytest                         # full suite incl. visual output to tests/visual_output/
 ```
 
 The tests live in `tests/` and verify:
 - Generated matrices are K-regular (equal row & column sums).
-- BvN and Radix decompositions exactly reconstruct the original matrix.
+- BvN, Radix, and Euler-splitting decompositions exactly reconstruct the original matrix.
+- Euler splits are lossless and produce doubly-stochastic $(S/2)$-regular halves.
+- Cycle-length invariants hold ($C = S$ for strong engines, $C \ge S$ for WFA).
 - Permutation count and cycle length metrics are computed correctly.
 
 A GitHub Actions workflow (`.github/workflows/python-tests.yml`) runs pytest on push.
