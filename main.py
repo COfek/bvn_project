@@ -27,10 +27,21 @@ def build_config(args) -> ExperimentConfig:
     if radix_bases is None:
         radix_bases = [] if engine == "euler_bvn" else [2, 4, 8, 16, 32]
 
+    # --euler-colors overrides --euler-depths when given.
+    # Each color count must be a power of 2; depth = log2(colors).
+    euler_depths = args.euler_depths
+    if args.euler_colors is not None:
+        bad = [c for c in args.euler_colors if c < 1 or (c & (c - 1)) != 0]
+        if bad:
+            raise ValueError(
+                f"--euler-colors values must be powers of 2, got: {bad}"
+            )
+        euler_depths = [c.bit_length() - 1 for c in args.euler_colors]
+
     return ExperimentConfig(
         engine=engine,
         radix_bases=radix_bases,
-        euler_depths=args.euler_depths,
+        euler_depths=euler_depths,
         euler_split_method=args.euler_split_method,
         euler_leaf_engine=args.euler_leaf_engine,
         random_seed=args.random_seed,
