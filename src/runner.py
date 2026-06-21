@@ -210,7 +210,7 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
                 stats = _compute_for_index(idx, config)
                 results.append(stats)
             except Exception as e:
-                logger.error(f"Error at index {idx}: {e}")
+                logger.error(f"Error at index {idx}: {e}", exc_info=True)
 
             if (idx + 1) % update_interval == 0 or (idx + 1) == config.num_matrices:
                 percent = ((idx + 1) / config.num_matrices) * 100
@@ -226,7 +226,7 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
                 try:
                     results.append(future.result())
                 except Exception as e:
-                    logger.error(f"Worker error: {e}")
+                    logger.error(f"Worker error: {e}", exc_info=True)
 
                 completed_count += 1
                 if completed_count % update_interval == 0 or completed_count == config.num_matrices:

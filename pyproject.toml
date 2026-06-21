@@ -2,3 +2,8 @@
 python_interpreter = ".venv/Scripts/python.exe"
 search_path = ["."]
 
+[tool.pytest.ini_options]
+markers = [
+    "visual: marks tests that generate visual output (skipped in CI)",
+]
+

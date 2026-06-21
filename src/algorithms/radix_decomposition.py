@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Tuple
+
+logger = logging.getLogger(__name__)
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -170,7 +173,7 @@ def decompose_radix(
             max_plane_runtime = max(max_plane_runtime, plane_runtime)
             all_components.extend(comps)
         except Exception as exc:
-            print(f"Radix plane sequential worker failed: {exc}")
+            logger.error(f"Radix plane sequential worker failed: {exc}", exc_info=True)
 
     return all_components, max_plane_runtime, len(planes)
 
