@@ -1,0 +1,78 @@
+[MASTER]
+# Run on src/ only; tests are excluded from CI linting
+ignore-paths = ^tests/
+
+[MESSAGES CONTROL]
+# Disabled rules and the rationale for each:
+#
+# C0114 missing-module-docstring      — research scripts don't need module docstrings
+# C0115 missing-class-docstring       — dataclasses are self-documenting
+# C0116 missing-function-docstring    — short helper functions are self-documenting
+# C0301 line-too-long                 — long lines are common in JIT/scientific code
+# C0302 too-many-lines                — euler_splitting.py is large by design
+# C0303 trailing-whitespace           — editor handles this
+# C0411 wrong-import-order            — not enforced in this project
+# C0413 wrong-import-position         — lazy imports inside functions are intentional (Numba)
+#
+# R0801 duplicate-code                — JIT variants (scan/fast) share structure by design
+# R0902 too-many-instance-attributes  — config dataclass is intentionally wide
+# R0903 too-few-public-methods        — dataclasses
+# R0912 too-many-branches             — matching algorithm dispatch is inherently branchy
+# R0913 too-many-arguments            — JIT kernels and plot functions need many params
+# R0914 too-many-locals               — JIT kernels use many local arrays for speed
+# R0915 too-many-statements           — large JIT functions are monolithic by design
+#
+# W0212 protected-access              — internal JIT functions are accessed intentionally
+# W0311 bad-indentation               — minor style, not a bug
+# W0612 unused-variable               — JIT kernels sometimes unpack for clarity
+# W0613 unused-argument               — API compatibility (e.g. max_workers reserved)
+# W1203 logging-fstring-interpolation — f-strings in logging are acceptable here
+#
+disable =
+    C0114,
+    C0115,
+    C0116,
+    C0301,
+    C0302,
+    C0303,
+    C0411,
+    C0413,
+    R0801,
+    R0902,
+    R0903,
+    R0912,
+    R0913,
+    R0914,
+    R0915,
+    W0212,
+    W0311,
+    W0612,
+    W0613,
+    W1203,
+    C0103,   # invalid-name — S, n, k, i, j are standard mathematical names in this domain
+    C0304,   # missing-final-newline — minor style
+    C0305,   # trailing-newlines — minor style
+    C0321,   # multiple-statements — inline if/continue is common in scientific/JIT code
+    R1705,   # no-else-return — style preference, not a bug
+    W0718,   # broad-exception-caught — intentional in runner to not crash long experiments
+    R0917,   # too-many-positional-arguments — generate_matrix signature is fixed API
+    R1731,   # consider-using-max-builtin — suggestion, not a bug
+    R1730,   # consider-using-min-builtin — suggestion, not a bug (JIT code)
+    C0200,   # consider-using-enumerate — range/len pattern intentional in JIT-adjacent code
+    C0415,   # import-outside-toplevel — lazy import of `time` inside function is intentional
+    R1702,   # too-many-nested-blocks — JIT kernels with tier-stack logic are inherently nested
+    R1716,   # chained-comparison — explicit form clearer in JIT/numerical code
+    R1735,   # use-dict-literal — dict() call style preference
+
+[FORMAT]
+max-line-length = 200
+
+[DESIGN]
+max-args = 12
+max-locals = 30
+max-branches = 20
+max-statements = 80
+
+[SIMILARITIES]
+# Minimum lines of similar code before reporting duplicate-code
+min-similarity-lines = 20
