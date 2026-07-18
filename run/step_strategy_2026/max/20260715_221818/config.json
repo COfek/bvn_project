@@ -1,0 +1,27 @@
+{
+    "n": 256,
+    "num_matrices": 105,
+    "k": 256,
+    "random_seed": 42,
+    "max_workers": null,
+    "output_csv": "results.csv",
+    "radix_bases": [
+        2,
+        4,
+        8,
+        16
+    ],
+    "radix_strategy": "all",
+    "euler_depths": [
+        1
+    ],
+    "euler_split_method": "heuristic",
+    "euler_leaf_engine": "heavy_static",
+    "engine": "maximum",
+    "plot": false,
+    "output_dir": "run/step_strategy_2026/max",
+    "is_parallel": false,
+    "max_weight": 64.0,
+    "float_weights": false,
+    "unit_weight": 1.0
+}

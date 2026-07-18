@@ -99,6 +99,12 @@ for ax in (axr, axw):
     ax.plot(tcfg, 10*tcfg, "k--", lw=1.4, label="$T_{unit}=10\\,T_{config}$")
     ax.axhline(0.01, color="navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")
     ax.set_xlim(tcfg.min(), tcfg.max()); ax.set_ylim(tunit.min(), tunit.max())
+from matplotlib.lines import Line2D
+axr.legend(handles=[
+    Line2D([], [], color="k", ls="-", lw=1.2, label="break-even (DCT ratio = 1)"),
+    Line2D([], [], color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$ (lecturer)"),
+    Line2D([], [], color="navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms"),
+], fontsize=8, loc="lower right", framealpha=0.9)
 fig.suptitle("DCT Parameter Space — Dense (n=256, k=256, $W_{max}$=64)   |   "
              "DCT = $T_{calc}+N\\,T_{config}+C\\,T_{unit}$", fontsize=13, y=1.02)
 fig.tight_layout()
@@ -109,8 +115,9 @@ print("saved dct_param_space_2d")
 # ===== FIGURE 1b: y-axis re-parameterised as ratio r = T_unit / T_config =====
 # At (T_config, r) the actual T_unit = r * T_config, so
 #   DCT = T_calc + N*T_config + C*(r*T_config) = T_calc + T_config*(N + C*r)
-rgrid = np.logspace(-1, 3, 240)          # ratio up to 1000
-TCr, R = np.meshgrid(tcfg, rgrid)
+rgrid = np.logspace(np.log10(5), 3, 240)   # ratio 5 .. 1000 (config-dominated r<5 excluded)
+tcfgr = np.logspace(-3, 0, 240)            # realistic T_config: 1 us .. 1 ms
+TCr, R = np.meshgrid(tcfgr, rgrid)
 def dct_r(idx):
     N, C, Tcalc = NCT[idx]
     return Tcalc + TCr * (N + C * R)
@@ -133,15 +140,18 @@ cmap_r = ListedColormap(cmap_cols[:len(winners_r)])
 norm_r = BoundaryNorm(np.arange(-0.5, len(winners_r)+0.5), cmap_r.N)
 axrw.pcolormesh(TCr, R, np.vectorize(remap_r.get)(winr), cmap=cmap_r, norm=norm_r, shading="auto")
 axrw.set_title("Winner map (lowest-DCT configuration)")
-axrw.legend(handles=[Patch(color=cmap_cols[remap_r[w]], label=labels[w]) for w in winners_r],
-            fontsize=8, loc="upper left", framealpha=0.95)
 for ax in (axrr, axrw):
     ax.axhline(10, color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$ (lecturer)")
-    ax.plot(tcfg, 0.01/tcfg, "navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")
+    ax.plot(tcfgr, 0.01/tcfgr, "navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")
     ax.set_xscale("log"); ax.set_yscale("log")
     ax.set_xlabel("$T_{config}$ (ms)"); ax.set_ylabel("ratio  $r = T_{unit}/T_{config}$")
-    ax.set_xlim(tcfg.min(), tcfg.max()); ax.set_ylim(rgrid.min(), rgrid.max())
-    ax.legend(fontsize=8, loc="lower left", framealpha=0.9)
+    ax.set_xlim(tcfgr.min(), tcfgr.max()); ax.set_ylim(rgrid.min(), rgrid.max())
+axrr.legend(fontsize=8, loc="lower left", framealpha=0.9)
+axrw.legend(handles=[Patch(color=cmap_cols[remap_r[w]], label=labels[w]) for w in winners_r]
+                   + [Line2D([], [], color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$ (lecturer)"),
+                      Line2D([], [], color="navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")],
+            title="Winning configuration", title_fontsize=9,
+            fontsize=8, loc="lower left", framealpha=0.95)
 figR.suptitle("DCT Parameter Space — y-axis as ratio $r=T_{unit}/T_{config}$ (up to 1000)   |   "
               "Dense (n=256, k=256, $W_{max}$=64)", fontsize=13, y=1.02)
 figR.tight_layout()
@@ -159,6 +169,9 @@ ax1.plot_surface(LTC, LTU, np.log10(dct(B)), color="#E69F00", alpha=0.65)
 ax1.set_xlabel("log10 $T_{config}$"); ax1.set_ylabel("log10 $T_{unit}$"); ax1.set_zlabel("log10 DCT")
 ax1.set_title(f"{labels[A]} vs {labels[B]}\n(surfaces intersect = crossover)")
 ax1.view_init(elev=22, azim=-52)
+ax1.legend(handles=[Patch(color="#56B4E9", alpha=0.65, label=labels[A]),
+                    Patch(color="#E69F00", alpha=0.65, label=labels[B])],
+           loc="upper left", fontsize=9, framealpha=0.95)
 # right: minimum-DCT surface colored by winner
 ax2 = fig.add_subplot(122, projection="3d")
 minZ = np.log10(allD.min(axis=0))
@@ -171,7 +184,8 @@ ax2.set_xlabel("log10 $T_{config}$"); ax2.set_ylabel("log10 $T_{unit}$"); ax2.se
 ax2.set_title("Minimum-DCT surface\n(coloured by winning configuration)")
 ax2.view_init(elev=22, azim=-52)
 ax2.legend(handles=[Patch(color=cmap_cols[remap[w]], label=labels[w]) for w in winners],
-           fontsize=7.5, loc="upper left")
+           title="Winning configuration", title_fontsize=9,
+           fontsize=9, loc="upper left", framealpha=0.95)
 fig.suptitle("DCT Parameter Space (3-D) — Dense (n=256, k=256, $W_{max}$=64)", fontsize=13, y=1.0)
 fig.tight_layout()
 fig.savefig(f"{OUT}/dct_3d_surfaces.pdf", bbox_inches="tight")

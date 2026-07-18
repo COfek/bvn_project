@@ -71,7 +71,10 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         "euler_bvn",
     ]:
         t0 = time.perf_counter()
-        bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine)
+        _strat = getattr(config, 'radix_strategy', 'min')
+        _strat = _strat if _strat in ('min', 'median', 'max') else 'min'
+        bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine,
+                                           step_strategy=_strat)
         runtime_bvn = time.perf_counter() - t0
 
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
@@ -163,12 +166,15 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         # selectable via --euler-split-method for comparison runs.
         split_method = getattr(config, 'euler_split_method', 'heuristic')
         for depth in euler_depths:
+            _strat = getattr(config, 'radix_strategy', 'min')
+            _strat = _strat if _strat in ('min', 'median', 'max') else 'min'
             comps, split_rt, max_rt, n_leaves = decompose_euler_framework(
                 matrix=matrix,
                 matching_method=euler_matching,
                 depth=depth,
                 split_method=split_method,
                 max_workers=config.max_workers,
+                step_strategy=_strat,
             )
             c_len = float(sum(comp.weight for comp in comps))
             n_perm = len(comps)

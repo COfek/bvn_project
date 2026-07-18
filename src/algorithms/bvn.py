@@ -31,6 +31,7 @@ def bvn_decomposition(
     matrix: FloatMatrix,
     matching_algorithm: str = "maximum",
     max_iters: Optional[int] = None,
+    step_strategy: str = "min",
 ) -> List[DecompositionComponent]:
     """
     Perform an exact Birkhoff–von Neumann decomposition on a K-regular integer matrix.
@@ -47,6 +48,9 @@ def bvn_decomposition(
     work = np.array(matrix, dtype=np.float64, copy=True)
     components: List[DecompositionComponent] = []
     iteration = 0
+    # 0=min (classic BvN), 1=median, 2=max — same semantics as the JIT kernels:
+    # λ chosen from the matched entries, subtraction clipped at 0.
+    strategy_int = {"min": 0, "median": 1, "max": 2}.get(step_strategy, 0)
 
     n = work.shape[0]
 
@@ -121,7 +125,7 @@ def bvn_decomposition(
             # Optimization: Use JIT-compiled full decomposition for dynamic Heavy
             # This bypasses the Python loop for finding matches and updating the matrix,
             # making it consistent with how WFA and heavy_static are handled.
-            weights, all_matches = _jit_decompose_sorted_dynamic(work, 1e-9)
+            weights, all_matches = _jit_decompose_sorted_dynamic(work, strategy_int, 1e-9)
 
             for w, matches in zip(weights, all_matches):
                 if w <= 1e-12:
@@ -139,7 +143,7 @@ def bvn_decomposition(
         elif matching_algorithm == "heavy_static":
             # Optimization: Use JIT-compiled full decomposition for static Heavy
             # This bypasses the Python loop for finding matches and updating the matrix
-            weights, all_matches = _jit_decompose_sorted_static(work, 1e-9)
+            weights, all_matches = _jit_decompose_sorted_static(work, strategy_int, 1e-9)
             
             # Convert to DecompositionComponent objects
             for w, matches in zip(weights, all_matches):
@@ -158,7 +162,7 @@ def bvn_decomposition(
         elif matching_algorithm == "wfa":
             # Optimization: Use JIT-compiled full decomposition for WFA
             # This bypasses the Python loop for finding matches and updating the matrix
-            weights, all_matches = _jit_decompose_wfa(work, n, 1e-9)
+            weights, all_matches = _jit_decompose_wfa(work, n, 1e-9, strategy_int)
             
             # Convert to DecompositionComponent objects
             for w, matches in zip(weights, all_matches):
@@ -195,7 +199,18 @@ def bvn_decomposition(
         if len(selected_values) == 0:
              break
 
-        lambda_value = float(np.min(selected_values))
+        # λ over POSITIVE selected values only: the Hungarian assignment can
+        # include zero cells (penalty fallback), and a median/max over zeros
+        # would stall the drain and truncate the decomposition.
+        positive_values = selected_values[selected_values > 1e-12]
+        if len(positive_values) == 0:
+            break
+        if strategy_int == 2:
+            lambda_value = float(np.max(positive_values))
+        elif strategy_int == 1:
+            lambda_value = float(np.sort(positive_values)[len(positive_values) // 2])
+        else:
+            lambda_value = float(np.min(positive_values))
 
         # If we can't find a matching with weight > 0, the matrix is decomposed
         if lambda_value <= 1e-12:
@@ -207,8 +222,9 @@ def bvn_decomposition(
 
         components.append(DecompositionComponent(permutation=permutation, weight=lambda_value))
 
-        # Subtract the weight from the working matrix
-        work[row_ind, col_ind] -= lambda_value
+        # Subtract the weight from the working matrix (clip at 0: median/max
+        # strategies overdraw cells below lambda, same as the JIT kernels)
+        work[row_ind, col_ind] = np.maximum(work[row_ind, col_ind] - lambda_value, 0.0)
         
         # Clean up small residuals
         work[work < 1e-12] = 0.0

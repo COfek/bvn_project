@@ -1201,6 +1201,7 @@ def _leaf_bvn(
     leaf_float: np.ndarray,
     matching_method: str,
     tol: float = 1e-9,
+    step_strategy: str = "min",
 ) -> Tuple[List[DecompositionComponent], float]:
     """
     Run BvN on a single leaf matrix using the JIT-compiled fast path where
@@ -1210,23 +1211,25 @@ def _leaf_bvn(
     Returns (components, wall_clock_seconds).
     """
     t0 = time.perf_counter()
+    strategy_int = {"min": 0, "median": 1, "max": 2}.get(step_strategy, 0)
 
     if matching_method in ("heavy", "heavy_static"):
         work = leaf_float.copy()
         if matching_method == "heavy":
-            weights, all_matches = _jit_decompose_sorted_dynamic(work, tol=tol)
+            weights, all_matches = _jit_decompose_sorted_dynamic(work, strategy_int, tol)
         else:
-            weights, all_matches = _jit_decompose_sorted_static(work, tol=tol)
+            weights, all_matches = _jit_decompose_sorted_static(work, strategy_int, tol)
         comps = _matches_to_components(weights, all_matches, leaf_float)
 
     elif matching_method == "wfa":
         work = leaf_float.copy()
-        weights, all_matches = _jit_decompose_wfa(work, work.shape[0], tol=tol)
+        weights, all_matches = _jit_decompose_wfa(work, work.shape[0], tol, strategy_int)
         comps = _matches_to_components(weights, all_matches, leaf_float)
 
     else:
         # maximum / minimum — fall back to scipy Hungarian via Python BvN
-        comps = bvn_decomposition(leaf_float.copy(), matching_algorithm=matching_method)
+        comps = bvn_decomposition(leaf_float.copy(), matching_algorithm=matching_method,
+                                  step_strategy=step_strategy)
 
     return comps, time.perf_counter() - t0
 
@@ -1257,6 +1260,7 @@ def decompose_euler_framework(
     depth: int = 1,
     split_method: str = "euler",
     max_workers: Optional[int] = None,
+    step_strategy: str = "min",
 ) -> Tuple[List[DecompositionComponent], float, float, int]:
     """
     Euler splitting framework decomposition.
@@ -1318,7 +1322,7 @@ def decompose_euler_framework(
 
     for leaf in non_empty:
         leaf_float = leaf.astype(np.float64)
-        comps, leaf_rt = _leaf_bvn(leaf_float, matching_method)
+        comps, leaf_rt = _leaf_bvn(leaf_float, matching_method, step_strategy=step_strategy)
         max_leaf_runtime = max(max_leaf_runtime, leaf_rt)
         all_components.extend(comps)
 

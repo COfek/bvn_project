@@ -35,33 +35,27 @@ from pathlib import Path
 #   BvN + Radix B=2: run/rerun_2026 (1000 samples, Hungarian bug fixed).
 #   Euler: euler_exp/eng_*_dense_d4 with TOTAL T_calc = max-leaf + split.
 # ------------------------------------------------------------------
-_ROOT = Path(__file__).parent.parent
-def _rerun(e): return sorted((_ROOT / "run/rerun_2026" / e).glob("*/results_stats.csv"))[-1]
-def _euler(p): return sorted((_ROOT / "euler_exp" / f"eng_{p}_dense_d4").glob("*/results_stats.csv"))[-1]
-
-def _build_configs():
-    eng = [("Hungarian", "max", "maximum"), ("WFA", "wfa", "wfa"),
-           ("GW Dyn", "heavy", "heavy"), ("GW Stat", "heavy_static", "heavy_static")]
-    cfgs = []
-    for nm, re, pre in eng:
-        dr = pd.read_csv(_rerun(re)).iloc[5:]
-        cfgs.append((f"{nm}-BvN", dr["bvn_runtime"].mean()*1000, round(dr["bvn_perms"].mean()), round(dr["bvn_cycle"].mean())))
-    for nm, re, pre in eng:
-        dr = pd.read_csv(_rerun(re)).iloc[5:]
-        cfgs.append((f"{nm}-B2", dr[f"{pre}_2_time"].mean()*1000, round(dr[f"{pre}_2_perms"].mean()), round(dr[f"{pre}_2_cycle"].mean())))
-    # Euler representatives: Hungarian d4 and GW Static d3 (TOTAL = time + split)
-    for nm, pre, d in [("Hungarian-Euler-d4", "maximum", 4), ("GW Stat-Euler-d3", "heavy_static", 3)]:
-        de = pd.read_csv(_euler(pre)).iloc[5:]
-        tcalc = (de[f"euler_heuristic_depth{d}_time"].mean() + de[f"euler_heuristic_depth{d}_split"].mean())*1000
-        cfgs.append((nm, tcalc, round(de[f"euler_heuristic_depth{d}_perms"].mean()), round(de[f"euler_heuristic_depth{d}_cycle"].mean())))
-    return cfgs
-
 # ------------------------------------------------------------------
-# Measured mean values from paper (dense scenario k=256)
+# Measured mean values (dense scenario k=256), consistent with
+# Table~ref{tab:results_summary}. T_calc for Euler is split-inclusive
+# (parallel split wall + max single-leaf extraction). The only correction
+# vs the June figure is Hungarian BvN cycle 8209 -> 8211 (bug fix: the old
+# Hungarian run had 16 matrices with an incomplete C<S decomposition).
 # T_calc in ms | N = permutation count | C = decomposition cycle length
 # ------------------------------------------------------------------
 #  label              T_calc_ms    N       C
-CONFIGS = _build_configs()
+CONFIGS = [
+    ("Hungarian-BvN",     641.3,    476,   8211),   # cycle 8209 -> 8211 (fix)
+    ("WFA-BvN",          1721.1,  10527,  11941),
+    ("GW Dyn-BvN",       1548.9,   1123,   8211),
+    ("GW Stat-BvN",      1212.7,   7644,   8211),
+    ("Hungarian-B2",       68.9,    657,  11349),
+    ("WFA-B2",             32.6,    806,  13455),
+    ("GW Dyn-B2",          46.0,    657,  11338),
+    ("GW Stat-B2",         29.6,    657,  11338),
+    ("Hungarian-Euler-d4", 84.6,    851,   8174),   # 40.7 split + 43.9 max-leaf
+    ("GW Stat-Euler-d3",  165.2,   7450,   8174),   # 40.3 split + 124.8 max-leaf
+]
 
 # Colours: BvN baselines solid, Radix-B2 dashed; grouped by matching
 STYLE = {

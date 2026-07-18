@@ -1,0 +1,24 @@
+{
+    "n": 256,
+    "num_matrices": 105,
+    "k": 16,
+    "random_seed": 42,
+    "max_workers": null,
+    "output_csv": "results.csv",
+    "radix_bases": [],
+    "radix_strategy": "min",
+    "euler_depths": [
+        1,
+        2,
+        3
+    ],
+    "euler_split_method": "heuristic",
+    "euler_leaf_engine": "heavy",
+    "engine": "euler_bvn",
+    "plot": true,
+    "output_dir": "euler_exp/eng_heavy_sparse",
+    "is_parallel": false,
+    "max_weight": 64.0,
+    "float_weights": false,
+    "unit_weight": 1.0
+}
