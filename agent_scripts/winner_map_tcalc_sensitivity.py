@@ -1,7 +1,8 @@
 """Winner maps sensitivity sweep:
   - y axis: ratio r = T_unit/T_config starting at 5 (up to 1000)
   - x axis: T_config over realistic optical-switch values (1 us .. 1 ms)
-  - three panels: T_compute x1 (full), x1/2, x0 (fully amortised / prescheduled)
+  - three panels: T_compute full, /8 and /64, enough to show the trend; the
+    finer sweep (/4 .. /128 and 0) is still printed to stdout for the text
 Configs: all 4 engines x {BvN, B16..B2, Euler d1..d4}; Euler T_compute split-inclusive.
 """
 import glob
@@ -51,8 +52,9 @@ tcfg = np.logspace(-3, 0, 220)                 # 1 us .. 1 ms
 rgrid = np.logspace(np.log10(5), 3, 220)       # ratio 5 .. 1000
 TC, R = np.meshgrid(tcfg, rgrid)
 
-# Fine sweep of the computation-time budget so the Hungarian BvN winning region can be
-# watched EMERGING (it is absent through T_compute/8, first appears at T_compute/16, then grows).
+# Fine sweep of the computation-time budget; only the PANELS are drawn, the rest
+# are printed so the shares quoted in the text can be checked.
+PANELS = (1.0, 0.125, 1/64.)
 SCALES = [
     (1.0,     r"$T_{compute}$ (full)"),
     (0.25,    r"$T_{compute}/4$"),
@@ -75,8 +77,19 @@ remap = {w: i for i, w in enumerate(winners_all)}
 cmap = ListedColormap(cmap_cols[:len(winners_all)])
 norm = BoundaryNorm(np.arange(-0.5, len(winners_all)+0.5), cmap.N)
 
-fig, axes = plt.subplots(2, 4, figsize=(18, 9), sharex=True, sharey=True)
-axes = axes.ravel()
+for w, (s, ttl) in zip(wins, SCALES):
+    share = {labels[x]: (w == x).mean()*100 for x in sorted(set(w.ravel().tolist()))}
+    print(ttl, {k: f"{v:.0f}%" for k, v in share.items()})
+
+keep = [i for i, (s, _) in enumerate(SCALES) if s in PANELS]
+wins = [wins[i] for i in keep]
+SCALES = [SCALES[i] for i in keep]
+winners_all = sorted(set(np.concatenate([w.ravel() for w in wins]).tolist()))
+remap = {w: i for i, w in enumerate(winners_all)}
+cmap = ListedColormap(cmap_cols[:len(winners_all)])
+norm = BoundaryNorm(np.arange(-0.5, len(winners_all)+0.5), cmap.N)
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharex=True, sharey=True)
 for ax, w, (s, ttl) in zip(axes, wins, SCALES):
     ax.pcolormesh(TC, R, np.vectorize(remap.get)(w), cmap=cmap, norm=norm, shading="auto")
     ax.axhline(10, color="k", ls="--", lw=1.1)
@@ -86,11 +99,8 @@ for ax, w, (s, ttl) in zip(axes, wins, SCALES):
     ax.set_title(f"{ttl}\nHungarian BvN wins {bvn_pct:.0f}%", fontsize=10.5,
                  color=("#0072B2" if bvn_pct > 0.5 else "black"),
                  fontweight=("bold" if bvn_pct > 0.5 else "normal"))
-    share = {labels[x]: (w == x).mean()*100 for x in sorted(set(w.ravel().tolist()))}
-    print(ttl, {k: f"{v:.0f}%" for k, v in share.items()})
-for ax in (axes[0], axes[4]):
-    ax.set_ylabel("ratio  $r = T_{unit}/T_{config}$")
-for ax in axes[4:]:
+axes[0].set_ylabel("ratio  $r = T_{unit}/T_{config}$")
+for ax in axes:
     ax.set_xlabel("$T_{config}$")
 handles = [Patch(color=cmap_cols[remap[w]], label=labels[w]) for w in winners_all] \
         + [plt.Line2D([], [], color="k", ls="--", lw=1.1, label="$r=10$")]
@@ -101,7 +111,7 @@ fig.legend(handles=handles, title="Winning configuration", ncol=min(len(handles)
 # [point 27] title moved to caption: "the plain Hungarian BvN region emerges gradually as $T_{compute}$ shrinks\n"
 # [point 27] title moved to caption: "Dense, n=256, k=256, $W_{max}$=64; BvN cycle-consistent with Euler (same run, $C=S$)",
 # [point 27] title moved to caption: fontsize=13, y=1.005)
-fig.tight_layout(rect=[0, 0.05, 1, 0.99])
+fig.tight_layout(rect=[0, 0.1, 1, 0.99])
 fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.pdf", bbox_inches="tight")
 fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.png", dpi=140, bbox_inches="tight")
 print("saved winner_map_tcalc_sensitivity")
