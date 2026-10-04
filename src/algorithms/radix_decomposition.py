@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Tuple
 
+import time
+
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
@@ -83,35 +85,13 @@ MATCHING_ALGORITHMS: Dict[str, Callable[[np.ndarray], List[Tuple[int, int]]]] = 
 }
 
 
-def decompose_radix(
-        matrix: np.ndarray,
-        base: int = 3,
-        max_workers: int | None = None,
-        step_strategy: str = "min",
-        matching_method: str = "heavy"
-) -> Tuple[List[RadixComponent], float, int]:
-    """
-    Decomposes an integer matrix into weighted permutations using a Radix approach.
-    Simulates hardware parallelism by computing planes sequentially and returning
-    the maximum execution time of any single plane.
-
-    Args:
-        matrix: The K-regular integer matrix.
-        base: The radix base (e.g., 2 for bitplane).
-        max_workers: Ignored (forced sequential for hardware simulation).
-        step_strategy: "min", "max", or "median" for weight selection.
-        matching_method: "heavy", "wfa", or "maximum".
-        float_precision_bits: Bits of precision for Sinkhorn/Float matrices.
-        normalize_input: If True, scale float matrix to int space (Sinkhorn mode).
-
-    Returns:
-        Tuple of (components, simulated_max_plane_runtime, num_non_empty_planes).
-        num_non_empty_planes is the count of digit planes that contained
-        at least one non-zero entry and were therefore actually decomposed.
-    """
+def extract_digit_planes(matrix: np.ndarray, base: int) -> List[Tuple[float, np.ndarray]]:
+    """Write every entry of `matrix` in base `base` and return the non-empty digit
+    planes as (weight, plane) pairs. Split out of decompose_radix so that its cost
+    can be timed on its own and charged to Radix's computation time."""
     max_val = np.max(matrix)
     if max_val == 0:
-        return [], 0.0, 0
+        return []
 
     planes: List[Tuple[float, np.ndarray]] = []
 
@@ -149,10 +129,44 @@ def decompose_radix(
             temp_matrix //= base
             if np.all(temp_matrix == 0):
                 break
+    return planes
+
+
+def decompose_radix(
+        matrix: np.ndarray,
+        base: int = 3,
+        max_workers: int | None = None,
+        step_strategy: str = "min",
+        matching_method: str = "heavy"
+) -> Tuple[List[RadixComponent], float, int]:
+    """
+    Decomposes an integer matrix into weighted permutations using a Radix approach.
+    Simulates hardware parallelism by computing planes sequentially and returning
+    the maximum execution time of any single plane.
+
+    Args:
+        matrix: The K-regular integer matrix.
+        base: The radix base (e.g., 2 for bitplane).
+        max_workers: Ignored (forced sequential for hardware simulation).
+        step_strategy: "min", "max", or "median" for weight selection.
+        matching_method: "heavy", "wfa", or "maximum".
+        float_precision_bits: Bits of precision for Sinkhorn/Float matrices.
+        normalize_input: If True, scale float matrix to int space (Sinkhorn mode).
+
+    Returns:
+        Tuple of (components, extraction_time + simulated_max_plane_runtime,
+        num_non_empty_planes).
+        num_non_empty_planes is the count of digit planes that contained
+        at least one non-zero entry and were therefore actually decomposed.
+    """
+    t_extract = time.perf_counter()
+    planes = extract_digit_planes(matrix, base)
+    extraction_time = time.perf_counter() - t_extract
+    if not planes:
+        return [], extraction_time, 0
 
     all_components: List[RadixComponent] = []
     max_plane_runtime = 0.0
-    import time
 
     # Sequential hardware simulation
     for weight, plane_matrix in planes:
@@ -172,7 +186,10 @@ def decompose_radix(
         except Exception as exc:
             print(f"Radix plane sequential worker failed: {exc}")
 
-    return all_components, max_plane_runtime, len(planes)
+    # The extraction runs once before the planes are decomposed in parallel, so it
+    # adds to the slowest plane's time (charged since 2026-10-04; earlier campaigns
+    # recorded the slowest plane alone and are corrected by radix_extraction.py).
+    return all_components, extraction_time + max_plane_runtime, len(planes)
 
 
 def _decompose_digit_plane(

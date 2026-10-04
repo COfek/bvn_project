@@ -31,6 +31,10 @@ import os
 
 import pandas as pd
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from radix_extraction import add_to_radix_times  # noqa: E402
+
 ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
 SWEEPS = (1, 2, 3)   # named, never globbed: sweep3_contaminated must stay out
 WARMUP = 5
@@ -41,7 +45,11 @@ def _one(sweep: int, kind: str, engine: str) -> pd.DataFrame:
         ROOT, f"run/variance_2026/sweep{sweep}/{kind}/{engine}/*/results_stats.csv")))
     if not hits:
         raise FileNotFoundError(f"no results for sweep{sweep}/{kind}/{engine}")
-    return pd.read_csv(hits[-1]).iloc[WARMUP:].reset_index(drop=True)
+    d = pd.read_csv(hits[-1])
+    if kind == "radix":
+        # the campaign timed the slowest plane only; charge the digit extraction
+        d = add_to_radix_times(d, "variance")
+    return d.iloc[WARMUP:].reset_index(drop=True)
 
 
 def _mean_over_sweeps(kind: str, engine: str) -> pd.DataFrame:
