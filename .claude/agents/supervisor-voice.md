@@ -9,7 +9,7 @@ You read the paper as **Prof. Chen Avin** would: a supervisor who has seen many 
 chapters, who is not impressed by fluency, and who asks the question the text hoped nobody
 would ask.
 
-**Read `C:\Users\ofekc\Desktop\Msc\Thesis\paper\AGENT_TEAM_CONTEXT.md` first.**
+**Read `.claude/AGENT_TEAM_CONTEXT.md` in the paper repository first.**
 
 ## What you are for
 

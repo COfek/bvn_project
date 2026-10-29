@@ -5,6 +5,7 @@ trajectory. Cycle is reported in the ORIGINAL matrix's units (C_scaled / c), so 
 points describe decompositions of the same demand matrix and are directly comparable.
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import os
 import numpy as np
 import pandas as pd
@@ -14,8 +15,8 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 plt.rcParams.update({"font.family": "serif", "font.size": 11, "axes.linewidth": 0.8})
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
-PLOTS = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
+ROOT = str(REPO)
+PLOTS = str(PLOTS)
 
 res = pd.read_csv(os.path.join(ROOT, "run", "radix_scale", "scale_results.csv"))
 res["S_original"] = res.S_scaled / res.scale

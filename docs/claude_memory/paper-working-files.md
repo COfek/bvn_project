@@ -8,7 +8,7 @@ metadata:
   modified: 2026-08-29T09:28:49.864Z
 ---
 
-As of 2026-08-29, in `C:\Users\ofekc\Desktop\Msc\Thesis\paper\`:
+As of 2026-08-29, in the author's local working folder `../paper/` (next to the paper repository):
 
 - **`main_paper_with_comments.tex` is the working file** — it is Chen Avin's copy, carrying
   the `\chen{}` macro. `main_paper.tex` is kept byte-identical by copying after each edit.

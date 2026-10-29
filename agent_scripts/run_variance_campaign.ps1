@@ -13,9 +13,10 @@
 # Launch:  pwsh -NoProfile -File agent_scripts\run_variance_campaign.ps1
 
 $ErrorActionPreference = 'Continue'
-Set-Location 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project'
-# absolute, so the task does not depend on the working directory Task Scheduler gives it
-$py   = 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\.venv\Scripts\python.exe'
+$Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
+Set-Location $Repo
+# relative to this script, so the task does not depend on the working directory Task Scheduler gives it
+$py   = (Join-Path $Repo '.venv\Scripts\python.exe')
 $root = 'run/variance_2026'
 New-Item -ItemType Directory -Force -Path $root | Out-Null
 

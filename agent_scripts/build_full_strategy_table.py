@@ -11,10 +11,11 @@ Sources (dense, n=256, k=256, Wmax=64, seed 42, 105 matrices, first 5 dropped):
 Runtime convention: BvN = bvn_runtime; Radix = max-plane time; Euler = split + max-leaf.
 Prints the table and writes paper/strategy_full_table.tex (4 per-engine tabulars).
 """
+from _paths import PAPER, REPO  # repository-relative paths
 import glob
 import pandas as pd
 
-ROOT = "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project"
+ROOT = str(REPO)
 ENG = [("Hungarian", "max", "maximum"), ("WFA", "wfa", "wfa"),
        ("GW Dynamic", "heavy", "heavy"), ("GW Static", "heavy_static", "heavy_static")]
 FRAMES = ["BvN"] + [f"B{b}" for b in [16, 8, 4, 2]] + [f"d{d}" for d in [1, 2, 3, 4]]
@@ -73,5 +74,5 @@ for name in data:
         tex.append(fr.replace("B", "B") + " & " + " & ".join(cs) + r" \\")
     tex.append(r"\bottomrule")
     tex.append(r"\end{tabular}\par\medskip")
-open("C:/Users/ofekc/Desktop/Msc/Thesis/paper/strategy_full_table.tex", "w", encoding="utf-8").write("\n".join(tex))
+open(str(PAPER / "strategy_full_table.tex"), "w", encoding="utf-8").write("\n".join(tex))
 print("\nwrote paper/strategy_full_table.tex")

@@ -20,8 +20,8 @@ Outputs:
   run/radix_scale/scale_summary.csv    means
 """
 from __future__ import annotations
+from _paths import REPO  # repository-relative paths
 import os, sys, time
-sys.path.insert(0, r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project")
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,7 @@ from src.algorithms.radix_decomposition import decompose_radix
 from src.utils.griner_avin_tm import tm_integer
 from src.utils.matrix_generator import generate_matrix
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
+ROOT = str(REPO)
 OUTDIR = os.path.join(ROOT, "run", "radix_scale")
 
 N = 256

@@ -24,6 +24,9 @@ Layout:
   `sorted_array_matching.py` (GW Dynamic / GW Static).
 - `agent_scripts/`: every campaign runner and every script that draws a paper figure or table
   (for example `fig_splitting_paper.py` for Figure 3, `make_paper_tables.py` for the tables).
+  No path is absolute: scripts take their folders from `agent_scripts/_paths.py` (`REPO`, and
+  `PAPER`/`PLOTS` = a `paper/` folder next to this repository, or `BVN_PAPER_DIR` if set), and
+  the PowerShell launchers from `$PSScriptRoot`. Keep it that way.
 - `run/<campaign>/`, `euler_exp/`: the campaign results the paper quotes (named folders only;
   the old timestamped sweeps `run/2026MMDD_*`, `summary/` and `step_exp/` are not in git).
 - `tests/`: `pytest -q -k "not visual"`.

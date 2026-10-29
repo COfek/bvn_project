@@ -1,5 +1,9 @@
 # Handoff: thesis setup on the desktop (Windows), for the laptop session
 
+Paths: `<Thesis>` is the folder that holds both repositories on the author's desktop
+(`<Thesis>/bvn_project`, `<Thesis>/paper`, `<Thesis>/paper_overleaf`); `<home>` is the
+user's home folder. Nothing in either repository depends on them.
+
 Written 2026-10-29 by the Claude session on the desktop, for Ofek's Claude session on the
 laptop, which cannot see this machine. Everything below was read from the machine on that
 date; nothing is from memory. Paths are the desktop's.
@@ -10,7 +14,7 @@ date; nothing is from memory. Paths are the desktop's.
 
 ## 1. Folder layout
 
-Root: `C:\Users\ofekc\Desktop\Msc\Thesis\`
+Root: `<Thesis>\`
 
 | Path | What it is | Git? |
 |---|---|---|
@@ -71,7 +75,7 @@ edits on a side branch (`overleaf-YYYY-MM-DD-HHMM`). Fetch that branch, merge it
 
 ---
 
-## 2. Claude hooks (`C:\Users\ofekc\.claude\settings.json`, user scope)
+## 2. Claude hooks (`<home>\.claude\settings.json`, user scope)
 
 The file holds only `enableWorkflows`, `skipWorkflowUsageWarning` and `hooks`. No secrets.
 
@@ -80,12 +84,12 @@ The file holds only `enableWorkflows`, `skipWorkflowUsageWarning` and `hooks`. N
   "PreToolUse": [
     { "matcher": "Edit|Write|MultiEdit",
       "hooks": [ { "type": "command",
-        "command": "\"C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project/.venv/Scripts/python.exe\" \"C:/Users/ofekc/Desktop/Msc/Thesis/paper_overleaf/.claude/hooks/protect_comments.py\"" } ] }
+        "command": "\"<Thesis>/bvn_project/.venv/Scripts/python.exe\" \"<Thesis>/paper_overleaf/.claude/hooks/protect_comments.py\"" } ] }
   ],
   "PostToolUse": [
     { "matcher": "Bash|PowerShell",
       "hooks": [ { "type": "command",
-        "command": "\"C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project/.venv/Scripts/python.exe\" \"C:/Users/ofekc/Desktop/Msc/Thesis/paper_overleaf/.claude/hooks/bash_marker_guard.py\"" } ] }
+        "command": "\"<Thesis>/bvn_project/.venv/Scripts/python.exe\" \"<Thesis>/paper_overleaf/.claude/hooks/bash_marker_guard.py\"" } ] }
   ]
 }
 ```
@@ -102,8 +106,8 @@ The file holds only `enableWorkflows`, `skipWorkflowUsageWarning` and `hooks`. N
 
 ## 3. Python environment
 
-- venv: `C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\.venv` (git-ignored)
-- created with: `C:\Users\ofekc\AppData\Local\Programs\Python\Python313\python.exe -m venv ...\bvn_project\.venv`
+- venv: `<Thesis>\bvn_project\.venv` (git-ignored)
+- created with: `<home>\AppData\Local\Programs\Python\Python313\python.exe -m venv ...\bvn_project\.venv`
 - Python **3.13.0**
 - `requirements.txt`: `numpy>=2.0, scipy>=1.17, matplotlib>=3.10, networkx>=3.6, rich>=14.0, pytest>=9.0, numba>=0.63, pandas>=2.0`
 - installed (the versions the paper quotes in section 6.1): numpy 2.3.5, scipy 1.17.0, numba 0.63.1,
@@ -118,7 +122,7 @@ The file holds only `enableWorkflows`, `skipWorkflowUsageWarning` and `hooks`. N
 ## 4. LaTeX
 
 - **MiKTeX 25.12**, `pdflatex` = MiKTeX-pdfTeX 4.23, at
-  `C:\Users\ofekc\AppData\Local\Programs\MiKTeX\miktex\bin\x64\`
+  `<home>\AppData\Local\Programs\MiKTeX\miktex\bin\x64\`
 - class `acmart` v2.19 (2026/06/27), from MiKTeX's package tree
 - the bibliography is inline (`thebibliography` at the end of the .tex); no BibTeX run needed
 - `pdftotext` 4.00 comes from Git for Windows (`/mingw64/bin`), used by the checker
@@ -203,7 +207,7 @@ compiles with **zero** errors.
 - **Ready-to-review markers** now sit above section 3, section 5 (opening), 5.1.1, 5.1.2 and 5.2.
 
 ### Memory (Claude auto-memory on the desktop)
-`C:\Users\ofekc\.claude\projects\C--Users-ofekc-Desktop-Msc-Thesis-bvn-project\memory\`:
+`<home>\.claude\projects\<project>\memory\`:
 agent-guide, campaign-data-provenance, paper-latex-location, paper-notation-conventions,
 paper-working-files, paper-writing-principles, related-work-articles (+ MEMORY.md index).
 Not synced anywhere. The rules that matter are in `paper_overleaf/.claude/` (in Chen's repo).
@@ -315,7 +319,7 @@ Permutations, Cycle Length, and the Cost of Computing the Schedule*
 Author: Ofek Cohen (MSc, Ben-Gurion University). Advisor: Prof. Chen Avin.
 Format: `acmart[sigconf,nonacm]`, two-column, bibliography inline (no `.bib`).
 
-**Working file:** `C:\Users\ofekc\Desktop\Msc\Thesis\paper\main_paper_with_comments.tex`
+**Working file:** `<Thesis>\paper\main_paper_with_comments.tex`
 `main_paper.tex` is kept byte-identical by copying after each edit. Never edit
 `overleaf_updated.tex` (a stale snapshot) or any `*_draft*.tex`.
 
@@ -445,7 +449,7 @@ comment in `dct_parameter_space.py` but nowhere in the paper; and 7.2's claim th
 ## Build check
 
 ```bash
-cd "/c/Users/ofekc/Desktop/Msc/Thesis/paper" && pdflatex -interaction=nonstopmode main_paper_with_comments.tex >_b.log 2>&1 && pdflatex -interaction=nonstopmode main_paper_with_comments.tex >_b.log 2>&1; grep -c '^!' _b.log; grep -c undefined _b.log
+cd "<Thesis>/paper" && pdflatex -interaction=nonstopmode main_paper_with_comments.tex >_b.log 2>&1 && pdflatex -interaction=nonstopmode main_paper_with_comments.tex >_b.log 2>&1; grep -c '^!' _b.log; grep -c undefined _b.log
 ```
 
 Both counts must be `0` before any work is offered to the author.

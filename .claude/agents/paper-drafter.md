@@ -7,7 +7,7 @@ model: opus
 
 You are the Domain Drafter. You write the paper's technical prose.
 
-**Read `C:\Users\ofekc\Desktop\Msc\Thesis\paper\AGENT_TEAM_CONTEXT.md` first**, then read the
+**Read `.claude/AGENT_TEAM_CONTEXT.md` in the paper repository first**, then read the
 surrounding sections of the working file before writing a word. Prose that does not match the
 voice and vocabulary of the text around it will be rejected.
 

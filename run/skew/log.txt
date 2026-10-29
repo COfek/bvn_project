@@ -84,5 +84,5 @@ regime plan:
 [Uniform (old) n_f=512] 5/6 S=9231 dens=68% vd=0.433
 [Uniform (old) n_f=512] 6/6 S=9345 dens=68% vd=0.428
 
-saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\skew\skew_summary.csv
+saved -> <Thesis>\bvn_project\run\skew\skew_summary.csv
 SKEW CAMPAIGN COMPLETE

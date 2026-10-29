@@ -1,8 +1,9 @@
 """Build meeting_doc.tex: the high-level package for the advisor meeting.
 Part A: paper structure + story. Part B: the 9 exhibits. Part C: theoretical directions."""
+from _paths import PAPER, REPO  # repository-relative paths
 import re
 
-PAPER = "C:/Users/ofekc/Desktop/Msc/Thesis/paper"
+PAPER = str(PAPER)
 src = open(f"{PAPER}/test.tex", encoding="utf-8").read()
 
 def tabular_of(label):
@@ -191,7 +192,7 @@ doc += exhibit(r"Exhibit 11 --- FULL grid: every engine $\times$ every framework
     r"(i) Hungarian BvN$+$max reaches $N{=}175$ --- $\bar\lambda\approx61$, nearly the $W_{\max}{=}64$ floor; (ii) median cuts WFA BvN runtime $27\times$ (1700$\to$62\,ms); (iii) strategies $\neq$ min break the $C{=}S$ guarantee everywhere (Euler included); (iv) at $B{=}2$ all strategies coincide (0/1 planes) --- a built-in sanity check.",
     r"{\footnotesize \input{strategy_full_table.tex}}")
 import pandas as pd
-_tt = pd.read_csv("C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project/run/ttfp/ttfp_results.csv")
+_tt = pd.read_csv(str(REPO / "run/ttfp/ttfp_results.csv"))
 _pv = _tt.pivot_table(index="framework", columns="engine", values="ttfp_ms", aggfunc="mean")
 _order = ["BvN", "Radix B2", "Radix B4", "Radix B8", "Radix B16",
           "Euler d1", "Euler d2", "Euler d3", "Euler d4"]

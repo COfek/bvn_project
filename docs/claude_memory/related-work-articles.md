@@ -20,5 +20,5 @@ Lecturer-assigned related work (both from the Purdue StygianNet group, Vamsi Add
    engines; Fig 2 shows BvN (many small matchings) vs max-weight (few dense) — the "matrices from
    the article" the lecturer wants brought in. URL: https://stygianet.cs.purdue.edu/papers/birkhoff-moe-hotoptics26.pdf
 
-Full thesis-focused reading notes: `Desktop\Msc\Thesis\article_summaries.md`.
+Full thesis-focused reading notes: `article_summaries.md`, in the author's thesis folder (not in a repository).
 See also [[paper-latex-location]].

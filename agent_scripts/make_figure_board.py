@@ -1,7 +1,8 @@
 """Build figure_board.tex: the curated exhibit set (user-selected)."""
+from _paths import PAPER  # repository-relative paths
 import re
 
-PAPER = "C:/Users/ofekc/Desktop/Msc/Thesis/paper"
+PAPER = str(PAPER)
 src = open(f"{PAPER}/test.tex", encoding="utf-8").read()
 
 def tabular_of(label):

@@ -149,6 +149,6 @@ GW Static   Euler d2          251.3     7411      8148  1.000
 GW Static   Euler d3          167.0     7433      8148  1.000
 GW Static   Euler d4          129.3     7510      8148  1.000
 
-saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\tm_workload\tm_results.csv
-saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\tm_workload\tm_summary.csv
+saved -> <Thesis>\bvn_project\run\tm_workload\tm_results.csv
+saved -> <Thesis>\bvn_project\run\tm_workload\tm_summary.csv
 Figures/tables: run agent_scripts/tm_paper_figures.py

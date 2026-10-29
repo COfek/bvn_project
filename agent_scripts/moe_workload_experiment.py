@@ -12,8 +12,8 @@ non-regular matrix:
 Outputs a comparison table to stdout and a figure to paper/plots_pdf/moe_workload.pdf.
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import sys, time
-sys.path.insert(0, r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project")
 
 import numpy as np
 import matplotlib
@@ -24,7 +24,7 @@ from src.algorithms.bvn import bvn_decomposition
 from src.algorithms.euler_splitting import decompose_euler_framework, euler_split_once
 from src.utils.matrix_generator import generate_matrix
 
-OUT = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
+OUT = str(PLOTS)
 N = 64
 ENGINES = [("Hungarian", "maximum"), ("WFA", "wfa"),
            ("GW Dynamic", "heavy"), ("GW Static", "heavy_static")]

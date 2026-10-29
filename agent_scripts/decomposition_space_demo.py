@@ -29,6 +29,7 @@ DCT model:  DCT = T_compute + N * T_config + C * T_unit
 
 Output: paper/plots_pdf/decomposition_space_demo.pdf
 """
+from _paths import PLOTS  # repository-relative paths
 
 import itertools
 import math
@@ -447,7 +448,7 @@ ax.set_xticks(range(min(Ns), max(Ns) + 1))
 ax.set_yticks(range(min(Cs), max(Cs) + 1))
 fig.tight_layout()
 
-out = Path("C:/Users/ofekc/Desktop/Msc/Thesis/paper/plots_pdf/decomposition_space_demo.pdf")
+out = Path(str(PLOTS / "decomposition_space_demo.pdf"))
 out.parent.mkdir(parents=True, exist_ok=True)
 fig.savefig(out, bbox_inches="tight")
 print("=" * 72)

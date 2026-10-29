@@ -8,6 +8,7 @@ scaled to fit within a single column horizontally.
   euler_tradeoff_paper.pdf  Euler depths             -- for "Euler splitting across engines"
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import os, glob
 import numpy as np
 import pandas as pd
@@ -23,8 +24,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 plt.rcParams.update({"font.family": "serif"})
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
-PLOTS = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
+ROOT = str(REPO)
+PLOTS = str(PLOTS)
 ENG = [("Hungarian", "#0072B2", "o"), ("GW Dynamic", "#D55E00", "s"),
        ("GW Static", "#009E73", "^"), ("WFA", "#CC79A7", "D")]
 BASES = [16, 8, 4, 2]

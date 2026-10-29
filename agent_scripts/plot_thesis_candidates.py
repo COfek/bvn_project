@@ -9,13 +9,14 @@ paper/plots_pdf/. Built from the fresh run/rerun_2026 CSVs.
   dct_crossover             (6) BvN vs Radix B2 DCT curves per engine
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import glob, pandas as pd, numpy as np
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-ROOT = "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project"
-OUT = "C:/Users/ofekc/Desktop/Msc/Thesis/paper/plots_pdf"
+ROOT = str(REPO)
+OUT = str(PLOTS)
 RUNS = [("Hungarian", "max", "maximum", "#4C72B0"),
         ("GW Dynamic", "heavy", "heavy", "#55A868"),
         ("GW Static", "heavy_static", "heavy_static", "#C44E52"),

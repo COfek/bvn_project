@@ -25,6 +25,7 @@ the same value either way.
     de = euler_frame("maximum")    # Euler depths 1-4, Hungarian leaves
 """
 from __future__ import annotations
+from _paths import REPO  # repository-relative paths
 
 import glob
 import os
@@ -35,7 +36,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from radix_extraction import add_to_radix_times  # noqa: E402
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
+ROOT = str(REPO)
 SWEEPS = (1, 2, 3)   # named, never globbed: sweep3_contaminated must stay out
 WARMUP = 5
 

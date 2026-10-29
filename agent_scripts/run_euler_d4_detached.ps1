@@ -2,7 +2,8 @@
 # eng_*_dense Euler params. Detached so it survives session teardown.
 # Launch: Start-Process pwsh -ArgumentList '-NoProfile','-File','agent_scripts\run_euler_d4_detached.ps1' -WindowStyle Hidden
 $ErrorActionPreference = 'Continue'
-Set-Location 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project'
+$Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
+Set-Location $Repo
 $py = '.\.venv\Scripts\python.exe'
 foreach ($eng in @('maximum','heavy','heavy_static','wfa')) {
     & $py main.py -n 256 -k 256 --max-weight 64 -s 105 --engine euler_bvn `

@@ -7,12 +7,13 @@ Reusable: point SOURCES at either the canonical final_runs folders or the
 fresh rerun_2026 folders. Regenerate after the rerun for clean Hungarian data.
 """
 from __future__ import annotations
+from _paths import REPO  # repository-relative paths
 import sys, pandas as pd, numpy as np
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-ROOT = "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project"
+ROOT = str(REPO)
 
 # name -> (results_stats.csv path, column-prefix, colour)
 def canonical():

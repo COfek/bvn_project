@@ -2,7 +2,8 @@
 # matching the params of the existing eng_* Euler runs. Detached from any session.
 # Launch: Start-Process pwsh -ArgumentList '-NoProfile','-File','agent_scripts\run_euler_static_detached.ps1' -WindowStyle Hidden
 $ErrorActionPreference = 'Continue'
-Set-Location 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project'
+$Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
+Set-Location $Repo
 $py = '.\.venv\Scripts\python.exe'
 
 # dense (k=256)

@@ -7,8 +7,8 @@ support of D (each is ~D/2), whereas the heuristic yields genuinely sparser halv
 Output: paper/plots_pdf/euler_split_heatmaps.pdf|png
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import sys, os
-sys.path.insert(0, r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project")
 
 import numpy as np
 import matplotlib
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from src.algorithms.euler_splitting import euler_split_once
 from tests.test_euler_splitting import _make_matrix
 
-OUT = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
+OUT = str(PLOTS)
 plt.rcParams.update({"font.family": "serif"})
 
 # seed 5 gives the cleanest demonstration: the alternating colouring leaves BOTH halves with

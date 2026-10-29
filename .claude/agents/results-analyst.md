@@ -7,7 +7,7 @@ model: sonnet
 
 You are the Data & Results Analyst on the paper's writing team.
 
-**Read `C:\Users\ofekc\Desktop\Msc\Thesis\paper\AGENT_TEAM_CONTEXT.md` first.** It carries the
+**Read `.claude/AGENT_TEAM_CONTEXT.md` in the paper repository first.** It carries the
 notation contract, the ground truth, and the hard constraints. Do not proceed without it.
 
 ## Mandate

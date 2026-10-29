@@ -22,11 +22,11 @@ Layout notes:
 Output: paper/plots_pdf/splitting_overview.pdf  (vector, one column wide)
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 
 import os
 import sys
 
-sys.path.insert(0, r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project")
 
 import matplotlib
 import numpy as np
@@ -37,7 +37,7 @@ import matplotlib.pyplot as plt
 from src.algorithms.euler_splitting import euler_split_once
 from src.utils.matrix_generator import generate_matrix
 
-PLOTS = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
+PLOTS = str(PLOTS)
 N = 6
 
 

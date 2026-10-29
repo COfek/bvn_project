@@ -2,7 +2,8 @@
 # all four engines, 105 matrices dense, seed 42. Detached (survives session).
 # Launch: Start-Process pwsh -ArgumentList '-NoProfile','-File','agent_scripts\run_step_strategy_detached.ps1' -WindowStyle Hidden
 $ErrorActionPreference = 'Continue'
-Set-Location 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project'
+$Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
+Set-Location $Repo
 $py = '.\.venv\Scripts\python.exe'
 foreach ($eng in @('max','heavy','heavy_static','wfa')) {
     & $py main.py -n 256 -k 256 --max-weight 64 -s 105 --engine $eng `

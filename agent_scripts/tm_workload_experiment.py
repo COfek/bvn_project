@@ -18,8 +18,8 @@ Outputs:
   paper/plots_pdf/tm_workload.pdf    trade-off figure
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import os, sys, time
-sys.path.insert(0, r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project")
 
 import numpy as np
 import pandas as pd
@@ -33,9 +33,9 @@ from src.algorithms.euler_splitting import decompose_euler_framework
 from src.utils.griner_avin_tm import tm_integer
 from src.utils.matrix_generator import generate_matrix
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
+ROOT = str(REPO)
 OUTDIR = os.path.join(ROOT, "run", "tm_workload")
-PLOTS = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
+PLOTS = str(PLOTS)
 
 N = 256
 N_MATRICES = 10          # after 1 warm-up matrix (JIT)

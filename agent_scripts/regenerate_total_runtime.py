@@ -10,13 +10,14 @@ Produces (paper/plots_pdf/):
   design_space_projections.pdf      (Radix + Euler trajectories, TOTAL runtime)
 """
 from __future__ import annotations
+from _paths import PLOTS  # repository-relative paths
 import glob, pandas as pd
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 plt.rcParams.update({"font.family": "serif", "font.size": 11, "axes.linewidth": 0.8})
 
-OUT = "C:/Users/ofekc/Desktop/Msc/Thesis/paper/plots_pdf"
+OUT = str(PLOTS)
 ENG = [("Hungarian", "max", "maximum", "#0072B2", "o"),
        ("GW Dynamic", "heavy", "heavy", "#D55E00", "s"),
        ("GW Static", "heavy_static", "heavy_static", "#009E73", "^"),

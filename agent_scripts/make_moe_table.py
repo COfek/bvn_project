@@ -15,6 +15,7 @@ and C/S here is a ratio of means.  Per-model, per-layer figures are in
 run/moe_workload/moe_results.csv.
 """
 from __future__ import annotations
+from _paths import PAPER  # repository-relative paths
 
 import os
 
@@ -24,7 +25,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from radix_extraction import correct_summary, correct_scale_results  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\moe_tab_summary.tex"
+OUT = str(PAPER / "moe_tab_summary.tex")
 
 ENGINES = ["Hungarian", "GW Dynamic", "GW Static", "WFA"]
 REG = [("MoE throughput", "Thr."), ("MoE mmlu", "MMLU")]

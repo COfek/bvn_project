@@ -6,6 +6,7 @@ Reads   run/tm_workload/tm_summary.csv   (produced by tm_workload_experiment.py)
 Writes  paper/plots_pdf/tm_*.pdf|png     and paper/tm_tab_*.tex
 """
 from __future__ import annotations
+from _paths import PAPER, PLOTS, REPO  # repository-relative paths
 import os
 import numpy as np
 import pandas as pd
@@ -22,9 +23,9 @@ from matplotlib.ticker import FuncFormatter
 
 plt.rcParams.update({"font.family": "serif", "font.size": 11, "axes.linewidth": 0.8})
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
-PLOTS = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
-PAPER = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper"
+ROOT = str(REPO)
+PLOTS = str(PLOTS)
+PAPER = str(PAPER)
 SUM = os.path.join(ROOT, "run", "tm_workload", "tm_summary.csv")
 
 ENG = [("Hungarian", "#0072B2", "o"), ("GW Dynamic", "#D55E00", "s"),

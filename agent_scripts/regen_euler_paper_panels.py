@@ -6,6 +6,7 @@ Overwrites, per engine folder (paper reads these paths directly):
   plots_pdf/euler_<eng>_k256/runtime_vs_permutations_euler_bvn.pdf
   plots_pdf/euler_<eng>_k16/runtime_comparison.pdf
 """
+from _paths import PLOTS  # repository-relative paths
 import glob
 import pandas as pd
 import matplotlib
@@ -13,7 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 plt.rcParams.update({"font.family": "serif", "font.size": 11, "axes.linewidth": 0.8})
-OUT = "C:/Users/ofekc/Desktop/Msc/Thesis/paper/plots_pdf"
+OUT = str(PLOTS)
 # engine -> (data prefix, plots_pdf folder token, display name)
 ENG = [("maximum", "maximum", "Hungarian"), ("wfa", "wfa", "WFA"),
        ("heavy", "heavy", "GW Dynamic"), ("heavy_static", "heavystatic", "GW Static")]

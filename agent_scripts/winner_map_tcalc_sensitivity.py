@@ -5,6 +5,7 @@
     finer sweep (/4 .. /128 and 0) is still printed to stdout for the text
 Configs: all 4 engines x {BvN, B16..B2, Euler d1..d4}; Euler T_compute split-inclusive.
 """
+from _paths import PLOTS, REPO  # repository-relative paths
 import glob
 import numpy as np
 import pandas as pd
@@ -26,8 +27,8 @@ def _tfmt(v, _p):
 TFMT = FuncFormatter(_tfmt)
 
 plt.rcParams.update({"font.family": "serif", "font.size": 11})
-ROOT = "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project"
-OUT = "C:/Users/ofekc/Desktop/Msc/Thesis/paper/plots_pdf"
+ROOT = str(REPO)
+OUT = str(PLOTS)
 ENG = [("Hungarian", "max", "maximum"), ("WFA", "wfa", "wfa"),
        ("GW Dynamic", "heavy", "heavy"), ("GW Static", "heavy_static", "heavy_static")]
 

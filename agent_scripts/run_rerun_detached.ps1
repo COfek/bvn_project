@@ -1,7 +1,8 @@
 # Runs the remaining rerun engines sequentially, detached from any Claude session.
 # Launch with:  Start-Process pwsh -ArgumentList '-File','agent_scripts\run_rerun_detached.ps1' -WindowStyle Hidden
 $ErrorActionPreference = 'Continue'
-Set-Location 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project'
+$Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
+Set-Location $Repo
 $py = '.\.venv\Scripts\python.exe'
 $engines = @('heavy','heavy_static','wfa')
 foreach ($eng in $engines) {

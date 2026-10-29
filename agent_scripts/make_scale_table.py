@@ -1,9 +1,10 @@
 """LaTeX table for the Radix scaling result (per-matrix best scale, then averaged)."""
+from _paths import PAPER, REPO  # repository-relative paths
 import os
 import pandas as pd
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
-PAPER = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper"
+ROOT = str(REPO)
+PAPER = str(PAPER)
 d = pd.read_csv(os.path.join(ROOT, "run", "radix_scale", "scale_results.csv"))
 
 BASES = [16, 8, 4, 2]

@@ -9,8 +9,8 @@ matrix-level view to the companion heatmap figure.
 Output: paper/plots_pdf/euler_bipartite_paper.pdf|png
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import sys, os
-sys.path.insert(0, r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project")
 
 import numpy as np
 import matplotlib
@@ -21,7 +21,7 @@ import matplotlib.patches as mpatches
 from src.algorithms.euler_splitting import euler_split_once
 from tests.test_euler_splitting import _make_matrix
 
-OUT = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
+OUT = str(PLOTS)
 plt.rcParams.update({"font.family": "serif"})
 
 N, K, SEED, MAXW = 6, 3, 0, 6

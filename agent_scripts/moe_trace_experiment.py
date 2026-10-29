@@ -37,12 +37,12 @@ Outputs:
   run/moe_workload/moe_summary.csv     mean per (regime, engine, config)
 """
 from __future__ import annotations
+from _paths import REPO  # repository-relative paths
 
 import os
 import sys
 import time
 
-sys.path.insert(0, r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project")
 
 import numpy as np
 import pandas as pd
@@ -52,7 +52,7 @@ from src.algorithms.euler_splitting import decompose_euler_framework
 from src.algorithms.radix_decomposition import decompose_radix
 from src.utils.moe_trace import load_all
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
+ROOT = str(REPO)
 TRACES = os.path.join(ROOT, "paper_traces")
 OUTDIR = os.path.join(ROOT, "run", "moe_workload")
 

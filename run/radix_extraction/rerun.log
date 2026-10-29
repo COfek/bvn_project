@@ -1,13 +1,13 @@
 [2026-10-05 02:30:01] daytime measurements kept in run/radix_extraction/daytime_2026-10-04
 [2026-10-05 02:30:02] rerun starting  cpu_load=2% processes=229
-variance: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\radix_extraction\variance.csv  (37 s)
+variance: <Thesis>\bvn_project\run\radix_extraction\variance.csv  (37 s)
        mean    min    max
 base                     
 2     2.811  2.510  3.260
 4     1.618  1.231  1.968
 8     1.004  0.782  1.438
 16    0.967  0.781  1.299
-tm: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\radix_extraction\tm.csv  (1 s)
+tm: <Thesis>\bvn_project\run\radix_extraction\tm.csv  (1 s)
                         mean    min    max
 regime           base                     
 TM dense         2     2.430  2.288  2.620
@@ -22,7 +22,7 @@ Uniform (thesis) 2     2.694  2.529  2.815
                  4     1.437  1.340  1.503
                  8     0.840  0.786  0.920
                  16    0.832  0.777  0.909
-radix_scale: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\radix_extraction\radix_scale.csv  (1 s)
+radix_scale: <Thesis>\bvn_project\run\radix_extraction\radix_scale.csv  (1 s)
                 mean    min    max
 regime   base                     
 TM dense 2     2.636  2.523  2.827
@@ -33,7 +33,7 @@ Uniform  2     2.917  2.656  3.283
          4     1.667  1.458  2.049
          8     1.032  0.791  1.270
          16    0.978  0.780  1.319
-moe: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\radix_extraction\moe.csv  (0 s)
+moe: <Thesis>\bvn_project\run\radix_extraction\moe.csv  (0 s)
                       mean    min    max
 regime         base                     
 MoE mmlu       2     0.061  0.058  0.067

@@ -6,6 +6,7 @@
   tab_moe_raw.tex      per-engine digest, one column wide
 """
 from __future__ import annotations
+from _paths import PAPER, PLOTS  # repository-relative paths
 
 import os
 
@@ -18,8 +19,8 @@ import matplotlib.pyplot as plt
 
 plt.rcParams.update({"font.family": "serif"})
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PLOTS = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper\plots_pdf"
-TABLES = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper"
+PLOTS = str(PLOTS)
+TABLES = str(PAPER)
 
 ENG = [("Hungarian", "#0072B2", "o"), ("GW Dynamic", "#D55E00", "s"),
        ("GW Static", "#009E73", "^"), ("WFA", "#CC79A7", "D")]

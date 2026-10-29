@@ -13,6 +13,7 @@ next to the campaign. The table and figure scripts add it to the Radix times.
     from radix_extraction import extraction_ms             # {(matrix_index, base): ms}
 """
 from __future__ import annotations
+from _paths import REPO  # repository-relative paths
 
 import os
 import sys
@@ -21,7 +22,7 @@ import time
 import numpy as np
 import pandas as pd
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
+ROOT = str(REPO)
 sys.path.insert(0, ROOT)
 from src.algorithms.radix_decomposition import extract_digit_planes  # noqa: E402
 from src.utils.matrix_generator import generate_matrix  # noqa: E402

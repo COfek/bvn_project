@@ -14,6 +14,7 @@ Outputs (paper/plots_pdf/):
   dct_3d_surfaces.pdf      : two-surface crossover + minimum-DCT surface
 """
 from __future__ import annotations
+from _paths import PLOTS, REPO  # repository-relative paths
 import glob, numpy as np, pandas as pd
 import sys, os as _os
 _os.sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
@@ -31,8 +32,8 @@ def _tfmt(v, _p):
     return f"{v*1e6:g} ns"
 TFMT = FuncFormatter(_tfmt)
 
-ROOT = "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project"
-OUT = "C:/Users/ofekc/Desktop/Msc/Thesis/paper/plots_pdf"
+ROOT = str(REPO)
+OUT = str(PLOTS)
 ENG = [("Hungarian", "max", "maximum"), ("WFA", "wfa", "wfa"),
        ("GW Dynamic", "heavy", "heavy"), ("GW Static", "heavy_static", "heavy_static")]
 

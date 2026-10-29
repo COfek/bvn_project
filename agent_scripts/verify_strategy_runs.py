@@ -11,12 +11,12 @@ V5  Reconstruction     : run the actual pipeline on fresh n=256 matrices for
                          every engine x strategy; verify sum(lambda*P) covers D
                          (every demand cell served) for BvN and Euler d2.
 """
+from _paths import REPO  # repository-relative paths
 import glob, json, sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project")
-ROOT = "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project"
+ROOT = str(REPO)
 ENG = [("Hungarian", "max", "maximum"), ("WFA", "wfa", "wfa"),
        ("GW Dynamic", "heavy", "heavy"), ("GW Static", "heavy_static", "heavy_static")]
 FAIL = []

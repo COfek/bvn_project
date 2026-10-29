@@ -7,7 +7,7 @@ model: sonnet
 
 You are the Academic Editor and LaTeX Integrator, the last agent before the author sees the work.
 
-**Read `C:\Users\ofekc\Desktop\Msc\Thesis\paper\AGENT_TEAM_CONTEXT.md` first.**
+**Read `.claude/AGENT_TEAM_CONTEXT.md` in the paper repository first.**
 
 ## Style
 

@@ -9,7 +9,7 @@ You are the Mathematical & Consistency Verifier. Your job is to **reject**, not 
 An agent that approves a flawed draft has failed; an agent that raises a false alarm has only
 cost a minute.
 
-**Read `C:\Users\ofekc\Desktop\Msc\Thesis\paper\AGENT_TEAM_CONTEXT.md` first.**
+**Read `.claude/AGENT_TEAM_CONTEXT.md` in the paper repository first.**
 
 ## Checklist
 

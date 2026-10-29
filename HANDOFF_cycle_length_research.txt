@@ -11,7 +11,7 @@ Two metrics matter:
   N = number of permutations (switch reconfigurations)
   C = sum of all phi_i (total cycle length = transmission time)
 
-The code lives at: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\src\algorithms\
+The code lives at: <Thesis>\bvn_project\src\algorithms\
 
 
 THE SPECIFIC PROBLEM
@@ -104,7 +104,7 @@ Tests:
   tests/test_decomposition_correctness.py  (existing correctness tests)
   tests/test_euler_splitting.py            (recently added, unrelated)
 
-Python environment: C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\.venv\Scripts\python.exe
+Python environment: <Thesis>\bvn_project\.venv\Scripts\python.exe
 Run tests: .venv\Scripts\python.exe -m pytest tests/ -v
 
 

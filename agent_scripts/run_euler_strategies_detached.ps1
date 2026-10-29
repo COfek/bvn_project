@@ -2,7 +2,8 @@
 # (min strategy already covered by euler_exp/eng_*_dense_d4.) Detached.
 # Launch: Start-Process pwsh -ArgumentList '-NoProfile','-File','agent_scripts\run_euler_strategies_detached.ps1' -WindowStyle Hidden
 $ErrorActionPreference = 'Continue'
-Set-Location 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project'
+$Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
+Set-Location $Repo
 $py = '.\.venv\Scripts\python.exe'
 foreach ($strat in @('median','max')) {
     foreach ($eng in @('maximum','heavy','heavy_static','wfa')) {

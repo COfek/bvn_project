@@ -31,6 +31,7 @@ Two traps this script avoids, both of which have bitten:
 Usage:  .venv/Scripts/python.exe agent_scripts/make_paper_tables.py
 """
 from __future__ import annotations
+from _paths import PAPER, REPO  # repository-relative paths
 
 import glob
 import os
@@ -42,8 +43,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from radix_extraction import add_to_radix_times, extraction_ms  # noqa: E402
 
-ROOT = r"C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project"
-OUT = r"C:\Users\ofekc\Desktop\Msc\Thesis\paper"
+ROOT = str(REPO)
+OUT = str(PAPER)
 
 WARMUP = 5          # matrices discarded to exclude JIT compilation, as 6.1 states
 SWEEPS = (1, 2, 3)  # named, never globbed: sweep3_contaminated must stay out

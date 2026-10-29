@@ -14,8 +14,9 @@
 # Launch:  pwsh -NoProfile -File agent_scripts\run_heuristic_ablation.ps1
 
 $ErrorActionPreference = 'Continue'
-Set-Location 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project'
-$py   = 'C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\.venv\Scripts\python.exe'
+$Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
+Set-Location $Repo
+$py   = (Join-Path $Repo '.venv\Scripts\python.exe')
 $root = 'run/ablation_heuristic_2026'
 New-Item -ItemType Directory -Force -Path $root | Out-Null
 

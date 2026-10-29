@@ -22,13 +22,13 @@ Engines (first iteration only):
 Dense benchmark: n=256, k=256, Wmax=64, seed 42+i, N_MATRICES matrices.
 Output: run/ttfp/ttfp_results.csv + printed summary. No paper changes.
 """
+from _paths import REPO  # repository-relative paths
 import os, time
 import numpy as np
 import pandas as pd
 from scipy.optimize import linear_sum_assignment
 
 import sys
-sys.path.insert(0, "C:/Users/ofekc/Desktop/Msc/Thesis/bvn_project")
 from src.utils.matrix_generator import generate_matrix
 from src.algorithms.wfa import wavefront_matching_vectorized
 from src.algorithms.sorted_array_matching import sorted_array_matching
