@@ -27,6 +27,29 @@ class DecompositionComponent:
     weight: float
 
 
+def _drop_empty_cells(work, row_ind, col_ind, tol):
+    """Keep only the assigned cells that carry positive residual demand.
+
+    `linear_sum_assignment` returns a *complete* assignment of the active rows.
+    When the residual has no perfect matching on its positive entries -- which
+    happens as soon as the input is not regular -- some rows are assigned to zero
+    cells via the large-cost fallback. Recording those cells in the permutation
+    would inflate the reconstruction: the cell contributes lambda to the sum while
+    the residual there stays clipped at zero, so sum(lambda_i P_i) > D.
+
+    Dropping them turns the peel into a partial matching, i.e. a weak
+    decomposition step, which is what a non-regular residual actually admits.
+    This mirrors the filter already applied in radix_decomposition's Hungarian
+    wrappers, where non-regular digit planes are the norm.
+
+    On regular input this is a no-op: a positive perfect matching exists at every
+    peel, and any fallback cell costs more than every positive cell, so the
+    optimal assignment never selects one.
+    """
+    keep = work[row_ind, col_ind] > tol
+    return row_ind[keep], col_ind[keep]
+
+
 def bvn_decomposition(
     matrix: FloatMatrix,
     matching_algorithm: str = "maximum",
@@ -76,6 +99,7 @@ def bvn_decomposition(
             sub_row_ind, col_ind_sub = linear_sum_assignment(cost)
             row_ind = active_rows[sub_row_ind]
             col_ind = col_ind_sub
+            row_ind, col_ind = _drop_empty_cells(work, row_ind, col_ind, tol)
 
         elif matching_algorithm == "minimum":
             # Minimum-weight perfect matching over positive edges only.
@@ -92,6 +116,7 @@ def bvn_decomposition(
             sub_row_ind, col_ind_sub = linear_sum_assignment(cost)
             row_ind = active_rows[sub_row_ind]
             col_ind = col_ind_sub
+            row_ind, col_ind = _drop_empty_cells(work, row_ind, col_ind, tol)
 
         elif matching_algorithm == "heavy_noaug":
             # GW Dynamic without augmenting paths — weak (partial-matching) decomposition

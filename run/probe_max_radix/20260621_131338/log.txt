@@ -1,0 +1,26 @@
+[2026-06-21 13:13:38] [INFO] [__main__] Run directory: run\probe_max_radix\20260621_131338 |  Engine: maximum | Bases: [2, 4, 8, 16, 32]
+[2026-06-21 13:13:38] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-06-21 13:13:38] [INFO] [src.runner] Starting Experiment | n=256, matrices=20, parallel=False
+[2026-06-21 13:13:42] [INFO] [src.runner] Progress: 1/20 matrices processed (5%)
+[2026-06-21 13:13:47] [INFO] [src.runner] Progress: 2/20 matrices processed (10%)
+[2026-06-21 13:13:51] [INFO] [src.runner] Progress: 3/20 matrices processed (15%)
+[2026-06-21 13:13:56] [INFO] [src.runner] Progress: 4/20 matrices processed (20%)
+[2026-06-21 13:14:00] [INFO] [src.runner] Progress: 5/20 matrices processed (25%)
+[2026-06-21 13:14:04] [INFO] [src.runner] Progress: 6/20 matrices processed (30%)
+[2026-06-21 13:14:09] [INFO] [src.runner] Progress: 7/20 matrices processed (35%)
+[2026-06-21 13:14:13] [INFO] [src.runner] Progress: 8/20 matrices processed (40%)
+[2026-06-21 13:14:18] [INFO] [src.runner] Progress: 9/20 matrices processed (45%)
+[2026-06-21 13:14:22] [INFO] [src.runner] Progress: 10/20 matrices processed (50%)
+[2026-06-21 13:14:26] [INFO] [src.runner] Progress: 11/20 matrices processed (55%)
+[2026-06-21 13:14:31] [INFO] [src.runner] Progress: 12/20 matrices processed (60%)
+[2026-06-21 13:14:35] [INFO] [src.runner] Progress: 13/20 matrices processed (65%)
+[2026-06-21 13:14:40] [INFO] [src.runner] Progress: 14/20 matrices processed (70%)
+[2026-06-21 13:14:44] [INFO] [src.runner] Progress: 15/20 matrices processed (75%)
+[2026-06-21 13:14:48] [INFO] [src.runner] Progress: 16/20 matrices processed (80%)
+[2026-06-21 13:14:53] [INFO] [src.runner] Progress: 17/20 matrices processed (85%)
+[2026-06-21 13:14:57] [INFO] [src.runner] Progress: 18/20 matrices processed (90%)
+[2026-06-21 13:15:02] [INFO] [src.runner] Progress: 19/20 matrices processed (95%)
+[2026-06-21 13:15:06] [INFO] [src.runner] Progress: 20/20 matrices processed (100%)
+[2026-06-21 13:15:06] [INFO] [src.runner] Experiment completed successfully.
+[2026-06-21 13:15:06] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]87.626[/cyan] seconds
+[2026-06-21 13:15:06] [INFO] [__main__] Saved CSV: run\probe_max_radix\20260621_131338\results_stats.csv

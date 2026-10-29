@@ -1,0 +1,58 @@
+Logging configured. Log file: euler_exp\strat_max_wfa\20260718_193638\log.txt
+------------------------ BvN-Arbiter Benchmark Started ------------------------
+[07/18/26 19:36:38] INFO     Run directory:                                    
+                             euler_exp\strat_max_wfa\20260718_193638 |  Engine:
+                             euler_bvn | Bases: []                             
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=105,        
+                             parallel=False                                    
+[07/18/26 19:36:42] INFO     Progress: 5/105 matrices processed (5%)           
+[07/18/26 19:36:44] INFO     Progress: 10/105 matrices processed (10%)         
+[07/18/26 19:36:46] INFO     Progress: 15/105 matrices processed (14%)         
+[07/18/26 19:36:49] INFO     Progress: 20/105 matrices processed (19%)         
+[07/18/26 19:36:51] INFO     Progress: 25/105 matrices processed (24%)         
+[07/18/26 19:36:53] INFO     Progress: 30/105 matrices processed (29%)         
+[07/18/26 19:36:56] INFO     Progress: 35/105 matrices processed (33%)         
+[07/18/26 19:36:58] INFO     Progress: 40/105 matrices processed (38%)         
+[07/18/26 19:37:01] INFO     Progress: 45/105 matrices processed (43%)         
+[07/18/26 19:37:03] INFO     Progress: 50/105 matrices processed (48%)         
+[07/18/26 19:37:05] INFO     Progress: 55/105 matrices processed (52%)         
+[07/18/26 19:37:08] INFO     Progress: 60/105 matrices processed (57%)         
+[07/18/26 19:37:11] INFO     Progress: 65/105 matrices processed (62%)         
+[07/18/26 19:37:13] INFO     Progress: 70/105 matrices processed (67%)         
+[07/18/26 19:37:16] INFO     Progress: 75/105 matrices processed (71%)         
+[07/18/26 19:37:19] INFO     Progress: 80/105 matrices processed (76%)         
+[07/18/26 19:37:21] INFO     Progress: 85/105 matrices processed (81%)         
+[07/18/26 19:37:24] INFO     Progress: 90/105 matrices processed (86%)         
+[07/18/26 19:37:26] INFO     Progress: 95/105 matrices processed (90%)         
+[07/18/26 19:37:29] INFO     Progress: 100/105 matrices processed (95%)        
+[07/18/26 19:37:31] INFO     Progress: 105/105 matrices processed (100%)       
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             53.287 seconds                                    
+                    INFO     Saved CSV:                                        
+                             euler_exp\strat_max_wfa\20260718_193638\results_st
+                             ats.csv                                           
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -       35.72       1.000        -     41572     233
+euler_heuristic_depth1          2.0     20.83       24.67       0.691    0.691     35608     241
+euler_heuristic_depth2          4.0     35.26       15.34       0.429    0.622     31697     256
+euler_heuristic_depth3          8.0     45.70        8.69       0.243    0.567     29744     284
+euler_heuristic_depth4         16.0     55.37        5.77       0.161    0.664     28554     330
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+                    INFO     Saved comparison summary:                         
+                             euler_exp\strat_max_wfa\20260718_193638\euler_comp
+                             arison_summary.txt                                
+----------------------------- Benchmark Complete! -----------------------------

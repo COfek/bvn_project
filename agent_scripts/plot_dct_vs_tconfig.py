@@ -4,7 +4,7 @@ DCT vs T_config plot  (log-scale x-axis, realistic T_unit).
 For each (matching, framework) combination we use mean values from the paper
 experiments (dense scenario: k=256, n=256, max_weight=64, ~1000 matrices):
 
-  DCT = T_calc + N * T_config + C * T_unit
+  DCT = T_compute + N * T_config + C * T_unit
 
 T_unit = 0.01 ms (10 us) — representative of a 100 Gbps link with 1 Mbit
 demand unit, and consistent with optical-circuit-switch literature.
@@ -33,17 +33,17 @@ from pathlib import Path
 # ------------------------------------------------------------------
 # FRESH means computed from the data (dense k=256).
 #   BvN + Radix B=2: run/rerun_2026 (1000 samples, Hungarian bug fixed).
-#   Euler: euler_exp/eng_*_dense_d4 with TOTAL T_calc = max-leaf + split.
+#   Euler: euler_exp/eng_*_dense_d4 with TOTAL T_compute = max-leaf + split.
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
 # Measured mean values (dense scenario k=256), consistent with
-# Table~ref{tab:results_summary}. T_calc for Euler is split-inclusive
+# Table~ref{tab:results_summary}. T_compute for Euler is split-inclusive
 # (parallel split wall + max single-leaf extraction). The only correction
 # vs the June figure is Hungarian BvN cycle 8209 -> 8211 (bug fix: the old
 # Hungarian run had 16 matrices with an incomplete C<S decomposition).
-# T_calc in ms | N = permutation count | C = decomposition cycle length
+# T_compute in ms | N = permutation count | C = decomposition cycle length
 # ------------------------------------------------------------------
-#  label              T_calc_ms    N       C
+#  label              T_compute_ms    N       C
 CONFIGS = [
     ("Hungarian-BvN",     641.3,    476,   8211),   # cycle 8209 -> 8211 (fix)
     ("WFA-BvN",          1721.1,  10527,  11941),

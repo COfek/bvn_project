@@ -1,0 +1,26 @@
+[2026-06-21 12:54:09] [INFO] [__main__] Run directory: run\big_maximum_bvn\20260621_125409 |  Engine: maximum_bvn | Bases: []
+[2026-06-21 12:54:09] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-06-21 12:54:09] [INFO] [src.runner] Starting Experiment | n=256, matrices=200, parallel=False
+[2026-06-21 12:54:16] [INFO] [src.runner] Progress: 10/200 matrices processed (5%)
+[2026-06-21 12:54:22] [INFO] [src.runner] Progress: 20/200 matrices processed (10%)
+[2026-06-21 12:54:29] [INFO] [src.runner] Progress: 30/200 matrices processed (15%)
+[2026-06-21 12:54:36] [INFO] [src.runner] Progress: 40/200 matrices processed (20%)
+[2026-06-21 12:54:43] [INFO] [src.runner] Progress: 50/200 matrices processed (25%)
+[2026-06-21 12:54:50] [INFO] [src.runner] Progress: 60/200 matrices processed (30%)
+[2026-06-21 12:54:57] [INFO] [src.runner] Progress: 70/200 matrices processed (35%)
+[2026-06-21 12:55:03] [INFO] [src.runner] Progress: 80/200 matrices processed (40%)
+[2026-06-21 12:55:10] [INFO] [src.runner] Progress: 90/200 matrices processed (45%)
+[2026-06-21 12:55:17] [INFO] [src.runner] Progress: 100/200 matrices processed (50%)
+[2026-06-21 12:55:24] [INFO] [src.runner] Progress: 110/200 matrices processed (55%)
+[2026-06-21 12:55:31] [INFO] [src.runner] Progress: 120/200 matrices processed (60%)
+[2026-06-21 12:55:38] [INFO] [src.runner] Progress: 130/200 matrices processed (65%)
+[2026-06-21 12:55:45] [INFO] [src.runner] Progress: 140/200 matrices processed (70%)
+[2026-06-21 12:55:52] [INFO] [src.runner] Progress: 150/200 matrices processed (75%)
+[2026-06-21 12:55:59] [INFO] [src.runner] Progress: 160/200 matrices processed (80%)
+[2026-06-21 12:56:05] [INFO] [src.runner] Progress: 170/200 matrices processed (85%)
+[2026-06-21 12:56:12] [INFO] [src.runner] Progress: 180/200 matrices processed (90%)
+[2026-06-21 12:56:19] [INFO] [src.runner] Progress: 190/200 matrices processed (95%)
+[2026-06-21 12:56:26] [INFO] [src.runner] Progress: 200/200 matrices processed (100%)
+[2026-06-21 12:56:26] [INFO] [src.runner] Experiment completed successfully.
+[2026-06-21 12:56:26] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]137.225[/cyan] seconds
+[2026-06-21 12:56:26] [INFO] [__main__] Saved CSV: run\big_maximum_bvn\20260621_125409\results_stats.csv

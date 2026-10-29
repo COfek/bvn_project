@@ -1,0 +1,28 @@
+[2026-09-25 03:55:26] [INFO] [__main__] Run directory: run\ablation_heuristic_2026\heuristic\heavy\20260925_035526 |  Engine: euler_bvn | Bases: []
+[2026-09-25 03:55:26] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-09-25 03:55:26] [INFO] [src.runner] Starting Experiment | n=256, matrices=105, parallel=False
+[2026-09-25 03:55:52] [INFO] [src.runner] Progress: 5/105 matrices processed (5%)
+[2026-09-25 03:56:16] [INFO] [src.runner] Progress: 10/105 matrices processed (10%)
+[2026-09-25 03:56:40] [INFO] [src.runner] Progress: 15/105 matrices processed (14%)
+[2026-09-25 03:57:04] [INFO] [src.runner] Progress: 20/105 matrices processed (19%)
+[2026-09-25 03:57:28] [INFO] [src.runner] Progress: 25/105 matrices processed (24%)
+[2026-09-25 03:57:52] [INFO] [src.runner] Progress: 30/105 matrices processed (29%)
+[2026-09-25 03:58:17] [INFO] [src.runner] Progress: 35/105 matrices processed (33%)
+[2026-09-25 03:58:42] [INFO] [src.runner] Progress: 40/105 matrices processed (38%)
+[2026-09-25 03:59:06] [INFO] [src.runner] Progress: 45/105 matrices processed (43%)
+[2026-09-25 03:59:30] [INFO] [src.runner] Progress: 50/105 matrices processed (48%)
+[2026-09-25 03:59:55] [INFO] [src.runner] Progress: 55/105 matrices processed (52%)
+[2026-09-25 04:00:20] [INFO] [src.runner] Progress: 60/105 matrices processed (57%)
+[2026-09-25 04:00:44] [INFO] [src.runner] Progress: 65/105 matrices processed (62%)
+[2026-09-25 04:01:09] [INFO] [src.runner] Progress: 70/105 matrices processed (67%)
+[2026-09-25 04:01:33] [INFO] [src.runner] Progress: 75/105 matrices processed (71%)
+[2026-09-25 04:01:58] [INFO] [src.runner] Progress: 80/105 matrices processed (76%)
+[2026-09-25 04:02:22] [INFO] [src.runner] Progress: 85/105 matrices processed (81%)
+[2026-09-25 04:02:47] [INFO] [src.runner] Progress: 90/105 matrices processed (86%)
+[2026-09-25 04:03:12] [INFO] [src.runner] Progress: 95/105 matrices processed (90%)
+[2026-09-25 04:03:37] [INFO] [src.runner] Progress: 100/105 matrices processed (95%)
+[2026-09-25 04:04:02] [INFO] [src.runner] Progress: 105/105 matrices processed (100%)
+[2026-09-25 04:04:02] [INFO] [src.runner] Experiment completed successfully.
+[2026-09-25 04:04:02] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]516.080[/cyan] seconds
+[2026-09-25 04:04:02] [INFO] [__main__] Saved CSV: run\ablation_heuristic_2026\heuristic\heavy\20260925_035526\results_stats.csv
+[2026-09-25 04:04:02] [INFO] [__main__] Saved comparison summary: run\ablation_heuristic_2026\heuristic\heavy\20260925_035526\euler_comparison_summary.txt

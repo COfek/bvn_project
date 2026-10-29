@@ -1,0 +1,59 @@
+Logging configured. Log file: 
+euler_exp\eng_heavy_static_dense_d4\20260628_184906\log.txt
+------------------------ BvN-Arbiter Benchmark Started ------------------------
+[06/28/26 18:49:06] INFO     Run directory:                                    
+                             euler_exp\eng_heavy_static_dense_d4\20260628_18490
+                             6 |  Engine: euler_bvn | Bases: []                
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=105,        
+                             parallel=False                                    
+[06/28/26 18:49:44] INFO     Progress: 5/105 matrices processed (5%)           
+[06/28/26 18:50:20] INFO     Progress: 10/105 matrices processed (10%)         
+[06/28/26 18:50:56] INFO     Progress: 15/105 matrices processed (14%)         
+[06/28/26 18:51:34] INFO     Progress: 20/105 matrices processed (19%)         
+[06/28/26 18:52:12] INFO     Progress: 25/105 matrices processed (24%)         
+[06/28/26 18:52:50] INFO     Progress: 30/105 matrices processed (29%)         
+[06/28/26 18:53:29] INFO     Progress: 35/105 matrices processed (33%)         
+[06/28/26 18:54:07] INFO     Progress: 40/105 matrices processed (38%)         
+[06/28/26 18:54:48] INFO     Progress: 45/105 matrices processed (43%)         
+[06/28/26 18:55:31] INFO     Progress: 50/105 matrices processed (48%)         
+[06/28/26 18:56:13] INFO     Progress: 55/105 matrices processed (52%)         
+[06/28/26 18:56:52] INFO     Progress: 60/105 matrices processed (57%)         
+[06/28/26 18:57:34] INFO     Progress: 65/105 matrices processed (62%)         
+[06/28/26 18:58:15] INFO     Progress: 70/105 matrices processed (67%)         
+[06/28/26 18:58:59] INFO     Progress: 75/105 matrices processed (71%)         
+[06/28/26 18:59:45] INFO     Progress: 80/105 matrices processed (76%)         
+[06/28/26 19:00:27] INFO     Progress: 85/105 matrices processed (81%)         
+[06/28/26 19:01:09] INFO     Progress: 90/105 matrices processed (86%)         
+[06/28/26 19:01:51] INFO     Progress: 95/105 matrices processed (90%)         
+[06/28/26 19:02:34] INFO     Progress: 100/105 matrices processed (95%)        
+[06/28/26 19:03:21] INFO     Progress: 105/105 matrices processed (100%)       
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             855.189 seconds                                   
+                    INFO     Saved CSV:                                        
+                             euler_exp\eng_heavy_static_dense_d4\20260628_18490
+                             6\results_stats.csv                               
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -     1242.62       1.000        -      8174    7614
+euler_heuristic_depth1          2.0     18.03      524.96       0.422    0.422      8174    7531
+euler_heuristic_depth2          4.0     34.55      280.20       0.225    0.534      8174    7430
+euler_heuristic_depth3          8.0     48.32      126.85       0.102    0.453      8174    7450
+euler_heuristic_depth4         16.0     64.94       84.30       0.068    0.665      8174    7533
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+                    INFO     Saved comparison summary:                         
+                             euler_exp\eng_heavy_static_dense_d4\20260628_18490
+                             6\euler_comparison_summary.txt                    
+----------------------------- Benchmark Complete! -----------------------------

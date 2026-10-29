@@ -1,0 +1,27 @@
+[2026-07-15 22:40:50] [INFO] [__main__] Run directory: run\step_strategy_2026\wfa\20260715_224050 |  Engine: wfa | Bases: [2, 4, 8, 16]
+[2026-07-15 22:40:50] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-07-15 22:40:50] [INFO] [src.runner] Starting Experiment | n=256, matrices=105, parallel=False
+[2026-07-15 22:41:04] [INFO] [src.runner] Progress: 5/105 matrices processed (5%)
+[2026-07-15 22:41:16] [INFO] [src.runner] Progress: 10/105 matrices processed (10%)
+[2026-07-15 22:41:28] [INFO] [src.runner] Progress: 15/105 matrices processed (14%)
+[2026-07-15 22:41:40] [INFO] [src.runner] Progress: 20/105 matrices processed (19%)
+[2026-07-15 22:41:51] [INFO] [src.runner] Progress: 25/105 matrices processed (24%)
+[2026-07-15 22:42:03] [INFO] [src.runner] Progress: 30/105 matrices processed (29%)
+[2026-07-15 22:42:15] [INFO] [src.runner] Progress: 35/105 matrices processed (33%)
+[2026-07-15 22:42:27] [INFO] [src.runner] Progress: 40/105 matrices processed (38%)
+[2026-07-15 22:42:39] [INFO] [src.runner] Progress: 45/105 matrices processed (43%)
+[2026-07-15 22:42:51] [INFO] [src.runner] Progress: 50/105 matrices processed (48%)
+[2026-07-15 22:43:03] [INFO] [src.runner] Progress: 55/105 matrices processed (52%)
+[2026-07-15 22:43:15] [INFO] [src.runner] Progress: 60/105 matrices processed (57%)
+[2026-07-15 22:43:27] [INFO] [src.runner] Progress: 65/105 matrices processed (62%)
+[2026-07-15 22:43:39] [INFO] [src.runner] Progress: 70/105 matrices processed (67%)
+[2026-07-15 22:43:51] [INFO] [src.runner] Progress: 75/105 matrices processed (71%)
+[2026-07-15 22:44:03] [INFO] [src.runner] Progress: 80/105 matrices processed (76%)
+[2026-07-15 22:44:15] [INFO] [src.runner] Progress: 85/105 matrices processed (81%)
+[2026-07-15 22:44:27] [INFO] [src.runner] Progress: 90/105 matrices processed (86%)
+[2026-07-15 22:44:39] [INFO] [src.runner] Progress: 95/105 matrices processed (90%)
+[2026-07-15 22:44:51] [INFO] [src.runner] Progress: 100/105 matrices processed (95%)
+[2026-07-15 22:45:03] [INFO] [src.runner] Progress: 105/105 matrices processed (100%)
+[2026-07-15 22:45:03] [INFO] [src.runner] Experiment completed successfully.
+[2026-07-15 22:45:03] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]252.821[/cyan] seconds
+[2026-07-15 22:45:03] [INFO] [__main__] Saved CSV: run\step_strategy_2026\wfa\20260715_224050\results_stats.csv

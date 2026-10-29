@@ -1,0 +1,25 @@
+[2026-08-31 02:30:01] old sweep 3 moved to sweep3_contaminated, kept as evidence
+[2026-08-31 02:30:02] === sweep 3 re-run starting === cpu_load=5% processes=298
+[2026-08-31 02:30:02] radix  max  starting
+[2026-08-31 03:19:59] radix  max  done in 49.9 min   cpu_load=0% processes=297
+[2026-08-31 03:19:59] radix  heavy  starting
+[2026-08-31 04:10:33] radix  heavy  done in 50.6 min   cpu_load=0% processes=297
+[2026-08-31 04:10:33] radix  heavy_static  starting
+[2026-08-31 04:28:15] radix  heavy_static  done in 17.7 min   cpu_load=0% processes=298
+[2026-08-31 04:28:15] radix  wfa  starting
+[2026-08-31 04:48:46] radix  wfa  done in 20.5 min   cpu_load=3% processes=298
+[2026-08-31 04:48:46] euler  maximum  starting
+[2026-08-31 04:54:26] euler  maximum  done in 5.6 min   cpu_load=2% processes=297
+[2026-08-31 04:54:26] euler  heavy  starting
+[2026-08-31 05:03:11] euler  heavy  done in 8.7 min   cpu_load=0% processes=296
+[2026-08-31 05:03:11] euler  heavy_static  starting
+[2026-08-31 05:16:00] euler  heavy_static  done in 12.8 min   cpu_load=14% processes=297
+[2026-08-31 05:16:00] euler  wfa  starting
+[2026-08-31 05:40:23] euler  wfa  done in 24.4 min   cpu_load=5% processes=298
+[2026-08-31 05:40:23] baseline  heavy  starting
+[2026-08-31 06:02:19] baseline  heavy  done in 21.9 min
+[2026-08-31 06:02:19] baseline  heavy_static  starting
+[2026-08-31 06:23:35] baseline  heavy_static  done in 21.3 min
+[2026-08-31 06:23:35] baseline  wfa  starting
+[2026-08-31 06:55:50] baseline  wfa  done in 32.3 min
+[2026-08-31 06:55:50] === sweep 3 re-run complete in 4.43 hours ===

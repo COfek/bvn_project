@@ -6,8 +6,11 @@ PAPER = "C:/Users/ofekc/Desktop/Msc/Thesis/paper"
 src = open(f"{PAPER}/test.tex", encoding="utf-8").read()
 
 def tabular_of(label):
+    # Anchor on the DEFINING \label{...}, not a loose substring: other tables that
+    # merely \ref{label} in their text would otherwise be matched first.
+    anchor = "\\label{" + label + "}"
     for m in re.finditer(r"\\begin\{table\}.*?\\end\{table\}", src, re.S):
-        if label in m.group(0):
+        if anchor in m.group(0):
             return re.search(r"\\begin\{tabular\}.*?\\end\{tabular\}", m.group(0), re.S).group(0)
     raise SystemExit(f"table {label} not found")
 
@@ -26,16 +29,6 @@ doc = r"""\documentclass[11pt]{article}
 \usepackage{graphicx,booktabs,multirow,amsmath,amssymb,enumitem}
 \setlength{\parindent}{0pt}
 \begin{document}
-
-\begin{center}
-{\LARGE\bfseries Thesis Meeting Package}\\[4pt]
-{\large Permutation-Matrix Decomposition of Doubly-Stochastic Traffic Matrices\\
-for Reconfigurable Switch Scheduling}\\[6pt]
-{\normalsize Ofek Cohen \quad---\quad benchmark setting: $n{=}256$, $k{=}256$, $W_{\max}{=}64$, dense unless noted}
-\end{center}
-\vspace{6pt}
-\hrule
-\vspace{10pt}
 
 \section*{Part A --- Paper structure and the story}
 
@@ -73,34 +66,49 @@ for Reconfigurable Switch Scheduling}\\[6pt]
         doubly stochastic --- degrading cycle length further; (b) WFA is a \emph{maximal}
         matching engine, so it can produce partial matchings by itself (an early cell selection
         can block later cells that a full permutation would have needed).
-  \item \textbf{What we propose:} a set of different matching algorithms and a set of different
-        parallelisation frameworks, demonstrating a three-way trade-off between permutation
-        count, cycle length, and the end-to-end runtime of the decomposition itself.
+  \item \textbf{What we propose:} rather than a single algorithm, a \emph{collection} of building
+        blocks a scheduler can mix and match. We start from the \emph{parallelisation frameworks}
+        (how to split the matrix so the work can run in parallel) and then, inside each framework,
+        the \emph{matching engines} that extract the permutations --- proposing several methods for
+        \emph{each} of these choices (and, later, several step-size strategies). Every combination
+        is one point in a large design space. We then \emph{explore} the three-way trade-off these
+        choices expose --- studying how permutation count, cycle length, and the end-to-end
+        computation time of the decomposition itself ($T_{compute}$) trade against one another ---
+        rather than claiming a single winner.
   \item We formalise the objective as the \textbf{Demand Completion Time}:
-        $\mathrm{DCT} = T_{calc} + N\cdot T_{config} + C\cdot T_{unit}$ --- computation time,
+        $\mathrm{DCT} = T_{compute} + N\cdot T_{config} + C\cdot T_{unit}$ --- computation time,
         plus configurations times reconfiguration time, plus cycle length times the demand
         unit's time.
   \item \textbf{Our first extension:} instead of representing the matrix with bit-planes only,
         we rename and generalise the method as \textbf{Radix decomposition}: represent each
         entry in a chosen base --- $2, 4, 8, 16$, and so on --- splitting the matrix into digit
-        planes of that base, and map the resulting Pareto over our metrics. As with base~2, the
-        planes are not guaranteed to be doubly stochastic, so cycle-length optimality is never
-        guaranteed, unlike in the classical algorithm.
+        planes of that base, and trace out the Pareto frontier that the different bases sweep
+        across our metrics. As with base~2, the planes are not guaranteed to be doubly stochastic,
+        so cycle-length optimality is never guaranteed, unlike in the classical algorithm.
   \item We then drew that Pareto with several matching engines: the classical Hungarian
-        algorithm; the suggested WFA; a greedy scan with weighted matching that maximises the
-        current step size (the weight subtracted at each iteration); and a greedy scan sorted
-        once at the start --- imposing structure in the hope of beating WFA.
+        algorithm; the WFA suggested by Chronos; and two \emph{greedy weighted} (GW) engines.
+        A greedy scan here means: sort the matrix entries from largest to smallest and walk down
+        that list, adding each cell to the current permutation whenever its row and its column are
+        both still free --- a fast, heuristic way to build a heavy matching in one pass. We test
+        two variants: \textbf{GW~Dynamic}, which re-sorts the residual matrix after every peel so
+        it always scans the currently heaviest cells, and \textbf{GW~Static}, which sorts once at
+        the start and reuses that fixed order --- imposing structure in the hope of beating WFA.
   \item \textbf{Our second framework} uses the Euler-tour principle. The motive: split the
         matrix into sub-matrices (leaves) that \emph{remain} doubly stochastic --- preserving
-        cycle-length optimality --- with a split that is itself cheap. Following Cole \&
-        Hopcroft (1982), an Euler tour on a graph where every vertex has an even number of
-        edges, coloured in two alternating colours along the way, yields two matrices with
-        exactly half the row/column sums ($S/2$ in the scaled case).
+        cycle-length optimality --- with a split that is itself cheap. An Euler tour on a
+        graph where every vertex has an even number of edges, coloured in two alternating
+        colours along the way, splits the matrix into two halves in which every row and every
+        column sums to exactly $S/2$ --- so each half is itself a scaled doubly stochastic
+        matrix. The split costs only time linear in the number of edges. Our framework
+        recurses to depth $d$ ($d{=}0$ $=$ plain BvN), decomposes the still-doubly-stochastic
+        leaves with weighted matching engines, and adds a sparsification heuristic on the
+        colouring.
   \item We wanted something more sophisticated than the plain halving that alternating colours
-        trivially give, so we defined a heuristic applied during the tour: when the tour goes
-        from row-node $i$ to column-node $j$, colour \emph{all} the edges between those two
-        nodes with the same colour. This yields sparser leaves, and we show that sparser
-        matrices decompose faster end-to-end (fewer entries to zero out).
+        trivially give, so we defined a heuristic applied during the tour: when the tour steps
+        from row-node $i$ to column-node $j$, we \emph{try} to give all the parallel edges between
+        those two nodes the same colour --- a preference the tour honours where it can, not a
+        guarantee. This tends to yield sparser leaves, and we show that sparser matrices decompose
+        faster end-to-end (fewer entries to zero out).
   \item Finally we present results and experiments exposing the trade-offs we found. A network
         engineer can take the DCT formula, locate themselves in the design space, and choose
         the best framework $+$ matching algorithm $+$ step strategy, getting the most out of
@@ -108,14 +116,17 @@ for Reconfigurable Switch Scheduling}\\[6pt]
 \end{enumerate}
 
 \medskip
-\textbf{Chapters} (updated per last meeting):
+\textbf{Chapters:}
 \begin{enumerate}[itemsep=1pt]
-  \item \textbf{Introduction} --- the reconfiguration tax; contributions.
+  \item \textbf{Introduction} --- reconfigurable datacenter networks (RDCN): optical
+        circuit switches replacing packet fabrics for predictable, periodic traffic
+        (LLM training collectives); demand-aware scheduling and the reconfiguration
+        tax; contributions.
   \item \textbf{Background \& Related Work} --- circuit-switch scheduling, BvN theorem, matching
         theory; Chronos (Radix $B{=}2$ + WFA) as the starting point of the story.
   \item \textbf{Problem Definition \& Model} --- the matrices we work on ($K$-regular scaled
         doubly stochastic, integer entries $\le W_{\max}$); the decomposition space we live in;
-        the DCT objective; \emph{subsection: the three-way trade-off} ($N$, $C$, $T_{calc}$).
+        the DCT objective; \emph{subsection: the three-way trade-off} ($N$, $C$, $T_{compute}$).
         Unifying remark: plain BvN is the degenerate case of \emph{both} frameworks --- Euler at
         depth $0$ and Radix with base $>$ the maximum entry.
   \item \textbf{Solution Framework} --- one chapter for the full toolbox: the matching engines
@@ -125,7 +136,7 @@ for Reconfigurable Switch Scheduling}\\[6pt]
   \item \textbf{Experimental Evaluation} --- the three-way trade-off, dense \& sparse, all
         engines; includes the step-strategy trade-off.
   \item \textbf{DCT Analysis} --- winner maps at realistic hardware values; sensitivity to
-        computation time ($T_{calc}$, $T_{calc}/2$, $T_{calc}{=}0$ prescheduled); time to first
+        computation time ($T_{compute}$, $T_{compute}/2$, $T_{compute}{=}0$ prescheduled); time to first
         configuration.
   \item \textbf{Conclusions \& Future Work}.
 \end{enumerate}
@@ -139,8 +150,8 @@ doc += exhibit(r"Exhibit 1 --- Cross-engine trade-off: \textsc{Radix}",
     r"Engines differ ${>}20\times$ in $N$ at BvN yet all converge to $N\approx657$ at $B{=}2$; runtime drops up to $60\times$ for $+38\%$ cycle.",
     r"\includegraphics[width=0.49\textwidth]{plots_pdf/tradeoff_runtime_cycle.pdf}\hfill\includegraphics[width=0.49\textwidth]{plots_pdf/tradeoff_runtime_permutations.pdf}")
 doc += exhibit(r"Exhibit 2 --- Cross-engine trade-off: \textsc{Euler} (end-to-end runtime, depths 1--4)",
-    r"Does splitting pay end-to-end (split $+$ max-leaf), and what does it cost per engine?",
-    r"GW Dynamic total $1330\to109$\,ms ($12\times$) at $C=S$ unchanged; price: $N$ $1122\to3268$; GW Static's $N$ stays flat ($\bar\lambda\approx1$ saturated).",
+    r"Does splitting pay end-to-end (split $+$ max-leaf), and is the cycle length preserved as we go deeper?",
+    r"GW Dynamic total $1330\to109$\,ms ($12\times$) as depth deepens. Panel (b) plots runtime vs.\ cycle: the three strong engines drop \emph{straight down} at $C=S=8174$ (runtime falls with depth, cycle fixed), while only WFA (a maximal engine) drifts right as its cycle inflates.",
     r"\includegraphics[width=\textwidth]{plots_pdf/euler_tradeoff_corrected.pdf}")
 doc += exhibit(r"Exhibit 3 --- Winner map, sensible regime only ($r\geq5$, $T_{config}$: 1\,$\mu$s--1\,ms)",
     r"Which configuration minimises DCT across realistic hardware, restricted to the transmission-dominated regime?",
@@ -166,13 +177,13 @@ doc += exhibit(r"Exhibit 8 --- Table: Euler vs.\ Radix (Hungarian matching on ev
     r"Head-to-head at comparable parallel-unit counts, split time charged: who wins on Total, at what cycle cost?",
     r"Euler d1 Total $320$\,ms vs Radix $B8$ $303$\,ms --- competitive, but Euler keeps $C=S$ ($C/S=1.0$) vs Radix's $+20\%$.",
     "\\begin{center}\\small\n" + t_evr + "\n\\end{center}")
-doc += exhibit(r"Exhibit 9 --- Design space $(N, C, T_{calc})$, total runtime",
+doc += exhibit(r"Exhibit 9 --- Design space $(N, C, T_{compute})$, total runtime",
     r"How do the two frameworks move through the full three-metric cost space that DCT prices?",
     r"Radix and Euler leave each engine's BvN anchor in \emph{orthogonal} directions; no move improves all three metrics at once.",
     r"\includegraphics[width=\textwidth]{plots_pdf/design_space_projections.pdf}")
-doc += exhibit(r"Exhibit 10 --- Winner map at realistic hardware; sensitivity to $T_{calc}$ (per last meeting)",
-    r"$T_{config}$ restricted to realistic values (1\,$\mu$s--1\,ms), ratio $r\geq5$: who wins with full computation time, half, and none (prescheduled)?",
-    r"With full $T_{calc}$, deep Hungarian Euler wins ${\sim}97\%$ of the map; halving $T_{calc}$ barely moves the boundaries; \textbf{at $T_{calc}=0$ plain Hungarian BvN wins 100\%} --- every framework exists only to buy computation time.",
+doc += exhibit(r"Exhibit 10 --- Winner map vs.\ the computation budget: where does plain Hungarian BvN emerge?",
+    r"$T_{config}$ realistic (1\,$\mu$s--1\,ms), $r\geq5$: as the computation budget shrinks ($T_{compute}$, then $/4,/8,/16,/32,/64,/128,0$), \emph{where} does plain Hungarian BvN start to win? (BvN cycle-consistent with Euler, same run)",
+    r"BvN is absent through $T_{compute}/8$; it \textbf{first appears at $T_{compute}/16$} (5\%, in the large-$T_{config}$ / few-permutation corner), then grows $15\%\to25\%\to35\%$ by $T_{compute}/128$, reaching 100\% only at $T_{compute}=0$. The region emerges \emph{gradually} from the corner inward --- not as a cliff.",
     r"\includegraphics[width=\textwidth]{plots_pdf/winner_map_tcalc_sensitivity.pdf}")
 
 doc += exhibit(r"Exhibit 11 --- FULL grid: every engine $\times$ every framework $\times$ every step strategy",
@@ -211,10 +222,10 @@ doc += r"""
   \item \textbf{Configuration lower bound (support).} Each configuration covers at most one cell per
         row, so $N \ge \max_i \mathrm{nnz}(\text{row } i)$. Combined with T2:
         $N \ge \max\{\lceil S/W_{\max}\rceil,\ \max_i \mathrm{nnz}_i\}$.
-  \item \textbf{Optimum structure \& designer formula.} DCT is linear over $(N, C, T_{calc})$, so the
+  \item \textbf{Optimum structure \& designer formula.} DCT is linear over $(N, C, T_{compute})$, so the
         optimum is always a vertex of the lower convex hull of achievable points; for any two
         configurations the break-even is closed-form,
-        $T_{unit}^{*} = \frac{(T_{calc}^{B}-T_{calc}^{A}) + (N_B-N_A)\,T_{config}}{C_A - C_B}$ ---
+        $T_{unit}^{*} = \frac{(T_{compute}^{B}-T_{compute}^{A}) + (N_B-N_A)\,T_{config}}{C_A - C_B}$ ---
         this \emph{is} the boundary curve in every winner map we measured.
   \item \textbf{The space is intractably large.} Counting perfect matchings is the permanent
         (\#P-complete, Valiant 1979); for the unit $K_{n,n}$ case strong decompositions biject with

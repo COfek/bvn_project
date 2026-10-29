@@ -1,0 +1,28 @@
+[2026-06-13 23:06:27] [INFO] [__main__] Run directory: run\sparse_wfa\20260613_230627 |  Engine: wfa_bvn | Bases: [2, 4, 8, 16]
+[2026-06-13 23:06:27] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-06-13 23:06:27] [INFO] [src.runner] Starting Experiment | n=256, matrices=1000, parallel=False
+[2026-06-13 23:06:44] [INFO] [src.runner] Progress: 50/1000 matrices processed (5%)
+[2026-06-13 23:06:58] [INFO] [src.runner] Progress: 100/1000 matrices processed (10%)
+[2026-06-13 23:07:13] [INFO] [src.runner] Progress: 150/1000 matrices processed (15%)
+[2026-06-13 23:07:28] [INFO] [src.runner] Progress: 200/1000 matrices processed (20%)
+[2026-06-13 23:07:43] [INFO] [src.runner] Progress: 250/1000 matrices processed (25%)
+[2026-06-13 23:07:57] [INFO] [src.runner] Progress: 300/1000 matrices processed (30%)
+[2026-06-13 23:08:12] [INFO] [src.runner] Progress: 350/1000 matrices processed (35%)
+[2026-06-13 23:08:27] [INFO] [src.runner] Progress: 400/1000 matrices processed (40%)
+[2026-06-13 23:08:42] [INFO] [src.runner] Progress: 450/1000 matrices processed (45%)
+[2026-06-13 23:08:57] [INFO] [src.runner] Progress: 500/1000 matrices processed (50%)
+[2026-06-13 23:09:12] [INFO] [src.runner] Progress: 550/1000 matrices processed (55%)
+[2026-06-13 23:09:27] [INFO] [src.runner] Progress: 600/1000 matrices processed (60%)
+[2026-06-13 23:09:42] [INFO] [src.runner] Progress: 650/1000 matrices processed (65%)
+[2026-06-13 23:09:57] [INFO] [src.runner] Progress: 700/1000 matrices processed (70%)
+[2026-06-13 23:10:12] [INFO] [src.runner] Progress: 750/1000 matrices processed (75%)
+[2026-06-13 23:10:27] [INFO] [src.runner] Progress: 800/1000 matrices processed (80%)
+[2026-06-13 23:10:42] [INFO] [src.runner] Progress: 850/1000 matrices processed (85%)
+[2026-06-13 23:10:57] [INFO] [src.runner] Progress: 900/1000 matrices processed (90%)
+[2026-06-13 23:11:12] [INFO] [src.runner] Progress: 950/1000 matrices processed (95%)
+[2026-06-13 23:11:27] [INFO] [src.runner] Progress: 1000/1000 matrices processed (100%)
+[2026-06-13 23:11:27] [INFO] [src.runner] Experiment completed successfully.
+[2026-06-13 23:11:27] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]299.654[/cyan] seconds
+[2026-06-13 23:11:27] [INFO] [__main__] Saved CSV: run\sparse_wfa\20260613_230627\results_stats.csv
+[2026-06-13 23:11:27] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Generating Plots
+[2026-06-13 23:11:29] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Generating Plots in [cyan]2.628[/cyan] seconds

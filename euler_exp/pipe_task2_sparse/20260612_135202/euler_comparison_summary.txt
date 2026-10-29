@@ -1,0 +1,36 @@
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -       35.56       1.000        -       498      52
+euler_heuristic_depth1          2.0      1.57       26.07       0.733    0.733       498      76
+euler_heuristic_depth2          4.0      3.39       19.47       0.547    0.747       498     113
+euler_heuristic_depth3          8.0      6.01       15.24       0.429    0.783       498     180
+euler_heuristic_depth4         16.0     10.98       12.38       0.348    0.813       498     288
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+[2] Euler leaves vs. Radix digit planes (same matching engine)
+    Compare rows with similar 'units' - that is the matched-parallelism
+    comparison; 'max-unit' is the slowest leaf/plane.
+
+config                        units max-unit ms     cycle  cycle/S   perms
+--------------------------------------------------------------------------
+euler_heuristic_depth1          2.0       26.07       498    1.000      76
+maximum_16                      2.0       45.37       540    1.083      79
+maximum_8                       3.0       25.63       667    1.338      78
+euler_heuristic_depth2          4.0       19.47       498    1.000     113
+maximum_4                       4.0       12.47       686    1.376      63
+maximum_2                       7.3        5.37       770    1.544      57
+euler_heuristic_depth3          8.0       15.24       498    1.000     180
+euler_heuristic_depth4         16.0       12.38       498    1.000     288
+
+    cycle/S > 1.0 marks cycle-length inflation (Radix pays this; Euler
+    leaves stay doubly stochastic, so their cycle stays at S).

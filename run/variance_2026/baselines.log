@@ -1,0 +1,21 @@
+[2026-08-30 10:33:10] waiting for run/variance_2026/ALL_DONE.marker before starting
+[2026-08-30 12:23:11] sweeps finished; starting baseline runs
+[2026-08-30 12:23:11] sweep 1  baseline  heavy_static  (--engine heavy_static_bvn)  starting
+[2026-08-30 12:45:34] sweep 1  baseline  heavy_static  done in 22.4 min
+[2026-08-30 12:45:34] sweep 1  baseline  wfa  (--engine wfa_bvn)  starting
+[2026-08-30 13:18:53] sweep 1  baseline  wfa  done in 33.3 min
+[2026-08-30 13:18:53] sweep 1  baseline  heavy  (--engine heavy_bvn)  starting
+[2026-08-30 13:42:47] sweep 1  baseline  heavy  done in 23.9 min
+[2026-08-30 13:42:47] sweep 2  baseline  heavy_static  (--engine heavy_static_bvn)  starting
+[2026-08-30 14:06:32] sweep 2  baseline  heavy_static  done in 23.7 min
+[2026-08-30 14:06:32] sweep 2  baseline  wfa  (--engine wfa_bvn)  starting
+[2026-08-30 14:41:56] sweep 2  baseline  wfa  done in 35.4 min
+[2026-08-30 14:41:56] sweep 2  baseline  heavy  (--engine heavy_bvn)  starting
+[2026-08-30 15:05:39] sweep 2  baseline  heavy  done in 23.7 min
+[2026-08-30 15:05:39] sweep 3  baseline  heavy_static  (--engine heavy_static_bvn)  starting
+[2026-08-30 15:29:54] sweep 3  baseline  heavy_static  done in 24.3 min
+[2026-08-30 15:29:54] sweep 3  baseline  wfa  (--engine wfa_bvn)  starting
+[2026-08-30 16:05:27] sweep 3  baseline  wfa  done in 35.6 min
+[2026-08-30 16:05:27] sweep 3  baseline  heavy  (--engine heavy_bvn)  starting
+[2026-08-30 16:29:34] sweep 3  baseline  heavy  done in 24.1 min
+[2026-08-30 16:29:34] === baselines complete in 4.11 hours ===

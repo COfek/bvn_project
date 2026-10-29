@@ -1,0 +1,58 @@
+Logging configured. Log file: euler_exp\strat_max_heavy\20260718_193455\log.txt
+------------------------ BvN-Arbiter Benchmark Started ------------------------
+[07/18/26 19:34:55] INFO     Run directory:                                    
+                             euler_exp\strat_max_heavy\20260718_193455 |       
+                             Engine: euler_bvn | Bases: []                     
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=105,        
+                             parallel=False                                    
+[07/18/26 19:35:01] INFO     Progress: 5/105 matrices processed (5%)           
+[07/18/26 19:35:03] INFO     Progress: 10/105 matrices processed (10%)         
+[07/18/26 19:35:06] INFO     Progress: 15/105 matrices processed (14%)         
+[07/18/26 19:35:09] INFO     Progress: 20/105 matrices processed (19%)         
+[07/18/26 19:35:12] INFO     Progress: 25/105 matrices processed (24%)         
+[07/18/26 19:35:15] INFO     Progress: 30/105 matrices processed (29%)         
+[07/18/26 19:35:18] INFO     Progress: 35/105 matrices processed (33%)         
+[07/18/26 19:35:20] INFO     Progress: 40/105 matrices processed (38%)         
+[07/18/26 19:35:23] INFO     Progress: 45/105 matrices processed (43%)         
+[07/18/26 19:35:26] INFO     Progress: 50/105 matrices processed (48%)         
+[07/18/26 19:35:28] INFO     Progress: 55/105 matrices processed (52%)         
+[07/18/26 19:35:31] INFO     Progress: 60/105 matrices processed (57%)         
+[07/18/26 19:35:34] INFO     Progress: 65/105 matrices processed (62%)         
+[07/18/26 19:35:37] INFO     Progress: 70/105 matrices processed (67%)         
+[07/18/26 19:35:39] INFO     Progress: 75/105 matrices processed (71%)         
+[07/18/26 19:35:42] INFO     Progress: 80/105 matrices processed (76%)         
+[07/18/26 19:35:45] INFO     Progress: 85/105 matrices processed (81%)         
+[07/18/26 19:35:48] INFO     Progress: 90/105 matrices processed (86%)         
+[07/18/26 19:35:50] INFO     Progress: 95/105 matrices processed (90%)         
+[07/18/26 19:35:54] INFO     Progress: 100/105 matrices processed (95%)        
+[07/18/26 19:35:57] INFO     Progress: 105/105 matrices processed (100%)       
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             61.249 seconds                                    
+                    INFO     Saved CSV:                                        
+                             euler_exp\strat_max_heavy\20260718_193455\results_
+                             stats.csv                                         
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -      151.89       1.000        -     10685     175
+euler_heuristic_depth1          2.0     16.91       46.88       0.309    0.309     10947     178
+euler_heuristic_depth2          4.0     27.76       16.10       0.106    0.344     11577     186
+euler_heuristic_depth3          8.0     35.25        7.00       0.046    0.435     12886     205
+euler_heuristic_depth4         16.0     43.44        3.11       0.020    0.444     14752     246
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+                    INFO     Saved comparison summary:                         
+                             euler_exp\strat_max_heavy\20260718_193455\euler_co
+                             mparison_summary.txt                              
+----------------------------- Benchmark Complete! -----------------------------

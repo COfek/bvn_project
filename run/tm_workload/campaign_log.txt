@@ -1,0 +1,154 @@
+[TM sparse] warm-up done
+[TM sparse] matrix 1/10  S=1187  density=22%
+[TM sparse] matrix 2/10  S=1191  density=22%
+[TM sparse] matrix 3/10  S=1189  density=22%
+[TM sparse] matrix 4/10  S=1191  density=22%
+[TM sparse] matrix 5/10  S=1192  density=22%
+[TM sparse] matrix 6/10  S=1185  density=22%
+[TM sparse] matrix 7/10  S=1189  density=22%
+[TM sparse] matrix 8/10  S=1185  density=22%
+[TM sparse] matrix 9/10  S=1185  density=22%
+[TM sparse] matrix 10/10  S=1192  density=22%
+[TM dense] warm-up done
+[TM dense] matrix 1/10  S=9536  density=86%
+[TM dense] matrix 2/10  S=9550  density=87%
+[TM dense] matrix 3/10  S=9539  density=86%
+[TM dense] matrix 4/10  S=9543  density=86%
+[TM dense] matrix 5/10  S=9543  density=86%
+[TM dense] matrix 6/10  S=9544  density=86%
+[TM dense] matrix 7/10  S=9550  density=86%
+[TM dense] matrix 8/10  S=9550  density=86%
+[TM dense] matrix 9/10  S=9541  density=86%
+[TM dense] matrix 10/10  S=9531  density=86%
+[Uniform (thesis)] warm-up done
+[Uniform (thesis)] matrix 1/10  S=7957  density=63%
+[Uniform (thesis)] matrix 2/10  S=8605  density=63%
+[Uniform (thesis)] matrix 3/10  S=7741  density=63%
+[Uniform (thesis)] matrix 4/10  S=8352  density=63%
+[Uniform (thesis)] matrix 5/10  S=8373  density=63%
+[Uniform (thesis)] matrix 6/10  S=7797  density=63%
+[Uniform (thesis)] matrix 7/10  S=8186  density=63%
+[Uniform (thesis)] matrix 8/10  S=8342  density=63%
+[Uniform (thesis)] matrix 9/10  S=8038  density=63%
+[Uniform (thesis)] matrix 10/10  S=8091  density=63%
+
+================ TM SPARSE  (n=256, TM t_l=0.2, c_l=0.7) S=1189 ================
+engine      config      runtime(ms)        N         C    C/S
+Hungarian   BvN                58.1       73      1189  1.000
+Hungarian   B16                75.8      124      1256  1.057
+Hungarian   B8                 85.9      170      1446  1.217
+Hungarian   B4                 63.0      180      1436  1.208
+Hungarian   B2                 28.7      199      1788  1.504
+Hungarian   Euler d1           55.1      132      1189  1.000
+Hungarian   Euler d2           45.5      186      1189  1.000
+Hungarian   Euler d3           39.7      277      1189  1.000
+Hungarian   Euler d4           35.2      403      1189  1.000
+WFA         BvN               298.5     1607      1848  1.555
+WFA         B16               108.6      645      1868  1.571
+WFA         B8                 80.5      542      1932  1.625
+WFA         B4                 39.5      340      1933  1.627
+WFA         B2                 11.9      260      2176  1.830
+WFA         Euler d1          173.8     1704      1875  1.578
+WFA         Euler d2          103.1     1731      1867  1.571
+WFA         Euler d3           63.5     1764      1877  1.579
+WFA         Euler d4           43.6     1807      1885  1.586
+GW Dynamic  BvN               142.3      371      1189  1.000
+GW Dynamic  B16               113.2      335      1250  1.052
+GW Dynamic  B8                111.7      354      1458  1.227
+GW Dynamic  B4                 49.0      244      1451  1.221
+GW Dynamic  B2                 14.5      199      1774  1.493
+GW Dynamic  Euler d1           69.5      446      1189  1.000
+GW Dynamic  Euler d2           43.7      642      1189  1.000
+GW Dynamic  Euler d3           31.0      772      1189  1.000
+GW Dynamic  Euler d4           26.6      920      1189  1.000
+GW Static   BvN               137.8     1092      1189  1.000
+GW Static   B16                59.9      435      1253  1.054
+GW Static   B8                 45.7      399      1452  1.222
+GW Static   B4                 24.1      252      1446  1.216
+GW Static   B2                  7.2      199      1762  1.482
+GW Static   Euler d1           72.2     1118      1189  1.000
+GW Static   Euler d2           41.1     1124      1189  1.000
+GW Static   Euler d3           28.3     1116      1189  1.000
+GW Static   Euler d4           25.4     1128      1189  1.000
+
+================ TM DENSE  (n=256, TM t_l=0.2, c_l=0.7) S=9543 ================
+engine      config      runtime(ms)        N         C    C/S
+Hungarian   BvN               516.7      409      9543  1.000
+Hungarian   B16               772.6      892     10516  1.102
+Hungarian   B8                433.1      732      9948  1.043
+Hungarian   B4                206.0      766     10660  1.117
+Hungarian   B2                117.2      822     13030  1.365
+Hungarian   Euler d1          279.2      453      9543  1.000
+Hungarian   Euler d2          168.0      538      9543  1.000
+Hungarian   Euler d3          130.4      688      9543  1.000
+Hungarian   Euler d4          110.8      947      9543  1.000
+WFA         BvN              1969.8    12363     13926  1.459
+WFA         B16               482.4     3352     14580  1.528
+WFA         B8                245.2     2072     14145  1.482
+WFA         B4                108.0     1391     14663  1.537
+WFA         B2                 46.8     1035     15557  1.630
+WFA         Euler d1         1032.5    12429     14216  1.490
+WFA         Euler d2          634.2    12611     14527  1.522
+WFA         Euler d3          398.1    12929     14999  1.572
+WFA         Euler d4          275.3    13212     15207  1.594
+GW Dynamic  BvN              2128.7     1468      9543  1.000
+GW Dynamic  B16              1397.5     1673     10504  1.101
+GW Dynamic  B8                886.1     1201      9948  1.043
+GW Dynamic  B4                331.7     1038     10662  1.117
+GW Dynamic  B2                 99.8      821     13005  1.363
+GW Dynamic  Euler d1          850.9     1804      9543  1.000
+GW Dynamic  Euler d2          313.5     2067      9543  1.000
+GW Dynamic  Euler d3          156.4     2459      9543  1.000
+GW Dynamic  Euler d4          129.9     3645      9543  1.000
+GW Static   BvN              1477.5     8641      9543  1.000
+GW Static   B16               439.4     2507     10506  1.101
+GW Static   B8                199.8     1554      9948  1.043
+GW Static   B4                108.4     1072     10654  1.116
+GW Static   B2                 41.2      821     13005  1.363
+GW Static   Euler d1          610.3     8627      9543  1.000
+GW Static   Euler d2          297.1     8570      9543  1.000
+GW Static   Euler d3          183.8     8766      9543  1.000
+GW Static   Euler d4          139.1     8726      9543  1.000
+
+================ UNIFORM (THESIS)  (n=256, TM t_l=0.2, c_l=0.7) S=8148 ================
+engine      config      runtime(ms)        N         C    C/S
+Hungarian   BvN               774.1      479      8148  1.000
+Hungarian   B16               773.6      844      8806  1.081
+Hungarian   B8                338.0      763      9761  1.198
+Hungarian   B4                135.0      659     10098  1.239
+Hungarian   B2                 57.2      659     11191  1.374
+Hungarian   Euler d1          355.5      510      8148  1.000
+Hungarian   Euler d2          186.3      565      8148  1.000
+Hungarian   Euler d3          123.9      672      8148  1.000
+Hungarian   Euler d4          102.2      851      8148  1.000
+WFA         BvN              1649.4    10439     11802  1.449
+WFA         B16               337.1     2350     12137  1.490
+WFA         B8                132.9     1709     12236  1.502
+WFA         B4                 74.4     1145     12582  1.544
+WFA         B2                 23.9      808     13317  1.634
+WFA         Euler d1          878.6    10580     12089  1.483
+WFA         Euler d2          500.7    10785     12386  1.520
+WFA         Euler d3          323.3    11089     12833  1.575
+WFA         Euler d4          212.7    11398     13006  1.596
+GW Dynamic  BvN              1487.2     1123      8148  1.000
+GW Dynamic  B16               977.6     1415      8806  1.081
+GW Dynamic  B8                514.3     1191      9761  1.198
+GW Dynamic  B4                177.0      904     10097  1.239
+GW Dynamic  B2                 41.6      660     11204  1.375
+GW Dynamic  Euler d1          584.8     1399      8148  1.000
+GW Dynamic  Euler d2          256.0     1814      8148  1.000
+GW Dynamic  Euler d3          136.5     2430      8148  1.000
+GW Dynamic  Euler d4          103.7     3238      8148  1.000
+GW Static   BvN              1204.4     7599      8148  1.000
+GW Static   B16               301.5     1813      8806  1.081
+GW Static   B8                125.1     1359      9761  1.198
+GW Static   B4                 68.6      918     10097  1.239
+GW Static   B2                 26.1      659     11191  1.374
+GW Static   Euler d1          505.3     7510      8148  1.000
+GW Static   Euler d2          251.3     7411      8148  1.000
+GW Static   Euler d3          167.0     7433      8148  1.000
+GW Static   Euler d4          129.3     7510      8148  1.000
+
+saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\tm_workload\tm_results.csv
+saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\tm_workload\tm_summary.csv
+Figures/tables: run agent_scripts/tm_paper_figures.py

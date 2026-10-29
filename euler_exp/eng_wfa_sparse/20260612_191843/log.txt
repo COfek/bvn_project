@@ -1,0 +1,30 @@
+[2026-06-12 19:18:43] [INFO] [__main__] Run directory: euler_exp\eng_wfa_sparse\20260612_191843 |  Engine: euler_bvn | Bases: []
+[2026-06-12 19:18:43] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-06-12 19:18:43] [INFO] [src.runner] Starting Experiment | n=256, matrices=105, parallel=False
+[2026-06-12 19:18:48] [INFO] [src.runner] Progress: 5/105 matrices processed (5%)
+[2026-06-12 19:18:52] [INFO] [src.runner] Progress: 10/105 matrices processed (10%)
+[2026-06-12 19:18:55] [INFO] [src.runner] Progress: 15/105 matrices processed (14%)
+[2026-06-12 19:18:59] [INFO] [src.runner] Progress: 20/105 matrices processed (19%)
+[2026-06-12 19:19:03] [INFO] [src.runner] Progress: 25/105 matrices processed (24%)
+[2026-06-12 19:19:07] [INFO] [src.runner] Progress: 30/105 matrices processed (29%)
+[2026-06-12 19:19:11] [INFO] [src.runner] Progress: 35/105 matrices processed (33%)
+[2026-06-12 19:19:15] [INFO] [src.runner] Progress: 40/105 matrices processed (38%)
+[2026-06-12 19:19:19] [INFO] [src.runner] Progress: 45/105 matrices processed (43%)
+[2026-06-12 19:19:22] [INFO] [src.runner] Progress: 50/105 matrices processed (48%)
+[2026-06-12 19:19:26] [INFO] [src.runner] Progress: 55/105 matrices processed (52%)
+[2026-06-12 19:19:30] [INFO] [src.runner] Progress: 60/105 matrices processed (57%)
+[2026-06-12 19:19:33] [INFO] [src.runner] Progress: 65/105 matrices processed (62%)
+[2026-06-12 19:19:37] [INFO] [src.runner] Progress: 70/105 matrices processed (67%)
+[2026-06-12 19:19:41] [INFO] [src.runner] Progress: 75/105 matrices processed (71%)
+[2026-06-12 19:19:44] [INFO] [src.runner] Progress: 80/105 matrices processed (76%)
+[2026-06-12 19:19:48] [INFO] [src.runner] Progress: 85/105 matrices processed (81%)
+[2026-06-12 19:19:52] [INFO] [src.runner] Progress: 90/105 matrices processed (86%)
+[2026-06-12 19:19:55] [INFO] [src.runner] Progress: 95/105 matrices processed (90%)
+[2026-06-12 19:19:59] [INFO] [src.runner] Progress: 100/105 matrices processed (95%)
+[2026-06-12 19:20:03] [INFO] [src.runner] Progress: 105/105 matrices processed (100%)
+[2026-06-12 19:20:03] [INFO] [src.runner] Experiment completed successfully.
+[2026-06-12 19:20:03] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]80.265[/cyan] seconds
+[2026-06-12 19:20:03] [INFO] [__main__] Saved CSV: euler_exp\eng_wfa_sparse\20260612_191843\results_stats.csv
+[2026-06-12 19:20:03] [INFO] [__main__] Saved comparison summary: euler_exp\eng_wfa_sparse\20260612_191843\euler_comparison_summary.txt
+[2026-06-12 19:20:03] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Generating Plots
+[2026-06-12 19:20:05] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Generating Plots in [cyan]2.352[/cyan] seconds

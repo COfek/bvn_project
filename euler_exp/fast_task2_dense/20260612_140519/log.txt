@@ -1,0 +1,30 @@
+[2026-06-12 14:05:20] [INFO] [__main__] Run directory: euler_exp\fast_task2_dense\20260612_140519 |  Engine: euler_bvn | Bases: [2, 4, 8, 16]
+[2026-06-12 14:05:20] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-06-12 14:05:20] [INFO] [src.runner] Starting Experiment | n=256, matrices=105, parallel=False
+[2026-06-12 14:05:51] [INFO] [src.runner] Progress: 5/105 matrices processed (5%)
+[2026-06-12 14:06:23] [INFO] [src.runner] Progress: 10/105 matrices processed (10%)
+[2026-06-12 14:06:53] [INFO] [src.runner] Progress: 15/105 matrices processed (14%)
+[2026-06-12 14:07:25] [INFO] [src.runner] Progress: 20/105 matrices processed (19%)
+[2026-06-12 14:07:55] [INFO] [src.runner] Progress: 25/105 matrices processed (24%)
+[2026-06-12 14:08:26] [INFO] [src.runner] Progress: 30/105 matrices processed (29%)
+[2026-06-12 14:08:56] [INFO] [src.runner] Progress: 35/105 matrices processed (33%)
+[2026-06-12 14:09:28] [INFO] [src.runner] Progress: 40/105 matrices processed (38%)
+[2026-06-12 14:09:59] [INFO] [src.runner] Progress: 45/105 matrices processed (43%)
+[2026-06-12 14:10:30] [INFO] [src.runner] Progress: 50/105 matrices processed (48%)
+[2026-06-12 14:11:01] [INFO] [src.runner] Progress: 55/105 matrices processed (52%)
+[2026-06-12 14:11:32] [INFO] [src.runner] Progress: 60/105 matrices processed (57%)
+[2026-06-12 14:12:04] [INFO] [src.runner] Progress: 65/105 matrices processed (62%)
+[2026-06-12 14:12:35] [INFO] [src.runner] Progress: 70/105 matrices processed (67%)
+[2026-06-12 14:13:06] [INFO] [src.runner] Progress: 75/105 matrices processed (71%)
+[2026-06-12 14:13:37] [INFO] [src.runner] Progress: 80/105 matrices processed (76%)
+[2026-06-12 14:14:08] [INFO] [src.runner] Progress: 85/105 matrices processed (81%)
+[2026-06-12 14:14:39] [INFO] [src.runner] Progress: 90/105 matrices processed (86%)
+[2026-06-12 14:15:11] [INFO] [src.runner] Progress: 95/105 matrices processed (90%)
+[2026-06-12 14:15:42] [INFO] [src.runner] Progress: 100/105 matrices processed (95%)
+[2026-06-12 14:16:14] [INFO] [src.runner] Progress: 105/105 matrices processed (100%)
+[2026-06-12 14:16:14] [INFO] [src.runner] Experiment completed successfully.
+[2026-06-12 14:16:14] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]654.126[/cyan] seconds
+[2026-06-12 14:16:14] [INFO] [__main__] Saved CSV: euler_exp\fast_task2_dense\20260612_140519\results_stats.csv
+[2026-06-12 14:16:14] [INFO] [__main__] Saved comparison summary: euler_exp\fast_task2_dense\20260612_140519\euler_comparison_summary.txt
+[2026-06-12 14:16:14] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Generating Plots
+[2026-06-12 14:16:18] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Generating Plots in [cyan]4.767[/cyan] seconds

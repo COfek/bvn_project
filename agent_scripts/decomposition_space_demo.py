@@ -22,9 +22,9 @@ idle ports). Strong (perfect-matching / BvN) decompositions then sit exactly at
 C = S; wasteful ones use more, shorter configurations and reach C > S. This is
 precisely the N-vs-C tradeoff the thesis studies.
 
-DCT model:  DCT = T_calc + N * T_config + C * T_unit
+DCT model:  DCT = T_compute + N * T_config + C * T_unit
   T_unit  = 0.01 ms (10 us)
-  T_calc  = 0   (comparing schedules of the SAME matrix; offline compute ignored)
+  T_compute  = 0   (comparing schedules of the SAME matrix; offline compute ignored)
   T_config swept on a log grid 1 ns .. 1 ms.
 
 Output: paper/plots_pdf/decomposition_space_demo.pdf

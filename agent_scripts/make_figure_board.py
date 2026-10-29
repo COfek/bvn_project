@@ -62,9 +62,9 @@ doc += page(r"8 --- Table: Euler vs.\ Radix (Hungarian matching on every unit)",
     r"Head-to-head at comparable parallel-unit counts and honest accounting (Split charged): who wins on Total, at what cycle cost?",
     r"Euler d1 Total $320$\,ms vs Radix $B8$ $303$\,ms --- competitive, but Euler keeps $C=S$ ($C/S=1.0$) vs Radix's $+20\%$.",
     "\\begin{center}\\small\n" + t_evr + "\n\\end{center}")
-doc += page(r"9 --- Design space $(N, C, T_{calc})$ --- total runtime",
+doc += page(r"9 --- Design space $(N, C, T_{compute})$ --- total runtime",
     r"How do the two frameworks move through the full three-metric cost space that DCT prices?",
-    r"Radix and Euler leave each engine's BvN anchor in \emph{orthogonal} directions: Radix trades $C\!\uparrow$ for $N\!\downarrow$; Euler trades $N\!\uparrow$ for $T_{calc}\!\downarrow$ at $C=S$. No move improves all three.",
+    r"Radix and Euler leave each engine's BvN anchor in \emph{orthogonal} directions: Radix trades $C\!\uparrow$ for $N\!\downarrow$; Euler trades $N\!\uparrow$ for $T_{compute}\!\downarrow$ at $C=S$. No move improves all three.",
     r"\includegraphics[width=\textwidth]{plots_pdf/design_space_projections.pdf}")
 doc += "\\end{document}\n"
 open(f"{PAPER}/figure_board.tex", "w", encoding="utf-8").write(doc)

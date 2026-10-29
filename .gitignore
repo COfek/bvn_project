@@ -33,7 +33,10 @@ dist/
 
 # VSCode
 .vscode/
-agent_scripts/
+# agent_scripts/ is tracked: it holds every campaign runner and paper figure script.
+# Only its bulky by-products stay out.
+agent_scripts/*.zip
+agent_scripts/*.log
 # ----------------------------
 # Project-specific output
 # ----------------------------

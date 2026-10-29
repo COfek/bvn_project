@@ -1,0 +1,58 @@
+[2026-08-30 02:30:02] environment recorded -> run/variance_2026/environment.json
+[2026-08-30 02:30:02] === variance campaign starting: 3 sweeps, 4 Radix + 4 Euler engines each ===
+[2026-08-30 02:30:03] cpu_load=0% processes=303
+[2026-08-30 02:30:04] --- sweep 1 of 3 begins --- cpu_load=2% processes=303
+[2026-08-30 02:30:04] sweep 1  radix  max  starting
+[2026-08-30 03:20:17] sweep 1  radix  max  done in 50.2 min   cpu_load=1% processes=303
+[2026-08-30 03:20:17] sweep 1  radix  heavy  starting
+[2026-08-30 04:11:17] sweep 1  radix  heavy  done in 51.0 min   cpu_load=1% processes=303
+[2026-08-30 04:11:17] sweep 1  radix  heavy_static  starting
+[2026-08-30 04:29:04] sweep 1  radix  heavy_static  done in 17.8 min   cpu_load=0% processes=304
+[2026-08-30 04:29:04] sweep 1  radix  wfa  starting
+[2026-08-30 04:49:47] sweep 1  radix  wfa  done in 20.7 min   cpu_load=0% processes=303
+[2026-08-30 04:49:47] sweep 1  euler  maximum  starting
+[2026-08-30 04:55:27] sweep 1  euler  maximum  done in 5.7 min   cpu_load=0% processes=304
+[2026-08-30 04:55:27] sweep 1  euler  heavy  starting
+[2026-08-30 05:04:14] sweep 1  euler  heavy  done in 8.8 min   cpu_load=0% processes=304
+[2026-08-30 05:04:14] sweep 1  euler  heavy_static  starting
+[2026-08-30 05:17:22] sweep 1  euler  heavy_static  done in 13.1 min   cpu_load=1% processes=305
+[2026-08-30 05:17:22] sweep 1  euler  wfa  starting
+[2026-08-30 05:42:02] sweep 1  euler  wfa  done in 24.6 min   cpu_load=1% processes=300
+[2026-08-30 05:42:02] --- sweep 1 complete in 192.0 min ---
+[2026-08-30 05:42:03] --- sweep 2 of 3 begins --- cpu_load=0% processes=300
+[2026-08-30 05:42:03] sweep 2  radix  max  starting
+[2026-08-30 06:32:05] sweep 2  radix  max  done in 50.0 min   cpu_load=0% processes=306
+[2026-08-30 06:32:05] sweep 2  radix  heavy  starting
+[2026-08-30 07:23:07] sweep 2  radix  heavy  done in 51.0 min   cpu_load=10% processes=301
+[2026-08-30 07:23:07] sweep 2  radix  heavy_static  starting
+[2026-08-30 07:40:20] sweep 2  radix  heavy_static  done in 17.2 min   cpu_load=5% processes=300
+[2026-08-30 07:40:20] sweep 2  radix  wfa  starting
+[2026-08-30 08:01:38] sweep 2  radix  wfa  done in 21.3 min   cpu_load=7% processes=301
+[2026-08-30 08:01:38] sweep 2  euler  maximum  starting
+[2026-08-30 08:07:16] sweep 2  euler  maximum  done in 5.6 min   cpu_load=1% processes=300
+[2026-08-30 08:07:16] sweep 2  euler  heavy  starting
+[2026-08-30 08:15:44] sweep 2  euler  heavy  done in 8.5 min   cpu_load=2% processes=303
+[2026-08-30 08:15:44] sweep 2  euler  heavy_static  starting
+[2026-08-30 08:28:31] sweep 2  euler  heavy_static  done in 12.8 min   cpu_load=12% processes=301
+[2026-08-30 08:28:31] sweep 2  euler  wfa  starting
+[2026-08-30 08:53:24] sweep 2  euler  wfa  done in 24.9 min   cpu_load=4% processes=300
+[2026-08-30 08:53:24] --- sweep 2 complete in 191.4 min ---
+[2026-08-30 08:53:25] --- sweep 3 of 3 begins --- cpu_load=0% processes=300
+[2026-08-30 08:53:25] sweep 3  radix  max  starting
+[2026-08-30 09:43:36] sweep 3  radix  max  done in 50.2 min   cpu_load=2% processes=307
+[2026-08-30 09:43:36] sweep 3  radix  heavy  starting
+[2026-08-30 10:39:03] sweep 3  radix  heavy  done in 55.4 min   cpu_load=8% processes=318
+[2026-08-30 10:39:03] sweep 3  radix  heavy_static  starting
+[2026-08-30 10:58:56] sweep 3  radix  heavy_static  done in 19.9 min   cpu_load=1% processes=334
+[2026-08-30 10:58:56] sweep 3  radix  wfa  starting
+[2026-08-30 11:24:01] sweep 3  radix  wfa  done in 25.1 min   cpu_load=1% processes=323
+[2026-08-30 11:24:01] sweep 3  euler  maximum  starting
+[2026-08-30 11:30:42] sweep 3  euler  maximum  done in 6.7 min   cpu_load=9% processes=328
+[2026-08-30 11:30:42] sweep 3  euler  heavy  starting
+[2026-08-30 11:40:41] sweep 3  euler  heavy  done in 10.0 min   cpu_load=2% processes=327
+[2026-08-30 11:40:41] sweep 3  euler  heavy_static  starting
+[2026-08-30 11:55:00] sweep 3  euler  heavy_static  done in 14.3 min   cpu_load=2% processes=322
+[2026-08-30 11:55:00] sweep 3  euler  wfa  starting
+[2026-08-30 12:22:31] sweep 3  euler  wfa  done in 27.5 min   cpu_load=1% processes=307
+[2026-08-30 12:22:31] --- sweep 3 complete in 209.1 min ---
+[2026-08-30 12:22:32] === all three sweeps complete in 9.87 hours ===

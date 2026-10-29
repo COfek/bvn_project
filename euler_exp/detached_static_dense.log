@@ -1,0 +1,58 @@
+Logging configured. Log file: 
+euler_exp\eng_heavy_static_dense\20260628_102237\log.txt
+------------------------ BvN-Arbiter Benchmark Started ------------------------
+[06/28/26 10:22:37] INFO     Run directory:                                    
+                             euler_exp\eng_heavy_static_dense\20260628_102237 |
+                             Engine: euler_bvn | Bases: []                     
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=105,        
+                             parallel=False                                    
+[06/28/26 10:23:12] INFO     Progress: 5/105 matrices processed (5%)           
+[06/28/26 10:23:39] INFO     Progress: 10/105 matrices processed (10%)         
+[06/28/26 10:24:07] INFO     Progress: 15/105 matrices processed (14%)         
+[06/28/26 10:24:38] INFO     Progress: 20/105 matrices processed (19%)         
+[06/28/26 10:25:06] INFO     Progress: 25/105 matrices processed (24%)         
+[06/28/26 10:25:35] INFO     Progress: 30/105 matrices processed (29%)         
+[06/28/26 10:26:05] INFO     Progress: 35/105 matrices processed (33%)         
+[06/28/26 10:26:35] INFO     Progress: 40/105 matrices processed (38%)         
+[06/28/26 10:27:06] INFO     Progress: 45/105 matrices processed (43%)         
+[06/28/26 10:27:36] INFO     Progress: 50/105 matrices processed (48%)         
+[06/28/26 10:28:08] INFO     Progress: 55/105 matrices processed (52%)         
+[06/28/26 10:28:38] INFO     Progress: 60/105 matrices processed (57%)         
+[06/28/26 10:29:08] INFO     Progress: 65/105 matrices processed (62%)         
+[06/28/26 10:29:38] INFO     Progress: 70/105 matrices processed (67%)         
+[06/28/26 10:30:07] INFO     Progress: 75/105 matrices processed (71%)         
+[06/28/26 10:30:38] INFO     Progress: 80/105 matrices processed (76%)         
+[06/28/26 10:31:10] INFO     Progress: 85/105 matrices processed (81%)         
+[06/28/26 10:31:42] INFO     Progress: 90/105 matrices processed (86%)         
+[06/28/26 10:32:13] INFO     Progress: 95/105 matrices processed (90%)         
+[06/28/26 10:32:45] INFO     Progress: 100/105 matrices processed (95%)        
+[06/28/26 10:33:16] INFO     Progress: 105/105 matrices processed (100%)       
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             639.045 seconds                                   
+                    INFO     Saved CSV:                                        
+                             euler_exp\eng_heavy_static_dense\20260628_102237\r
+                             esults_stats.csv                                  
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -     1195.83       1.000        -      8174    7614
+euler_heuristic_depth1          2.0     17.87      510.86       0.427    0.427      8174    7531
+euler_heuristic_depth2          4.0     32.76      257.64       0.215    0.504      8174    7430
+euler_heuristic_depth3          8.0     49.30      136.08       0.114    0.528      8174    7450
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+                    INFO     Saved comparison summary:                         
+                             euler_exp\eng_heavy_static_dense\20260628_102237\e
+                             uler_comparison_summary.txt                       
+----------------------------- Benchmark Complete! -----------------------------

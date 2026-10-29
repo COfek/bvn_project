@@ -1,0 +1,88 @@
+regime plan:
+  TM (new)       n_f=  16  kind=tm       knob=  16  S_target~280
+  Uniform (old)  n_f=  16  kind=uniform  knob=   9  S_target~280
+  TM (new)       n_f=  32  kind=tm       knob=  32  S_target~585
+  Uniform (old)  n_f=  32  kind=uniform  knob=  18  S_target~585
+  TM (new)       n_f=  64  kind=tm       knob=  64  S_target~1188
+  Uniform (old)  n_f=  64  kind=uniform  knob=  37  S_target~1188
+  TM (new)       n_f= 128  kind=tm       knob= 128  S_target~2374
+  Uniform (old)  n_f= 128  kind=uniform  knob=  74  S_target~2374
+  TM (new)       n_f= 256  kind=tm       knob= 256  S_target~4767
+  Uniform (old)  n_f= 256  kind=uniform  knob= 149  S_target~4767
+  TM (new)       n_f= 512  kind=tm       knob= 512  S_target~9534
+  Uniform (old)  n_f= 512  kind=uniform  knob= 298  S_target~9534
+[TM (new) n_f=16] 1/6 S=279 dens=6% vd=0.939
+[TM (new) n_f=16] 2/6 S=280 dens=6% vd=0.940
+[TM (new) n_f=16] 3/6 S=280 dens=6% vd=0.940
+[TM (new) n_f=16] 4/6 S=281 dens=6% vd=0.939
+[TM (new) n_f=16] 5/6 S=279 dens=6% vd=0.939
+[TM (new) n_f=16] 6/6 S=280 dens=6% vd=0.939
+[Uniform (old) n_f=16] 1/6 S=342 dens=3% vd=0.966
+[Uniform (old) n_f=16] 2/6 S=250 dens=3% vd=0.965
+[Uniform (old) n_f=16] 3/6 S=263 dens=3% vd=0.969
+[Uniform (old) n_f=16] 4/6 S=342 dens=3% vd=0.965
+[Uniform (old) n_f=16] 5/6 S=333 dens=3% vd=0.966
+[Uniform (old) n_f=16] 6/6 S=281 dens=3% vd=0.965
+[TM (new) n_f=32] 1/6 S=584 dens=12% vd=0.882
+[TM (new) n_f=32] 2/6 S=581 dens=12% vd=0.882
+[TM (new) n_f=32] 3/6 S=584 dens=12% vd=0.882
+[TM (new) n_f=32] 4/6 S=583 dens=12% vd=0.883
+[TM (new) n_f=32] 5/6 S=584 dens=12% vd=0.882
+[TM (new) n_f=32] 6/6 S=583 dens=12% vd=0.883
+[Uniform (old) n_f=32] 1/6 S=614 dens=7% vd=0.934
+[Uniform (old) n_f=32] 2/6 S=610 dens=7% vd=0.934
+[Uniform (old) n_f=32] 3/6 S=594 dens=7% vd=0.934
+[Uniform (old) n_f=32] 4/6 S=476 dens=7% vd=0.934
+[Uniform (old) n_f=32] 5/6 S=554 dens=7% vd=0.934
+[Uniform (old) n_f=32] 6/6 S=553 dens=6% vd=0.936
+[TM (new) n_f=64] 1/6 S=1191 dens=22% vd=0.777
+[TM (new) n_f=64] 2/6 S=1192 dens=22% vd=0.779
+[TM (new) n_f=64] 3/6 S=1185 dens=22% vd=0.778
+[TM (new) n_f=64] 4/6 S=1189 dens=22% vd=0.778
+[TM (new) n_f=64] 5/6 S=1185 dens=22% vd=0.778
+[TM (new) n_f=64] 6/6 S=1185 dens=22% vd=0.777
+[Uniform (old) n_f=64] 1/6 S=1187 dens=13% vd=0.877
+[Uniform (old) n_f=64] 2/6 S=1095 dens=13% vd=0.874
+[Uniform (old) n_f=64] 3/6 S=1003 dens=14% vd=0.868
+[Uniform (old) n_f=64] 4/6 S=1309 dens=13% vd=0.868
+[Uniform (old) n_f=64] 5/6 S=1210 dens=13% vd=0.867
+[Uniform (old) n_f=64] 6/6 S=1071 dens=13% vd=0.873
+[TM (new) n_f=128] 1/6 S=2379 dens=39% vd=0.667
+[TM (new) n_f=128] 2/6 S=2374 dens=39% vd=0.666
+[TM (new) n_f=128] 3/6 S=2386 dens=39% vd=0.667
+[TM (new) n_f=128] 4/6 S=2384 dens=39% vd=0.666
+[TM (new) n_f=128] 5/6 S=2384 dens=39% vd=0.666
+[TM (new) n_f=128] 6/6 S=2386 dens=39% vd=0.667
+[Uniform (old) n_f=128] 1/6 S=2281 dens=24% vd=0.766
+[Uniform (old) n_f=128] 2/6 S=2326 dens=25% vd=0.766
+[Uniform (old) n_f=128] 3/6 S=2107 dens=25% vd=0.767
+[Uniform (old) n_f=128] 4/6 S=2482 dens=25% vd=0.755
+[Uniform (old) n_f=128] 5/6 S=2500 dens=25% vd=0.759
+[Uniform (old) n_f=128] 6/6 S=2464 dens=25% vd=0.764
+[TM (new) n_f=256] 1/6 S=4763 dens=63% vd=0.580
+[TM (new) n_f=256] 2/6 S=4755 dens=63% vd=0.580
+[TM (new) n_f=256] 3/6 S=4772 dens=63% vd=0.580
+[TM (new) n_f=256] 4/6 S=4769 dens=63% vd=0.580
+[TM (new) n_f=256] 5/6 S=4752 dens=63% vd=0.579
+[TM (new) n_f=256] 6/6 S=4764 dens=63% vd=0.579
+[Uniform (old) n_f=256] 1/6 S=4960 dens=44% vd=0.597
+[Uniform (old) n_f=256] 2/6 S=4484 dens=44% vd=0.609
+[Uniform (old) n_f=256] 3/6 S=4712 dens=44% vd=0.614
+[Uniform (old) n_f=256] 4/6 S=4790 dens=44% vd=0.601
+[Uniform (old) n_f=256] 5/6 S=4621 dens=44% vd=0.608
+[Uniform (old) n_f=256] 6/6 S=5161 dens=44% vd=0.596
+[TM (new) n_f=512] 1/6 S=9543 dens=86% vd=0.469
+[TM (new) n_f=512] 2/6 S=9543 dens=86% vd=0.470
+[TM (new) n_f=512] 3/6 S=9544 dens=86% vd=0.469
+[TM (new) n_f=512] 4/6 S=9550 dens=86% vd=0.469
+[TM (new) n_f=512] 5/6 S=9550 dens=86% vd=0.469
+[TM (new) n_f=512] 6/6 S=9541 dens=86% vd=0.469
+[Uniform (old) n_f=512] 1/6 S=9782 dens=69% vd=0.428
+[Uniform (old) n_f=512] 2/6 S=9213 dens=68% vd=0.434
+[Uniform (old) n_f=512] 3/6 S=9384 dens=68% vd=0.437
+[Uniform (old) n_f=512] 4/6 S=9886 dens=68% vd=0.422
+[Uniform (old) n_f=512] 5/6 S=9231 dens=68% vd=0.433
+[Uniform (old) n_f=512] 6/6 S=9345 dens=68% vd=0.428
+
+saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run\skew\skew_summary.csv
+SKEW CAMPAIGN COMPLETE

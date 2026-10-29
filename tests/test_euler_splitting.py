@@ -1187,6 +1187,7 @@ class TestVisualization:
 
             out = graph_dir / f"bipartite_seed{seed:02d}.png"
             plt.savefig(out, dpi=140, bbox_inches="tight")
+            plt.savefig(out.with_suffix(".pdf"), bbox_inches="tight")  # vector for the paper
             plt.close(fig)
             print(f"\n[visual] saved -> {out}")
 

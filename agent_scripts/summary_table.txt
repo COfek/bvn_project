@@ -1,0 +1,11 @@
+Reading results from: run/20260215_101407/results_stats.csv
+Processed 1000 samples.
+
+Method               | Runtime (s)     | Permutations    | Cycle Length   
+---------------------------------------------------------------------------
+bvn                  | 0.2702          | 339.8           | 1.0            
+maximum_2            | 0.1866          | 484.1           | 1.2            
+maximum_4            | 0.2865          | 461.1           | 1.1            
+maximum_8            | 0.3613          | 437.7           | 1.1            
+maximum_16           | 0.3070          | 345.0           | 1.0            
+maximum_32           | 0.2985          | 344.6           | 1.0            

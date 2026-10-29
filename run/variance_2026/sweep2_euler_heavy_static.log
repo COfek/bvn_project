@@ -1,0 +1,59 @@
+Logging configured. Log file: 
+run\variance_2026\sweep2\euler\heavy_static\20260830_081545\log.txt
+------------------------ BvN-Arbiter Benchmark Started ------------------------
+[08/30/26 08:15:45] INFO     Run directory:                                    
+                             run\variance_2026\sweep2\euler\heavy_static\202608
+                             30_081545 |  Engine: euler_bvn | Bases: []        
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=105,        
+                             parallel=False                                    
+[08/30/26 08:16:19] INFO     Progress: 5/105 matrices processed (5%)           
+[08/30/26 08:16:51] INFO     Progress: 10/105 matrices processed (10%)         
+[08/30/26 08:17:22] INFO     Progress: 15/105 matrices processed (14%)         
+[08/30/26 08:17:56] INFO     Progress: 20/105 matrices processed (19%)         
+[08/30/26 08:18:30] INFO     Progress: 25/105 matrices processed (24%)         
+[08/30/26 08:19:05] INFO     Progress: 30/105 matrices processed (29%)         
+[08/30/26 08:19:40] INFO     Progress: 35/105 matrices processed (33%)         
+[08/30/26 08:20:15] INFO     Progress: 40/105 matrices processed (38%)         
+[08/30/26 08:20:51] INFO     Progress: 45/105 matrices processed (43%)         
+[08/30/26 08:21:28] INFO     Progress: 50/105 matrices processed (48%)         
+[08/30/26 08:22:05] INFO     Progress: 55/105 matrices processed (52%)         
+[08/30/26 08:22:42] INFO     Progress: 60/105 matrices processed (57%)         
+[08/30/26 08:23:20] INFO     Progress: 65/105 matrices processed (62%)         
+[08/30/26 08:23:57] INFO     Progress: 70/105 matrices processed (67%)         
+[08/30/26 08:24:34] INFO     Progress: 75/105 matrices processed (71%)         
+[08/30/26 08:25:13] INFO     Progress: 80/105 matrices processed (76%)         
+[08/30/26 08:25:52] INFO     Progress: 85/105 matrices processed (81%)         
+[08/30/26 08:26:32] INFO     Progress: 90/105 matrices processed (86%)         
+[08/30/26 08:27:11] INFO     Progress: 95/105 matrices processed (90%)         
+[08/30/26 08:27:50] INFO     Progress: 100/105 matrices processed (95%)        
+[08/30/26 08:28:30] INFO     Progress: 105/105 matrices processed (100%)       
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             764.556 seconds                                   
+                    INFO     Saved CSV:                                        
+                             run\variance_2026\sweep2\euler\heavy_static\202608
+                             30_081545\results_stats.csv                       
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -     1127.34       1.000        -      8174    7614
+euler_heuristic_depth1          2.0     16.82      484.49       0.430    0.430      8174    7531
+euler_heuristic_depth2          4.0     29.01      241.71       0.214    0.499      8174    7430
+euler_heuristic_depth3          8.0     37.97      113.36       0.101    0.469      8174    7450
+euler_heuristic_depth4         16.0     54.91       66.71       0.059    0.588      8174    7533
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+                    INFO     Saved comparison summary:                         
+                             run\variance_2026\sweep2\euler\heavy_static\202608
+                             30_081545\euler_comparison_summary.txt            
+----------------------------- Benchmark Complete! -----------------------------

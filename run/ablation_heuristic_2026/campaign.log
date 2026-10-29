@@ -1,0 +1,10 @@
+[2026-09-25 02:30:03] === heuristic ablation starting: 4 runs === cpu_load=1% processes=304
+[2026-09-25 02:30:04] heuristic  maximum  starting  cpu_load=1% processes=304
+[2026-09-25 02:35:42] heuristic  maximum  done in 5.6 min   cpu_load=0% processes=303
+[2026-09-25 02:35:43] euler  maximum  starting  cpu_load=2% processes=303
+[2026-09-25 03:08:38] euler  maximum  done in 32.9 min   cpu_load=2% processes=304
+[2026-09-25 03:08:39] euler  heavy  starting  cpu_load=0% processes=304
+[2026-09-25 03:55:24] euler  heavy  done in 46.8 min   cpu_load=0% processes=304
+[2026-09-25 03:55:25] heuristic  heavy  starting  cpu_load=1% processes=304
+[2026-09-25 04:04:03] heuristic  heavy  done in 8.6 min   cpu_load=0% processes=303
+[2026-09-25 04:04:03] === ablation complete in 94.0 min ===

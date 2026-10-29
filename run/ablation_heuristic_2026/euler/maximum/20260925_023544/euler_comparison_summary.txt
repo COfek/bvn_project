@@ -1,0 +1,18 @@
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -      667.68       1.000        -      8174     477
+euler_euler_depth1              2.0    877.12      524.37       0.785    0.785      8174     807
+euler_euler_depth2              4.0   1798.44      441.72       0.662    0.842      8174    1386
+euler_euler_depth3              8.0   2774.15      306.61       0.459    0.694      8174    2193
+euler_euler_depth4             16.0   3827.02      216.06       0.324    0.705      8174    3419
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).

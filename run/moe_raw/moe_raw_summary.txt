@@ -1,0 +1,36 @@
+Measured MoE traffic, decomposed as recorded (no regularisation)
+========================================================================
+
+traces: 12   n = [8]
+exact reconstruction on all 240 runs: True
+
+Per-trace lower bound S and column skew
+------------------------------------------------------------------------
+  Mixtral-8x22B / mmlu / L1                  tokens=   10516  S=   2250  col-skew= 3.49x
+  Mixtral-8x22B / mmlu / L5                  tokens=   10516  S=   2250  col-skew= 5.68x
+  Mixtral-8x22B / throughput / L1            tokens=  131072  S=  19613  col-skew= 1.38x
+  Mixtral-8x22B / throughput / L5            tokens=  131072  S=  22188  col-skew= 1.88x
+  Mixtral-8x7B / mmlu / L1                   tokens=   12002  S=   2498  col-skew= 3.43x
+  Mixtral-8x7B / mmlu / L5                   tokens=   12002  S=   2498  col-skew= 2.32x
+  Mixtral-8x7B / throughput / L1             tokens=   76600  S=  16384  col-skew= 1.57x
+  Mixtral-8x7B / throughput / L5             tokens=   76600  S=  16384  col-skew= 1.27x
+  deepseek-moe-16b-chat / mmlu / L1          tokens=   52786  S=   8652  col-skew= 1.75x
+  deepseek-moe-16b-chat / mmlu / L5          tokens=   55580  S=   9119  col-skew= 1.51x
+  deepseek-moe-16b-chat / throughput / L1    tokens=  209771  S=  36831  col-skew= 2.17x
+  deepseek-moe-16b-chat / throughput / L5    tokens=  220968  S=  39201  col-skew= 1.36x
+
+BvN: cycle inflation and utilization (mean over traces)
+------------------------------------------------------------------------
+  engine             N     C/S     eta  full perms    T [ms]
+  GW Dynamic      63.8   1.009   0.992      27.7%      0.26
+  GW Static       63.6   1.018   0.983      39.7%      0.20
+  Hungarian       63.6   1.023   0.980      21.9%      1.14
+  WFA             63.5   1.096   0.914      18.8%      0.19
+
+Radix: cycle inflation by base (mean over traces and engines)
+------------------------------------------------------------------------
+  framework          N     C/S     eta    T [ms]
+  Radix B=16     111.5   1.204   0.848      0.22
+  Radix B=2       73.6   1.523   0.661      0.04
+  Radix B=4       89.5   1.354   0.752      0.10
+  Radix B=8      105.8   1.171   0.869      0.15

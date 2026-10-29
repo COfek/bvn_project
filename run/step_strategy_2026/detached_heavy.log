@@ -1,0 +1,37 @@
+Logging configured. Log file: 
+run\step_strategy_2026\heavy\20260715_222903\log.txt
+------------------------ BvN-Arbiter Benchmark Started ------------------------
+[07/15/26 22:29:03] INFO     Run directory:                                    
+                             run\step_strategy_2026\heavy\20260715_222903 |    
+                             Engine: heavy | Bases: [2, 4, 8, 16]              
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=105,        
+                             parallel=False                                    
+[07/15/26 22:29:28] INFO     Progress: 5/105 matrices processed (5%)           
+[07/15/26 22:29:52] INFO     Progress: 10/105 matrices processed (10%)         
+[07/15/26 22:30:14] INFO     Progress: 15/105 matrices processed (14%)         
+[07/15/26 22:30:38] INFO     Progress: 20/105 matrices processed (19%)         
+[07/15/26 22:31:01] INFO     Progress: 25/105 matrices processed (24%)         
+[07/15/26 22:31:24] INFO     Progress: 30/105 matrices processed (29%)         
+[07/15/26 22:31:47] INFO     Progress: 35/105 matrices processed (33%)         
+[07/15/26 22:32:10] INFO     Progress: 40/105 matrices processed (38%)         
+[07/15/26 22:32:34] INFO     Progress: 45/105 matrices processed (43%)         
+[07/15/26 22:32:57] INFO     Progress: 50/105 matrices processed (48%)         
+[07/15/26 22:33:21] INFO     Progress: 55/105 matrices processed (52%)         
+[07/15/26 22:33:45] INFO     Progress: 60/105 matrices processed (57%)         
+[07/15/26 22:34:08] INFO     Progress: 65/105 matrices processed (62%)         
+[07/15/26 22:34:31] INFO     Progress: 70/105 matrices processed (67%)         
+[07/15/26 22:34:54] INFO     Progress: 75/105 matrices processed (71%)         
+[07/15/26 22:35:19] INFO     Progress: 80/105 matrices processed (76%)         
+[07/15/26 22:35:42] INFO     Progress: 85/105 matrices processed (81%)         
+[07/15/26 22:36:06] INFO     Progress: 90/105 matrices processed (86%)         
+[07/15/26 22:36:30] INFO     Progress: 95/105 matrices processed (90%)         
+[07/15/26 22:36:54] INFO     Progress: 100/105 matrices processed (95%)        
+[07/15/26 22:37:18] INFO     Progress: 105/105 matrices processed (100%)       
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             495.096 seconds                                   
+                    INFO     Saved CSV:                                        
+                             run\step_strategy_2026\heavy\20260715_222903\resul
+                             ts_stats.csv                                      
+----------------------------- Benchmark Complete! -----------------------------
