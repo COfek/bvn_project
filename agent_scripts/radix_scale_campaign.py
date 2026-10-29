@@ -86,9 +86,13 @@ def main():
                         _wall = time.perf_counter() - t0
                         C = float(sum(x.weight for x in comps))
                         # verify: dividing weights by c reconstructs the ORIGINAL matrix
-                        R = np.zeros_like(M0)
+                        # x.matrix is already weight * P (RadixComponent), so it is summed
+                        # as is; multiplying by x.weight again counted the weight twice and
+                        # flagged every decomposition (fixed 2026-10-29; the stored
+                        # recon_err column predates the fix and is meaningless)
+                        R = np.zeros(M0.shape)
                         for x in comps:
-                            R += (x.weight / c) * x.matrix
+                            R += x.matrix / c
                         err = float(np.abs(R - M0).max())
                         rows.append(dict(
                             regime=regime, matrix=m, engine=eng, base=B, scale=c,
