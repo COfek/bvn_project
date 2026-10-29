@@ -367,7 +367,7 @@ def tab_euler_vs_radix(regime, fname="tm_tab_euler_vs_radix.tex"):
                      r.runtime_ms, r.C / S, r.N))
     L = [r"\begin{tabular}{lrrrrrr}", r"\toprule",
          r"\textbf{Splitting} & \textbf{Units} & \textbf{Max-unit (ms)} & "
-         r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & \textbf{Perms} \\",
+         r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & $N$ \\",
          r"\midrule"]
     for i, (lbl, u, mu, sp, tot, cs, n) in enumerate(rows):
         spx = r"$\sim$0" if sp < 1e-9 else _fmt(sp, 1)

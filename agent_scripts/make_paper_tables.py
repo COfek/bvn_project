@@ -154,7 +154,7 @@ def table_radix() -> str:
     out = [header("Radix across engines, dense generated workload", sources, n),
            r"\begin{tabular}{llrrr}", r"\toprule",
            r"\textbf{Engine} & \textbf{Splitting} & \textbf{$\Tc$ (ms)} & "
-           r"\textbf{Cycle} & \textbf{Perms} \\",
+           r"\textbf{Cycle} & $N$ \\",
            r"\midrule"]
     for i, (name, labels, tc, tl, tp) in enumerate(rows):
         out.append(r"\multirow{5}{*}{" + name + "}")
@@ -187,7 +187,7 @@ def table_euler() -> str:
     out = [header("Euler splitting across engines, dense generated workload", sources, n),
            r"\begin{tabular}{llrrr}", r"\toprule",
            r"\textbf{Engine} & \textbf{Splitting} & \textbf{Max-leaf (ms)} & "
-           r"\textbf{Cycle} & \textbf{Perms} \\", r"\midrule"]
+           r"\textbf{Cycle} & $N$ \\", r"\midrule"]
     for i, (name, labels, tc, tl, tp) in enumerate(rows):
         out.append(r"\multirow{5}{*}{" + name + "}")
         for lab, a, b, c in zip(labels, tc, tl, tp):
@@ -227,7 +227,7 @@ def table_evr() -> str:
                              f"the window the Euler campaign covers)")], n),
            r"\begin{tabular}{lrrrrrr}", r"\toprule",
            r"\textbf{Splitting} & \textbf{Units} & \textbf{Max-unit (ms)} & "
-           r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & \textbf{Perms} \\",
+           r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & $N$ \\",
            r"\midrule"]
 
     for j, (depth, bases) in enumerate(pairs):
