@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.13'   # the project's version; scipy>=1.17 needs >= 3.11
         cache: 'pip'
         
     - name: Install dependencies
@@ -25,5 +25,7 @@ jobs:
         pip install -r requirements.txt
         
     - name: Run pytest
+      env:
+        MPLBACKEND: Agg   # plotting tests run headless
       run: |
         pytest tests/ -v
