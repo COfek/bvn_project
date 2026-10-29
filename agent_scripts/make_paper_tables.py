@@ -226,7 +226,7 @@ def table_evr() -> str:
                    ("Radix", f"sweep{{1,2,3}}/radix/max/ (first {n} matrices, "
                              f"the window the Euler campaign covers)")], n),
            r"\begin{tabular}{lrrrrrr}", r"\toprule",
-           r"\textbf{Splitting} & \textbf{Units} & \textbf{Max-unit (ms)} & "
+           r"\textbf{Splitting} & $K$ & \textbf{Slowest $D_k$ (ms)} & "
            r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & $N$ \\",
            r"\midrule"]
 

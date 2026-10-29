@@ -366,7 +366,7 @@ def tab_euler_vs_radix(regime, fname="tm_tab_euler_vs_radix.tex"):
         rows.append((f"Radix $B={b}$", r.units, r.unit_ms, 0.0,
                      r.runtime_ms, r.C / S, r.N))
     L = [r"\begin{tabular}{lrrrrrr}", r"\toprule",
-         r"\textbf{Splitting} & \textbf{Units} & \textbf{Max-unit (ms)} & "
+         r"\textbf{Splitting} & $K$ & \textbf{Slowest $D_k$ (ms)} & "
          r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & $N$ \\",
          r"\midrule"]
     for i, (lbl, u, mu, sp, tot, cs, n) in enumerate(rows):
