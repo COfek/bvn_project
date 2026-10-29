@@ -153,7 +153,7 @@ def table_radix() -> str:
 
     out = [header("Radix across engines, dense generated workload", sources, n),
            r"\begin{tabular}{llrrr}", r"\toprule",
-           r"\textbf{Engine} & \textbf{Config} & \textbf{$\Tc$ (ms)} & "
+           r"\textbf{Engine} & \textbf{Splitting} & \textbf{$\Tc$ (ms)} & "
            r"\textbf{Cycle} & \textbf{Perms} \\",
            r"\midrule"]
     for i, (name, labels, tc, tl, tp) in enumerate(rows):
@@ -186,7 +186,7 @@ def table_euler() -> str:
 
     out = [header("Euler splitting across engines, dense generated workload", sources, n),
            r"\begin{tabular}{llrrr}", r"\toprule",
-           r"\textbf{Engine} & \textbf{Config} & \textbf{Max-leaf (ms)} & "
+           r"\textbf{Engine} & \textbf{Splitting} & \textbf{Max-leaf (ms)} & "
            r"\textbf{Cycle} & \textbf{Perms} \\", r"\midrule"]
     for i, (name, labels, tc, tl, tp) in enumerate(rows):
         out.append(r"\multirow{5}{*}{" + name + "}")
@@ -226,7 +226,7 @@ def table_evr() -> str:
                    ("Radix", f"sweep{{1,2,3}}/radix/max/ (first {n} matrices, "
                              f"the window the Euler campaign covers)")], n),
            r"\begin{tabular}{lrrrrrr}", r"\toprule",
-           r"\textbf{Config} & \textbf{Units} & \textbf{Max-unit (ms)} & "
+           r"\textbf{Splitting} & \textbf{Units} & \textbf{Max-unit (ms)} & "
            r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & \textbf{Perms} \\",
            r"\midrule"]
 

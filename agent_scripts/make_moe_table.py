@@ -67,7 +67,7 @@ L = [r"\begin{tabular}{ll rr rr rr}", r"\toprule",
      r"& & \multicolumn{2}{c}{$\Tc$ (ms)} & \multicolumn{2}{c}{$N$}"
      r" & \multicolumn{2}{c}{$C/S$} \\",
      r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
-     r"\textbf{Engine} & \textbf{Config} & Thr. & MMLU & Thr. & MMLU & Thr. & MMLU \\",
+     r"\textbf{Engine} & \textbf{Splitting} & Thr. & MMLU & Thr. & MMLU & Thr. & MMLU \\",
      r"\midrule"]
 
 for i, (eng, block) in enumerate(rows):

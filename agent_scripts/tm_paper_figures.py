@@ -366,7 +366,7 @@ def tab_euler_vs_radix(regime, fname="tm_tab_euler_vs_radix.tex"):
         rows.append((f"Radix $B={b}$", r.units, r.unit_ms, 0.0,
                      r.runtime_ms, r.C / S, r.N))
     L = [r"\begin{tabular}{lrrrrrr}", r"\toprule",
-         r"\textbf{Config} & \textbf{Units} & \textbf{Max-unit (ms)} & "
+         r"\textbf{Splitting} & \textbf{Units} & \textbf{Max-unit (ms)} & "
          r"\textbf{Split (ms)} & \textbf{Total (ms)} & $C/S$ & \textbf{Perms} \\",
          r"\midrule"]
     for i, (lbl, u, mu, sp, tot, cs, n) in enumerate(rows):
@@ -385,7 +385,7 @@ def tab_compare(a=PRIMARY, b=BASELINE, fname="tm_tab_comparison.tex"):
          r"& & \multicolumn{2}{c}{$T_{compute}$ (ms)} & \multicolumn{2}{c}{$N$}"
          r" & \multicolumn{2}{c}{$C/S$} \\",
          r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
-         r"\textbf{Engine} & \textbf{Config} & TM & Unif. & TM & Unif. & TM & Unif. \\",
+         r"\textbf{Engine} & \textbf{Splitting} & TM & Unif. & TM & Unif. & TM & Unif. \\",
          r"\midrule"]
     key = ["BvN", "B2", "Euler d4"]
     for i, (name, _, _) in enumerate(ENG):
