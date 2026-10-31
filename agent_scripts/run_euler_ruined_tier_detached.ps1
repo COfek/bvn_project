@@ -7,6 +7,9 @@
 # Detached so it survives session teardown.
 # Launch: Start-Process pwsh -ArgumentList '-NoProfile','-File','agent_scripts\run_euler_ruined_tier_detached.ps1' -WindowStyle Hidden
 $ErrorActionPreference = 'Continue'
+# Keep the machine from idle-sleeping while this runs; released when the process exits.
+Add-Type -Namespace Win32 -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);'
+[Win32.Power]::SetThreadExecutionState(0x80000001) | Out-Null   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
 $Repo = Split-Path -Parent $PSScriptRoot   # the repository root, wherever it is cloned
 Set-Location $Repo
 $py = '.\.venv\Scripts\python.exe'
