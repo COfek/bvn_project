@@ -795,12 +795,20 @@ def _euler_split_grouped_jit(M, n):
 
 
 @jit(nopython=True, nogil=True, cache=True)
-def _euler_split_heuristic_fast_jit(M, n):
+def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
     """
     Same-direction Euler split with O(1) amortized neighbour selection.
 
-    Direction encoding in dir_arr: 0 = free, 1 = red (row->col), 2 = blue.
+    Direction encoding in dir_arr: 0 = free, 1 = red (row->col), 2 = blue,
+    3 = ruined (copies in both halves; set only when ruined_tier != 0).
     Node ids: rows 0..n-1, cols n..2n-1. Input must be even-regular.
+
+    ruined_tier == 0: three tiers (same direction, free, opposite direction).
+    A ruined pair keeps its first direction, so it stays tier 1 on that side.
+    ruined_tier != 0: four tiers (same direction and intact, free, ruined,
+    opposite direction and intact). A ruined pair costs no new non-zero in
+    either direction, so it is held back until the walk would otherwise
+    ruin an intact pair.
     """
     cnt = np.zeros((n, n), dtype=np.int64)          # remaining copies per pair
     deg = np.zeros(2 * n, dtype=np.int64)           # remaining unit-degree
@@ -840,6 +848,8 @@ def _euler_split_heuristic_fast_jit(M, n):
     t1_c = np.empty((n, cap_c), dtype=np.int32); t1_c_top = np.zeros(n, dtype=np.int64)
     t2_c = np.empty((n, cap_c), dtype=np.int32); t2_c_top = np.zeros(n, dtype=np.int64)
     t3_c = np.empty((n, cap_c), dtype=np.int32); t3_c_top = np.zeros(n, dtype=np.int64)
+    tr_r = np.empty((n, cap_r), dtype=np.int32); tr_r_top = np.zeros(n, dtype=np.int64)
+    tr_c = np.empty((n, cap_c), dtype=np.int32); tr_c_top = np.zeros(n, dtype=np.int64)
 
     # Fill t2 sorted descending by M value so LIFO pops see smallest first.
     vals_buf = np.empty(n, dtype=np.int64)
@@ -897,6 +907,12 @@ def _euler_split_heuristic_fast_jit(M, n):
                             u = n + j; break
                         t2_r_top[i] -= 1
                 if u == -1:
+                    while tr_r_top[i] > 0:
+                        j = np.int64(tr_r[i, tr_r_top[i] - 1])
+                        if cnt[i, j] > 0:
+                            u = n + j; break
+                        tr_r_top[i] -= 1
+                if u == -1:
                     while t3_r_top[i] > 0:
                         j = np.int64(t3_r[i, t3_r_top[i] - 1])
                         if cnt[i, j] > 0:
@@ -915,6 +931,12 @@ def _euler_split_heuristic_fast_jit(M, n):
                         if cnt[i2, j] > 0 and dir_arr[i2, j] == 0:
                             u = i2; break
                         t2_c_top[j] -= 1
+                if u == -1:
+                    while tr_c_top[j] > 0:
+                        i2 = np.int64(tr_c[j, tr_c_top[j] - 1])
+                        if cnt[i2, j] > 0:
+                            u = i2; break
+                        tr_c_top[j] -= 1
                 if u == -1:
                     while t3_c_top[j] > 0:
                         i2 = np.int64(t3_c[j, t3_c_top[j] - 1])
@@ -938,6 +960,10 @@ def _euler_split_heuristic_fast_jit(M, n):
                     dir_arr[i, j] = 1
                     t1_r[i, t1_r_top[i]] = np.int32(j); t1_r_top[i] += 1
                     t3_c[j, t3_c_top[j]] = np.int32(i); t3_c_top[j] += 1
+                elif ruined_tier != 0 and dir_arr[i, j] == 2:
+                    dir_arr[i, j] = 3
+                    tr_r[i, tr_r_top[i]] = np.int32(j); tr_r_top[i] += 1
+                    tr_c[j, tr_c_top[j]] = np.int32(i); tr_c_top[j] += 1
             else:
                 i = u; j = v - n
                 blue[i, j] += 1
@@ -945,6 +971,10 @@ def _euler_split_heuristic_fast_jit(M, n):
                     dir_arr[i, j] = 2
                     t1_c[j, t1_c_top[j]] = np.int32(i); t1_c_top[j] += 1
                     t3_r[i, t3_r_top[i]] = np.int32(j); t3_r_top[i] += 1
+                elif ruined_tier != 0 and dir_arr[i, j] == 1:
+                    dir_arr[i, j] = 3
+                    tr_r[i, tr_r_top[i]] = np.int32(j); tr_r_top[i] += 1
+                    tr_c[j, tr_c_top[j]] = np.int32(i); tr_c_top[j] += 1
 
             cnt[i, j] -= 1
             deg[v] -= 1
@@ -955,11 +985,16 @@ def _euler_split_heuristic_fast_jit(M, n):
     return red, blue
 
 
-def _euler_split_heuristic_fast(int_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Same-direction heuristic via O(1) tier stacks - the default fast path."""
+def _euler_split_heuristic_fast(
+    int_matrix: np.ndarray, ruined_tier: bool = False
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Same-direction heuristic via O(1) tier stacks - the default fast path.
+
+    ruined_tier=True adds the fourth tier (split_method="heuristic_ruined").
+    """
     n = int_matrix.shape[0]
     M = np.round(int_matrix).astype(np.int64)
-    return _euler_split_heuristic_fast_jit(M, n)
+    return _euler_split_heuristic_fast_jit(M, n, 1 if ruined_tier else 0)
 
 
 def _choose_next_neighbor(
@@ -1153,6 +1188,10 @@ def euler_split_once(
                       "greedy"         — greedy integral split (falls back to euler).
                       "heuristic"      — same-direction Euler split via O(1)
                                           tier-stack selection (the fast path).
+                      "heuristic_ruined" — "heuristic" with a fourth tier:
+                                          pairs already in both halves are
+                                          held back until the walk would
+                                          otherwise ruin an intact pair.
                       "heuristic_scan" — original O(n)-scan same-direction
                                           split, kept as reference.
 
@@ -1179,6 +1218,9 @@ def euler_split_once(
         # Same-direction heuristic, O(1) tier-stack selection (~30x faster
         # than the original O(n) scan with statistically identical sparsity).
         red, blue = _euler_split_heuristic_fast(int_matrix)
+    elif split_method == "heuristic_ruined":
+        # Four tiers: ruined pairs are held back (see the JIT kernel).
+        red, blue = _euler_split_heuristic_fast(int_matrix, ruined_tier=True)
     elif split_method == "heuristic_scan":
         # Original O(n)-scan implementation, kept as a reference/cross-check.
         red, blue = _euler_split_heuristic(int_matrix)

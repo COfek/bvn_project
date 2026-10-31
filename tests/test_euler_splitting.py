@@ -549,6 +549,69 @@ class TestHeuristicCorrectness:
 
 
 # ===========================================================================
+# 7b. Heuristic with the ruined tier ("heuristic_ruined")
+# ===========================================================================
+
+class TestHeuristicRuinedTier:
+    """
+    "heuristic_ruined" adds a fourth tier to the same-direction heuristic: a pair
+    whose copies are already in both halves is held back until the walk would
+    otherwise ruin an intact pair. The split invariants must hold exactly as for
+    "heuristic".
+    """
+
+    @pytest.mark.parametrize("seed", range(50))
+    def test_fuzz_invariants(self, seed):
+        """Full invariant check on random matrices, including odd S."""
+        rng = np.random.default_rng(seed + 8000)
+        n   = int(rng.integers(2, 33))
+        k   = int(rng.integers(1, 17))
+        mw  = int(rng.integers(1, 17))
+        mat = generate_matrix(n=n, k=k, max_weight=mw, rng=rng).astype(np.int64)
+        red, blue = euler_split_once(mat, split_method="heuristic_ruined")
+        check_split_invariants(mat, red, blue, "heuristic_ruined")
+
+    @pytest.mark.parametrize("seed", [42, 7, 123])
+    def test_invariants_paper_params(self, seed):
+        """Invariants at paper scale: n=256, k=256, max_weight=64."""
+        rng = np.random.default_rng(seed)
+        M   = generate_matrix(n=256, k=256, max_weight=64, rng=rng).astype(np.int64)
+        red, blue = euler_split_once(M, split_method="heuristic_ruined")
+        check_split_invariants(M, red, blue, "heuristic_ruined")
+
+    @pytest.mark.parametrize("depth", [1, 2, 3])
+    @pytest.mark.parametrize("seed", range(5))
+    def test_reconstruction_and_cycle_length(self, depth, seed):
+        """Split → BvN on each leaf reconstructs M, and C = sum(phi_i) = S."""
+        rng = np.random.default_rng(seed + 9000)
+        M   = generate_matrix(n=32, k=16, max_weight=8, rng=rng).astype(np.float64)
+        S   = float(M.sum(axis=1).max())
+        comps, _, _, _ = decompose_euler_framework(
+            M, matching_method="heavy", depth=depth, split_method="heuristic_ruined"
+        )
+        reconstructed = sum(c.weight * c.permutation for c in comps)
+        np.testing.assert_allclose(
+            reconstructed, M, atol=1e-6,
+            err_msg=f"reconstruction failed (depth={depth}, seed={seed})",
+        )
+        C = float(sum(c.weight for c in comps))
+        assert abs(C - S) < 1e-6, f"C={C:.4f} != S={S:.4f} (depth={depth}, seed={seed})"
+
+    def test_sparser_than_heuristic(self):
+        """
+        Regression check of the effect that motivated the tier: over six fixed
+        matrices, the two halves together have fewer non-zeros than with three tiers.
+        """
+        nnz = {"heuristic": 0, "heuristic_ruined": 0}
+        for seed in range(6):
+            mat = _make_matrix(64, 64, seed, max_weight=64).astype(np.int64)
+            for method in nnz:
+                red, blue = euler_split_once(mat, split_method=method)
+                nnz[method] += int(np.count_nonzero(red)) + int(np.count_nonzero(blue))
+        assert nnz["heuristic_ruined"] < nnz["heuristic"], nnz
+
+
+# ===========================================================================
 # 8. Visualisation: heatmaps saved to tests/visual_output/
 #    Run with:  pytest tests/test_euler_splitting.py -m visual -v
 # ===========================================================================
