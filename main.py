@@ -43,6 +43,7 @@ def build_config(args) -> ExperimentConfig:
         radix_bases=radix_bases,
         euler_depths=euler_depths,
         euler_split_method=args.euler_split_method,
+        free_between_runs=args.free_between_runs,
         euler_leaf_engine=args.euler_leaf_engine,
         random_seed=args.random_seed,
         max_workers=args.max_workers,

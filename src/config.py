@@ -44,6 +44,13 @@ class ExperimentConfig:
     # or "greedy" (integral block assignment with Euler fallback).
     euler_split_method: str = "heuristic"
 
+    # Free every earlier result before each timed call (the BvN baseline's once its
+    # statistics are taken, the previous Radix base's and Euler depth's), with
+    # gc.collect(). Off by default, so the published campaigns stay reproducible;
+    # with it off, results held in memory slow the timed calls of the engines with
+    # many configurations (euler_exp/ruined_tier/REPORT.md, section 4).
+    free_between_runs: bool = False
+
     # BvN matching engine used on the Euler leaves AND for the BvN baseline
     # when engine == "euler_bvn" (so baseline vs. leaves is a fair
     # comparison): "heavy", "heavy_static", "wfa", "maximum", "minimum".

@@ -70,6 +70,9 @@ def parse_args() -> argparse.Namespace:
                              "so all three frameworks are compared with the same engine "
                              "(e.g. 'maximum' reproduces the Euler-vs-bitplane comparison).")
 
+    parser.add_argument("--free-between-runs", action="store_true",
+                        help="Free every earlier result (baseline, previous Radix base or "
+                             "Euler depth) before each timed call. Off by default.")
     parser.add_argument("--random-seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--max-workers", type=int, default=None, help="Workers for Radix planes.")
     

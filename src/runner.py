@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import logging
 import os
 import time
@@ -94,6 +95,8 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
 
         num_permutations_bvn = len(bvn_components)
         bvn_matching_used = bvn_engine
+        if getattr(config, "free_between_runs", False):
+            bvn_components = None      # its statistics are taken; free before the timed calls
     else:
         bvn_components = []
         runtime_bvn = None
@@ -136,6 +139,9 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         if isinstance(config.radix_bases, list):
             for base in config.radix_bases:
                 for strategy in strategies:
+                    if getattr(config, "free_between_runs", False):
+                        radix_components = None
+                        gc.collect()
                     # Standard radix decomposition returns
                     # (components, simulated_max_plane_runtime, num_non_empty_planes)
                     radix_components, simulated_max_runtime, num_planes = decompose_radix(
@@ -168,6 +174,9 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         for depth in euler_depths:
             _strat = getattr(config, 'radix_strategy', 'min')
             _strat = _strat if _strat in ('min', 'median', 'max') else 'min'
+            if getattr(config, "free_between_runs", False):
+                comps = None           # free the previous depth before timing the next
+                gc.collect()
             comps, split_rt, max_rt, n_leaves = decompose_euler_framework(
                 matrix=matrix,
                 matching_method=euler_matching,
