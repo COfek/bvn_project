@@ -92,7 +92,7 @@ def main():
                              values=["leaf_drift", "split_drift"])
         print("### Paired runs: drift, median of the last 20 matrices / median of the first 20\n")
         cols = [(v, run, m) for v in ("leaf_drift", "split_drift") for run in sorted(dp.run.unique())
-                for m in ("heuristic", "heuristic_ruined")]
+                for m in ("heuristic", "heuristic_ruined") if (v, run, m) in piv.columns]
         names = {"leaf_drift": "leaf", "split_drift": "split",
                  "heuristic": "3 tiers", "heuristic_ruined": "4 tiers"}
         rows = []
@@ -118,6 +118,21 @@ def main():
         other = da[da.algorithm != "euler"]
         print(f"Radix and the BvN baselines, all {len(other)} timing columns of the three sweeps: "
               f"drift between {other.drift.min():.2f} and {other.drift.max():.2f}.\n")
+
+    dc = read("drift_campaigns.csv")
+    if dc is not None and not dc.empty:
+        print("### Tonight's campaigns: drift, median of the last 20 matrices / first 20\n")
+        rows = []
+        for eng in ("maximum", "heavy", "heavy_static", "wfa"):
+            row = [ENG[eng]]
+            for m in ("heuristic", "heuristic_ruined"):
+                sub = dc[dc.campaign == f"eng_{eng}_dense_d4_{m}"].set_index("column").drift
+                row += [f"{sub.get('bvn_runtime', float('nan')):.2f}"] + [
+                    f"{sub.get(f'euler_{m}_depth{d}_{q}', float('nan')):.2f}"
+                    for d, q in ((2, "time"), (4, "time"), (4, "split"))]
+            rows.append(row)
+        table(["engine"] + [f"{lab}, {r}" for r in ("3 tiers", "4 tiers")
+                            for lab in ("BvN baseline", "leaf d2", "leaf d4", "split d4")], rows)
 
 
 if __name__ == "__main__":
