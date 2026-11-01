@@ -10,6 +10,13 @@ comparison is paired and does not see the between-run spread of separate campaig
 
 N, C and the leaf non-zeros are deterministic; only the times are measured.
 
+Every configuration is stored as a dense n x n matrix (about 6 GB for a WFA depth-4
+result), and in the first run (paired_results.csv) the previous call's result was still
+alive while the next one was timed. That makes the first and second run of a pair differ
+by up to ~12% whichever method runs first; the alternating order cancels it as bias but
+not as noise. Since the _rep2 run, the previous result is freed before every timed call
+(environment.json: free_between_runs).
+
 Usage: python agent_scripts/euler_ruined_tier_compare.py [matrices=105] [tag]
 
 Outputs (euler_exp/ruined_tier/, each name followed by the optional tag):
@@ -19,6 +26,7 @@ Outputs (euler_exp/ruined_tier/, each name followed by the optional tag):
   environment.json    library versions, CPU count, start and end time
 """
 import csv
+import gc
 import json
 import os
 import platform
@@ -72,7 +80,8 @@ def main():
     env = dict(start=datetime.now().isoformat(timespec="seconds"), python=platform.python_version(),
                numpy=np.__version__, scipy=scipy.__version__, numba=numba.__version__,
                cpus=os.cpu_count(), machine=platform.machine(), system=platform.platform(),
-               n=N_DIM, k=K, max_weight=W, seed=SEED, matrices=N_MATRICES)
+               n=N_DIM, k=K, max_weight=W, seed=SEED, matrices=N_MATRICES,
+               free_between_runs=True)
 
     # warm-up: compile every kernel both methods and all engines touch
     Mw = generate_matrix(n=N_DIM, k=K, max_weight=W, rng=np.random.default_rng(10_000))
@@ -101,6 +110,8 @@ def main():
         for eng in ENGINES:
             for d in DEPTHS:
                 for pos, method in enumerate(order):
+                    comps = None      # free the previous result before timing the next
+                    gc.collect()
                     comps, split_s, leaf_s, n_leaves = decompose_euler_framework(
                         M, matching_method=eng, depth=d, split_method=method)
                     w_res.writerow(dict(matrix=i, engine=eng, depth=d, method=method, order=pos,

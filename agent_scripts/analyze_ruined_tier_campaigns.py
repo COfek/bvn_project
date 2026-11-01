@@ -1,0 +1,75 @@
+"""The three- and four-tier Euler splits as full campaigns (run_euler_ruined_tier_detached.ps1,
+step 2), set against the variance campaign behind the paper's Euler table.
+
+For every engine and depth, over matrices i >= 5 as in the paper's tables: the slowest
+leaf's time, the split time, the cycle length and N, for
+  paper   the mean of run/variance_2026/sweep{1,2,3}/euler/ (three-tier, what
+          tab_euler_all_engines.tex reports)
+  3-tier  tonight's rerun of the same campaign
+  4-tier  tonight's campaign with --euler-split-method heuristic_ruined
+N and the cycle length are deterministic, so 3-tier must equal every paper sweep exactly,
+matrix by matrix; the script asserts it, and that all the campaigns cover the same matrices. The 3-tier/paper time ratio shows how far tonight's machine state is from
+the August sweeps, the 4-tier/3-tier ratio is the effect at campaign level (one sweep
+each, so inside the between-run spread of a few percent; the paired comparison,
+euler_ruined_tier_compare.py, is the precise measurement).
+
+Output: euler_exp/ruined_tier/campaigns_summary.csv and a printout.
+"""
+import glob
+import sys
+
+import pandas as pd
+
+from _paths import REPO  # repository-relative paths
+
+WARMUP = 5
+DEPTHS = (1, 2, 3, 4)
+ENGINES = {"maximum": "Hungarian", "heavy": "GW Dynamic", "heavy_static": "GW Static", "wfa": "WFA"}
+DIR = REPO / "euler_exp" / "ruined_tier"
+
+
+def load(pattern):
+    hits = sorted(glob.glob(str(REPO / pattern)))
+    if not hits:
+        sys.exit(f"no campaign matches {pattern}")
+    d = pd.read_csv(hits[-1]).set_index("matrix_index").sort_index()
+    return d[d.index >= WARMUP]
+
+
+def main():
+    rows = []
+    for eng, name in ENGINES.items():
+        paper = [load(f"run/variance_2026/sweep{s}/euler/{eng}/*/results_stats.csv") for s in (1, 2, 3)]
+        three = load(f"euler_exp/ruined_tier/eng_{eng}_dense_d4_heuristic/*/results_stats.csv")
+        four = load(f"euler_exp/ruined_tier/eng_{eng}_dense_d4_heuristic_ruined/*/results_stats.csv")
+        assert all(list(x.index) == list(three.index) for x in paper + [four]), (name, "matrix sets differ")
+        for d in DEPTHS:
+            p3, p4 = f"euler_heuristic_depth{d}", f"euler_heuristic_ruined_depth{d}"
+            for q in ("perms", "cycle"):
+                for x in paper:
+                    assert (three[f"{p3}_{q}"] - x[f"{p3}_{q}"]).abs().max() < 1e-6, (name, d, q)
+            leaf_paper = sum(x[f"{p3}_time"].mean() for x in paper) / 3 * 1000
+            split_paper = sum(x[f"{p3}_split"].mean() for x in paper) / 3 * 1000
+            rows.append(dict(
+                engine=name, depth=d, matrices=len(three),
+                leaf_ms_paper=leaf_paper, leaf_ms_3tier=three[f"{p3}_time"].mean() * 1000,
+                leaf_ms_4tier=four[f"{p4}_time"].mean() * 1000,
+                split_ms_paper=split_paper, split_ms_3tier=three[f"{p3}_split"].mean() * 1000,
+                split_ms_4tier=four[f"{p4}_split"].mean() * 1000,
+                cycle_3tier=three[f"{p3}_cycle"].mean(), cycle_4tier=four[f"{p4}_cycle"].mean(),
+                N_3tier=three[f"{p3}_perms"].mean(), N_4tier=four[f"{p4}_perms"].mean()))
+    out = pd.DataFrame(rows)
+    out["tonight_vs_paper"] = out.leaf_ms_3tier / out.leaf_ms_paper
+    out["leaf_4_vs_3"] = out.leaf_ms_4tier / out.leaf_ms_3tier
+    out.to_csv(DIR / "campaigns_summary.csv", index=False)
+    print(f"{out.matrices.iloc[0]} matrices per campaign; N and cycle of tonight's three-tier "
+          f"campaign equal all three paper sweeps on every matrix.\n")
+    for r in out.itertuples():
+        print(f"{r.engine:10s} d{r.depth}  slowest leaf (ms) paper {r.leaf_ms_paper:7.1f}  "
+              f"3-tier {r.leaf_ms_3tier:7.1f} (x{r.tonight_vs_paper:.3f})  4-tier {r.leaf_ms_4tier:7.1f} "
+              f"(x{r.leaf_4_vs_3:.3f})  split {r.split_ms_3tier:5.1f} -> {r.split_ms_4tier:5.1f}  "
+              f"cycle {r.cycle_3tier:8.1f} -> {r.cycle_4tier:8.1f}  N {r.N_3tier:8.1f} -> {r.N_4tier:8.1f}")
+
+
+if __name__ == "__main__":
+    main()
