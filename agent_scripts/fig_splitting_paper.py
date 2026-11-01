@@ -10,8 +10,9 @@ panels named (a)-(d) in the caption):
     (d) euler-split(D,1)   same-direction heuristic          also regular, and sparser
 
 Layout notes:
-  * each column is titled by its panel letter and, below it, the operator name of
-    Section 5, so the figure and the text name the same things;
+  * each column is titled by the operator name of Section 5, on two lines, so the
+    figure and the text name the same things; the panel letter sits below the column,
+    all four level, and a thin rule separates neighbouring columns (Chen M3, 2026-10-29);
   * each Radix plane carries its weight as a left-hand label, written as a power of
     the base, which shows where the weight comes from. Euler halves carry no label:
     they are summed with coefficient 1;
@@ -84,16 +85,16 @@ red_h, blue_h = (x.astype(int) for x in
                  euler_split_once(D.astype(float), split_method="heuristic"))
 
 cols = [
-    ("(a)\nradix-split$(D,2)$", [(coeff(2, len(p2), i), m) for i, m in enumerate(p2)]),
-    ("(b)\nradix-split$(D,4)$", [(coeff(4, len(p4), i), m) for i, m in enumerate(p4)]),
-    ("(c)\neuler-split$(D,1)$", [("", red), ("", blue)]),
-    ("(d)\neuler-split$(D,1)$\nheuristic", [("", red_h), ("", blue_h)]),
+    ("radix-split\n$(D,2)$", [(coeff(2, len(p2), i), m) for i, m in enumerate(p2)]),
+    ("radix-split\n$(D,4)$", [(coeff(4, len(p4), i), m) for i, m in enumerate(p4)]),
+    ("euler-split\n$(D,1)$", [("", red), ("", blue)]),
+    ("euler-split\n$(D,1)$, heuristic", [("", red_h), ("", blue_h)]),
 ]
 nrow = 1 + max(len(parts) for _, parts in cols)
 
 fig, axes = plt.subplots(nrow, len(cols), figsize=(3.4, 0.86 * nrow + 0.35))
-fig.subplots_adjust(left=0.07, right=0.995, top=0.90, bottom=0.005,
-                    wspace=0.55, hspace=0.42)
+fig.subplots_adjust(left=0.07, right=0.995, top=0.90, bottom=0.04,
+                    wspace=0.75, hspace=0.42)
 
 for c, (title, parts) in enumerate(cols):
     draw(axes[0][c], D)
@@ -114,6 +115,19 @@ for c, (title, parts) in enumerate(cols):
         a, b = axes[k][c].get_position(), axes[k + 1][c].get_position()
         fig.text((a.x0 + a.x1) / 2, (a.y0 + b.y1) / 2, "=" if k == 0 else "+",
                  ha="center", va="center", fontsize=8)
+
+# panel letters below the columns (Chen M3), level with each other under the lowest row
+low = min(axes[nrow - 1][c].get_position().y0 for c in range(len(cols)))
+for c in range(len(cols)):
+    p = axes[0][c].get_position()
+    fig.text((p.x0 + p.x1) / 2, low - 0.02, f"({'abcd'[c]})", ha="center", va="top",
+             fontsize=7)
+# delimiters between the columns (Chen M3): a thin rule just left of each plane label
+for c in range(1, len(cols)):
+    a, b = axes[0][c - 1].get_position(), axes[0][c].get_position()
+    x = a.x1 + 0.3 * (b.x0 - a.x1)
+    fig.add_artist(plt.Line2D([x, x], [low - 0.05, 0.99], color="0.6", lw=0.5,
+                              transform=fig.transFigure))
 
 for ext in ("pdf", "png"):
     fig.savefig(os.path.join(PLOTS, f"splitting_overview.{ext}"), dpi=240,
