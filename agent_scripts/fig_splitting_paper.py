@@ -7,7 +7,7 @@ panels named (a)-(d) in the caption):
     (a) radix-split(D,2)   D = 2^2*Delta_2 + 2^1*Delta_1 + 2^0*Delta_0   NOT regular
     (b) radix-split(D,4)   D = 4^1*Delta_1 + 4^0*Delta_0                 NOT regular
     (c) euler-split(D,1)   D = red + blue                    both halves (S/2)-regular
-    (d) euler-split(D,1)   same-direction heuristic          also regular, and sparser
+    (d) sparse-euler-split(D,1)  same-direction heuristic     also regular, and sparser
 
 Layout notes:
   * each column is titled by the operator name of Section 5, on two lines, so the
@@ -88,7 +88,7 @@ cols = [
     ("radix-split\n$(D,2)$", [(coeff(2, len(p2), i), m) for i, m in enumerate(p2)]),
     ("radix-split\n$(D,4)$", [(coeff(4, len(p4), i), m) for i, m in enumerate(p4)]),
     ("euler-split\n$(D,1)$", [("", red), ("", blue)]),
-    ("euler-split\n$(D,1)$, heuristic", [("", red_h), ("", blue_h)]),
+    ("sparse-euler-split\n$(D,1)$", [("", red_h), ("", blue_h)]),
 ]
 nrow = 1 + max(len(parts) for _, parts in cols)
 
