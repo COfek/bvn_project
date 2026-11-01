@@ -12,7 +12,11 @@ matrix by matrix; the script asserts it, and that all the campaigns cover the sa
 Both campaigns must also agree, matrix by matrix, with the paired comparison's N and C for
 the same method (paired_results.csv), which reaches the decomposition through a different
 route (the paired script calls decompose_euler_framework directly, the campaign goes
-through main.py). The 3-tier/paper time ratio shows how far tonight's machine state is from
+through main.py). If paired_results_rep2.csv exists, its three-tier means are added
+(leaf_ms_rep2, split_ms_rep2): that run frees every result before the next timed call,
+while the campaigns keep the baseline's and the previous depth's results alive during each
+timed call, so rep2_vs_paper measures what the held memory costs the campaign's times.
+The 3-tier/paper time ratio shows how far tonight's machine state is from
 the August sweeps, the 4-tier/3-tier ratio is the effect at campaign level (one sweep
 each, so inside the between-run spread of a few percent; the paired comparison,
 euler_ruined_tier_compare.py, is the precise measurement).
@@ -72,6 +76,16 @@ def main():
     out = pd.DataFrame(rows)
     out["tonight_vs_paper"] = out.leaf_ms_3tier / out.leaf_ms_paper
     out["leaf_4_vs_3"] = out.leaf_ms_4tier / out.leaf_ms_3tier
+    rep2 = DIR / "paired_results_rep2.csv"
+    if rep2.exists():
+        r2 = pd.read_csv(rep2)
+        r2 = r2[(r2.matrix >= WARMUP) & (r2.method == "heuristic")]
+        r2 = r2.groupby(["engine", "depth"])[["leaf_ms", "split_ms"]].mean()
+        names = {v: k for k, v in ENGINES.items()}
+        out["leaf_ms_rep2"] = [r2.loc[(names[e], d), "leaf_ms"] for e, d in zip(out.engine, out.depth)]
+        out["split_ms_rep2"] = [r2.loc[(names[e], d), "split_ms"] for e, d in zip(out.engine, out.depth)]
+        out["rep2_vs_paper"] = out.leaf_ms_rep2 / out.leaf_ms_paper
+        out["split_rep2_vs_paper"] = out.split_ms_rep2 / out.split_ms_paper
     out.to_csv(DIR / "campaigns_summary.csv", index=False)
     print(f"{out.matrices.iloc[0]} matrices per campaign; N and cycle of tonight's three-tier "
           f"campaign equal all three paper sweeps on every matrix, and both campaigns equal "
@@ -80,7 +94,10 @@ def main():
         print(f"{r.engine:10s} d{r.depth}  slowest leaf (ms) paper {r.leaf_ms_paper:7.1f}  "
               f"3-tier {r.leaf_ms_3tier:7.1f} (x{r.tonight_vs_paper:.3f})  4-tier {r.leaf_ms_4tier:7.1f} "
               f"(x{r.leaf_4_vs_3:.3f})  split {r.split_ms_3tier:5.1f} -> {r.split_ms_4tier:5.1f}  "
-              f"cycle {r.cycle_3tier:8.1f} -> {r.cycle_4tier:8.1f}  N {r.N_3tier:8.1f} -> {r.N_4tier:8.1f}")
+              f"cycle {r.cycle_3tier:8.1f} -> {r.cycle_4tier:8.1f}  N {r.N_3tier:8.1f} -> {r.N_4tier:8.1f}"
+              + (f"  | memory freed (rep2, 3-tier): leaf {r.leaf_ms_rep2:7.1f} (x{r.rep2_vs_paper:.3f} paper)"
+                 f"  split {r.split_ms_rep2:5.1f} (x{r.split_rep2_vs_paper:.3f} paper)"
+                 if "leaf_ms_rep2" in out else ""))
 
 
 if __name__ == "__main__":

@@ -85,6 +85,40 @@ def main():
                 f"{r.tonight_vs_paper:.3f}", f"{r.leaf_ms_4tier:.1f}", f"{r.leaf_4_vs_3:.3f}",
                 f"{r.split_ms_3tier:.1f} -> {r.split_ms_4tier:.1f}"] for r in c.itertuples()])
 
+    if c is not None and "leaf_ms_rep2" in c:
+        print("### What the held memory costs: August campaign means against the paired run 2 "
+              "(three tiers, every result freed before the next timed call)\n")
+        table(["engine", "depth", "slowest leaf (ms), August", "freed", "ratio", "split (ms), August",
+               "freed", "ratio", "split + leaf (ms), August", "freed", "ratio"],
+              [[r.engine, r.depth, f"{r.leaf_ms_paper:.1f}", f"{r.leaf_ms_rep2:.1f}",
+                f"{r.rep2_vs_paper:.3f}", f"{r.split_ms_paper:.1f}", f"{r.split_ms_rep2:.1f}",
+                f"{r.split_rep2_vs_paper:.3f}", f"{r.leaf_ms_paper + r.split_ms_paper:.1f}",
+                f"{r.leaf_ms_rep2 + r.split_ms_rep2:.1f}",
+                f"{(r.leaf_ms_rep2 + r.split_ms_rep2) / (r.leaf_ms_paper + r.split_ms_paper):.3f}"]
+               for r in c.itertuples()])
+
+    ab = read("ablation_summary.csv")
+    if ab is not None:
+        print("### Ablation: leaf non-zeros per variant (mean over matrices)\n")
+        table(["variant", "depth", "leaf nnz", "vs 3 tiers", "excess over nnz(D)", "largest leaf",
+               "sparser / denser than 3 tiers", "than 4 tiers", "leaves identical to 3 tiers",
+               "to 4 tiers"],
+              [[r.variant, r.depth, f"{r.nnz_total:.0f}", f"{r.nnz_vs_3tier_pct:+.2f}%",
+                f"{r.excess_pct:.2f}%", f"{r.nnz_max:.1f}",
+                f"{r.sparser_than_3tier} / {r.denser_than_3tier}",
+                f"{r.sparser_than_4tier} / {r.denser_than_4tier}",
+                f"{r.same_as_3tier}/{r.matrices}", f"{r.same_as_4tier}/{r.matrices}"]
+               for r in ab.itertuples()])
+    an = read("ablation_N_summary.csv")
+    if an is not None:
+        print("### Ablation: N of the variants that split differently from both rules\n")
+        table(["variant", "engine", "depth", "N", "vs 3 tiers", "vs 4 tiers",
+               "fewer / same / more than 4 tiers", "C/S (3 tiers, 4 tiers)"],
+              [[r.variant, r.engine, r.depth, f"{r.N:.1f}", f"{r.vs_3tier_pct:+.2f}%",
+                f"{r.vs_4tier_pct:+.2f}%", f"{r.fewer_than_4tier} / {r.same_as_4tier} / {r.more_than_4tier}",
+                (f"{r.CS:.4f} ({r.CS_3tier:.4f}, {r.CS_4tier:.4f})" if r.CS > 1 + 1e-9 else "1")]
+               for r in an.itertuples()])
+
     dp = read("drift_paired.csv")
     if dp is not None:
         dp = dp.assign(engine=dp.engine.map(ENG))
