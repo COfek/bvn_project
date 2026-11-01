@@ -1,0 +1,20 @@
+Copied here at 06:16 on 2026-11-01 from the session file saved at 04:34:49 local time (Israel
+Standard Time, UTC+2; the "JST" below is how Git Bash labelled the local clock). Part 3
+started at 04:58:29. The text below is unchanged.
+
+Written 2026-11-01 04:34:49 JST, before part 3 (paired_results_rep2.csv) existed.
+
+Hypothesis: the drift and the per-engine split-time spread are caused by memory held
+during the timed calls (campaign: the baseline result plus the previous depth's result;
+paired run 1: the previous call's result), not by the work.
+
+Predictions for part 3 (the previous result freed and gc.collect() before every timed call):
+ 1. The depth-4 split time is about equal across the four engines' calls (within ~10%),
+    close to the Hungarian value. Part 1: 41.1 / 51.4 / 66.5 / 66.0 ms (Hungarian, GW Dynamic,
+    GW Static, WFA); August campaigns: 38.0 / 40.4 / 54.3 / 59.9 ms.
+ 2. The GW Dynamic depth-4 slowest-leaf time drifts far less than in part 1 (x2.6-3.3).
+ 3. The paired four-tier / three-tier GW ratios at depth 4 move towards 1
+    (part 1: 0.928 GW Dynamic, 0.939 GW Static), in line with the campaigns
+    (1.012 and 0.987).
+If 1 fails, the hypothesis is wrong or incomplete (for example, heap fragmentation left by
+earlier engines in the same process).
