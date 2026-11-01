@@ -777,12 +777,14 @@ def _euler_split_grouped_jit(M, n):
 # unit-edge traversals scans all n potential neighbours to rank tiers, i.e.
 # O(n^2 * S) total work (~470 ms on the dense paper config, n=256, S~8200).
 #
-# This variant replaces the scan with lazy per-node candidate stacks:
-#   tier-1 stack: pairs whose locked direction matches this node's departure
-#   tier-2 stack: pairs not yet locked (initial adjacency, pre-sorted so the
-#                 SMALLEST original M[i,j] pops first - same "smallest first"
-#                 spirit as the scan version)
-#   tier-3 stack: pairs locked against this node's direction (forced ruin)
+# This variant replaces the scan with lazy per-node candidate stacks, one per
+# tier (the tier names are the paper's):
+#   consistent:     pairs locked to this node's departure direction (cons_*)
+#   empty:          pairs not yet locked (initial adjacency, pre-sorted so the
+#                   SMALLEST original M[i,j] pops first - same "smallest first"
+#                   spirit as the scan version) (empty_*)
+#   non consistent: pairs already in both halves, four-tier rule only (ncons_*)
+#   opposite:       pairs locked against this node's direction (opp_*)
 # A pair enters each stack at most once per side; stale entries (count
 # exhausted / tier changed since push) are discarded lazily on pop, so
 # selection is O(1) amortized and the whole split is O(n*S + nnz*log n).
@@ -800,15 +802,16 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
     Same-direction Euler split with O(1) amortized neighbour selection.
 
     Direction encoding in dir_arr: 0 = free, 1 = red (row->col), 2 = blue,
-    3 = ruined (copies in both halves; set only when ruined_tier != 0).
+    3 = non consistent (copies in both halves; set only when ruined_tier != 0).
     Node ids: rows 0..n-1, cols n..2n-1. Input must be even-regular.
 
-    ruined_tier == 0: three tiers (same direction, free, opposite direction).
-    A ruined pair keeps its first direction, so it stays tier 1 on that side.
-    ruined_tier != 0: four tiers (same direction and intact, free, ruined,
-    opposite direction and intact). A ruined pair costs no new non-zero in
-    either direction, so it is held back until the walk would otherwise
-    ruin an intact pair.
+    ruined_tier == 0: three tiers, consistent, empty, opposite. A pair in both
+    halves keeps its first direction, so it stays consistent on that side.
+    ruined_tier != 0: four tiers, consistent, empty, non consistent, opposite
+    (consistent and opposite then hold only pairs still whole). A non-consistent
+    pair costs no new non-zero in either direction, so it is held back until
+    the walk would otherwise split a whole pair. ("ruined" is the parameter's
+    historical name for non consistent.)
     """
     cnt = np.zeros((n, n), dtype=np.int64)          # remaining copies per pair
     deg = np.zeros(2 * n, dtype=np.int64)           # remaining unit-degree
@@ -842,14 +845,14 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
         if nnz_per_col[j] > cap_c:
             cap_c = nnz_per_col[j]
 
-    t1_r = np.empty((n, cap_r), dtype=np.int32); t1_r_top = np.zeros(n, dtype=np.int64)
-    t2_r = np.empty((n, cap_r), dtype=np.int32); t2_r_top = np.zeros(n, dtype=np.int64)
-    t3_r = np.empty((n, cap_r), dtype=np.int32); t3_r_top = np.zeros(n, dtype=np.int64)
-    t1_c = np.empty((n, cap_c), dtype=np.int32); t1_c_top = np.zeros(n, dtype=np.int64)
-    t2_c = np.empty((n, cap_c), dtype=np.int32); t2_c_top = np.zeros(n, dtype=np.int64)
-    t3_c = np.empty((n, cap_c), dtype=np.int32); t3_c_top = np.zeros(n, dtype=np.int64)
-    tr_r = np.empty((n, cap_r), dtype=np.int32); tr_r_top = np.zeros(n, dtype=np.int64)
-    tr_c = np.empty((n, cap_c), dtype=np.int32); tr_c_top = np.zeros(n, dtype=np.int64)
+    cons_r = np.empty((n, cap_r), dtype=np.int32); cons_r_top = np.zeros(n, dtype=np.int64)
+    empty_r = np.empty((n, cap_r), dtype=np.int32); empty_r_top = np.zeros(n, dtype=np.int64)
+    opp_r = np.empty((n, cap_r), dtype=np.int32); opp_r_top = np.zeros(n, dtype=np.int64)
+    cons_c = np.empty((n, cap_c), dtype=np.int32); cons_c_top = np.zeros(n, dtype=np.int64)
+    empty_c = np.empty((n, cap_c), dtype=np.int32); empty_c_top = np.zeros(n, dtype=np.int64)
+    opp_c = np.empty((n, cap_c), dtype=np.int32); opp_c_top = np.zeros(n, dtype=np.int64)
+    ncons_r = np.empty((n, cap_r), dtype=np.int32); ncons_r_top = np.zeros(n, dtype=np.int64)
+    ncons_c = np.empty((n, cap_c), dtype=np.int32); ncons_c_top = np.zeros(n, dtype=np.int64)
 
     # Fill t2 sorted descending by M value so LIFO pops see smallest first.
     vals_buf = np.empty(n, dtype=np.int64)
@@ -863,8 +866,8 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                 m += 1
         order = np.argsort(vals_buf[:m])
         for q in range(m):
-            t2_r[i, q] = idx_buf[order[q]]
-        t2_r_top[i] = m
+            empty_r[i, q] = idx_buf[order[q]]
+        empty_r_top[i] = m
     for j in range(n):
         m = 0
         for i in range(n):
@@ -874,8 +877,8 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                 m += 1
         order = np.argsort(vals_buf[:m])
         for q in range(m):
-            t2_c[j, q] = idx_buf[order[q]]
-        t2_c_top[j] = m
+            empty_c[j, q] = idx_buf[order[q]]
+        empty_c_top[j] = m
 
     walk = np.empty(total_edges + 2, dtype=np.int64)
 
@@ -895,54 +898,54 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
             u = np.int64(-1)
             if v < n:
                 i = v
-                while t1_r_top[i] > 0:
-                    j = np.int64(t1_r[i, t1_r_top[i] - 1])
+                while cons_r_top[i] > 0:
+                    j = np.int64(cons_r[i, cons_r_top[i] - 1])
                     if cnt[i, j] > 0 and dir_arr[i, j] == 1:
                         u = n + j; break
-                    t1_r_top[i] -= 1
+                    cons_r_top[i] -= 1
                 if u == -1:
-                    while t2_r_top[i] > 0:
-                        j = np.int64(t2_r[i, t2_r_top[i] - 1])
+                    while empty_r_top[i] > 0:
+                        j = np.int64(empty_r[i, empty_r_top[i] - 1])
                         if cnt[i, j] > 0 and dir_arr[i, j] == 0:
                             u = n + j; break
-                        t2_r_top[i] -= 1
+                        empty_r_top[i] -= 1
                 if u == -1:
-                    while tr_r_top[i] > 0:
-                        j = np.int64(tr_r[i, tr_r_top[i] - 1])
+                    while ncons_r_top[i] > 0:
+                        j = np.int64(ncons_r[i, ncons_r_top[i] - 1])
                         if cnt[i, j] > 0:
                             u = n + j; break
-                        tr_r_top[i] -= 1
+                        ncons_r_top[i] -= 1
                 if u == -1:
-                    while t3_r_top[i] > 0:
-                        j = np.int64(t3_r[i, t3_r_top[i] - 1])
+                    while opp_r_top[i] > 0:
+                        j = np.int64(opp_r[i, opp_r_top[i] - 1])
                         if cnt[i, j] > 0:
                             u = n + j; break
-                        t3_r_top[i] -= 1
+                        opp_r_top[i] -= 1
             else:
                 j = v - n
-                while t1_c_top[j] > 0:
-                    i2 = np.int64(t1_c[j, t1_c_top[j] - 1])
+                while cons_c_top[j] > 0:
+                    i2 = np.int64(cons_c[j, cons_c_top[j] - 1])
                     if cnt[i2, j] > 0 and dir_arr[i2, j] == 2:
                         u = i2; break
-                    t1_c_top[j] -= 1
+                    cons_c_top[j] -= 1
                 if u == -1:
-                    while t2_c_top[j] > 0:
-                        i2 = np.int64(t2_c[j, t2_c_top[j] - 1])
+                    while empty_c_top[j] > 0:
+                        i2 = np.int64(empty_c[j, empty_c_top[j] - 1])
                         if cnt[i2, j] > 0 and dir_arr[i2, j] == 0:
                             u = i2; break
-                        t2_c_top[j] -= 1
+                        empty_c_top[j] -= 1
                 if u == -1:
-                    while tr_c_top[j] > 0:
-                        i2 = np.int64(tr_c[j, tr_c_top[j] - 1])
+                    while ncons_c_top[j] > 0:
+                        i2 = np.int64(ncons_c[j, ncons_c_top[j] - 1])
                         if cnt[i2, j] > 0:
                             u = i2; break
-                        tr_c_top[j] -= 1
+                        ncons_c_top[j] -= 1
                 if u == -1:
-                    while t3_c_top[j] > 0:
-                        i2 = np.int64(t3_c[j, t3_c_top[j] - 1])
+                    while opp_c_top[j] > 0:
+                        i2 = np.int64(opp_c[j, opp_c_top[j] - 1])
                         if cnt[i2, j] > 0:
                             u = i2; break
-                        t3_c_top[j] -= 1
+                        opp_c_top[j] -= 1
 
             if u == -1:
                 # Safety guard: deg and stacks disagree (should be impossible;
@@ -958,23 +961,23 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                 red[i, j] += 1
                 if dir_arr[i, j] == 0:
                     dir_arr[i, j] = 1
-                    t1_r[i, t1_r_top[i]] = np.int32(j); t1_r_top[i] += 1
-                    t3_c[j, t3_c_top[j]] = np.int32(i); t3_c_top[j] += 1
+                    cons_r[i, cons_r_top[i]] = np.int32(j); cons_r_top[i] += 1
+                    opp_c[j, opp_c_top[j]] = np.int32(i); opp_c_top[j] += 1
                 elif ruined_tier != 0 and dir_arr[i, j] == 2:
                     dir_arr[i, j] = 3
-                    tr_r[i, tr_r_top[i]] = np.int32(j); tr_r_top[i] += 1
-                    tr_c[j, tr_c_top[j]] = np.int32(i); tr_c_top[j] += 1
+                    ncons_r[i, ncons_r_top[i]] = np.int32(j); ncons_r_top[i] += 1
+                    ncons_c[j, ncons_c_top[j]] = np.int32(i); ncons_c_top[j] += 1
             else:
                 i = u; j = v - n
                 blue[i, j] += 1
                 if dir_arr[i, j] == 0:
                     dir_arr[i, j] = 2
-                    t1_c[j, t1_c_top[j]] = np.int32(i); t1_c_top[j] += 1
-                    t3_r[i, t3_r_top[i]] = np.int32(j); t3_r_top[i] += 1
+                    cons_c[j, cons_c_top[j]] = np.int32(i); cons_c_top[j] += 1
+                    opp_r[i, opp_r_top[i]] = np.int32(j); opp_r_top[i] += 1
                 elif ruined_tier != 0 and dir_arr[i, j] == 1:
                     dir_arr[i, j] = 3
-                    tr_r[i, tr_r_top[i]] = np.int32(j); tr_r_top[i] += 1
-                    tr_c[j, tr_c_top[j]] = np.int32(i); tr_c_top[j] += 1
+                    ncons_r[i, ncons_r_top[i]] = np.int32(j); ncons_r_top[i] += 1
+                    ncons_c[j, ncons_c_top[j]] = np.int32(i); ncons_c_top[j] += 1
 
             cnt[i, j] -= 1
             deg[v] -= 1
@@ -1187,11 +1190,14 @@ def euler_split_once(
                                           (O(nnz) vs O(sum(M)) traversal cost).
                       "greedy"         — greedy integral split (falls back to euler).
                       "heuristic"      — same-direction Euler split via O(1)
-                                          tier-stack selection (the fast path).
-                      "heuristic_ruined" — "heuristic" with a fourth tier:
-                                          pairs already in both halves are
-                                          held back until the walk would
-                                          otherwise ruin an intact pair.
+                                          tier-stack selection (the fast path;
+                                          tiers: consistent, empty, opposite).
+                      "heuristic_ruined" — "heuristic" with a fourth tier,
+                                          non consistent: pairs already in
+                                          both halves, held back until the
+                                          walk would otherwise split a whole
+                                          pair (tiers: consistent, empty,
+                                          non consistent, opposite).
                       "heuristic_scan" — original O(n)-scan same-direction
                                           split, kept as reference.
 
@@ -1219,7 +1225,7 @@ def euler_split_once(
         # than the original O(n) scan with statistically identical sparsity).
         red, blue = _euler_split_heuristic_fast(int_matrix)
     elif split_method == "heuristic_ruined":
-        # Four tiers: ruined pairs are held back (see the JIT kernel).
+        # Four tiers: non-consistent pairs are held back (see the JIT kernel).
         red, blue = _euler_split_heuristic_fast(int_matrix, ruined_tier=True)
     elif split_method == "heuristic_scan":
         # Original O(n)-scan implementation, kept as a reference/cross-check.

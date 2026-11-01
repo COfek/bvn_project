@@ -143,14 +143,14 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
         if nnz_per_col[j] > cap_c:
             cap_c = nnz_per_col[j]
 
-    t1_r = np.empty((n, cap_r), dtype=np.int32); t1_r_top = np.zeros(n, dtype=np.int64)
-    t2_r = np.empty((n, cap_r), dtype=np.int32); t2_r_top = np.zeros(n, dtype=np.int64)
-    t3_r = np.empty((n, cap_r), dtype=np.int32); t3_r_top = np.zeros(n, dtype=np.int64)
-    t1_c = np.empty((n, cap_c), dtype=np.int32); t1_c_top = np.zeros(n, dtype=np.int64)
-    t2_c = np.empty((n, cap_c), dtype=np.int32); t2_c_top = np.zeros(n, dtype=np.int64)
-    t3_c = np.empty((n, cap_c), dtype=np.int32); t3_c_top = np.zeros(n, dtype=np.int64)
-    tr_r = np.empty((n, cap_r), dtype=np.int32); tr_r_top = np.zeros(n, dtype=np.int64)
-    tr_c = np.empty((n, cap_c), dtype=np.int32); tr_c_top = np.zeros(n, dtype=np.int64)
+    cons_r = np.empty((n, cap_r), dtype=np.int32); cons_r_top = np.zeros(n, dtype=np.int64)
+    empty_r = np.empty((n, cap_r), dtype=np.int32); empty_r_top = np.zeros(n, dtype=np.int64)
+    opp_r = np.empty((n, cap_r), dtype=np.int32); opp_r_top = np.zeros(n, dtype=np.int64)
+    cons_c = np.empty((n, cap_c), dtype=np.int32); cons_c_top = np.zeros(n, dtype=np.int64)
+    empty_c = np.empty((n, cap_c), dtype=np.int32); empty_c_top = np.zeros(n, dtype=np.int64)
+    opp_c = np.empty((n, cap_c), dtype=np.int32); opp_c_top = np.zeros(n, dtype=np.int64)
+    ncons_r = np.empty((n, cap_r), dtype=np.int32); ncons_r_top = np.zeros(n, dtype=np.int64)
+    ncons_c = np.empty((n, cap_c), dtype=np.int32); ncons_c_top = np.zeros(n, dtype=np.int64)
 
     vals_buf = np.empty(n, dtype=np.int64)
     idx_buf = np.empty(n, dtype=np.int32)
@@ -163,8 +163,8 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
                 m += 1
         order = np.argsort(vals_buf[:m])
         for q in range(m):
-            t2_r[i, q] = idx_buf[order[q]]
-        t2_r_top[i] = m
+            empty_r[i, q] = idx_buf[order[q]]
+        empty_r_top[i] = m
     for j in range(n):
         m = 0
         for i in range(n):
@@ -174,8 +174,8 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
                 m += 1
         order = np.argsort(vals_buf[:m])
         for q in range(m):
-            t2_c[j, q] = idx_buf[order[q]]
-        t2_c_top[j] = m
+            empty_c[j, q] = idx_buf[order[q]]
+        empty_c_top[j] = m
 
     walk = np.empty(total_edges + 2, dtype=np.int64)
 
@@ -194,78 +194,78 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
             u = np.int64(-1)
             if v < n:
                 i = v
-                while t1_r_top[i] > 0:
-                    j = np.int64(t1_r[i, t1_r_top[i] - 1])
+                while cons_r_top[i] > 0:
+                    j = np.int64(cons_r[i, cons_r_top[i] - 1])
                     if cnt[i, j] > 0 and dir_arr[i, j] == 1:
                         u = n + j; break
-                    t1_r_top[i] -= 1
+                    cons_r_top[i] -= 1
                 if u == -1 and split_tier != 0 and split_before_free != 0:
-                    while tr_r_top[i] > 0:
-                        j = np.int64(tr_r[i, tr_r_top[i] - 1])
+                    while ncons_r_top[i] > 0:
+                        j = np.int64(ncons_r[i, ncons_r_top[i] - 1])
                         if cnt[i, j] > 0:
                             u = n + j; break
-                        tr_r_top[i] -= 1
+                        ncons_r_top[i] -= 1
                 if u == -1:
-                    while t2_r_top[i] > 0:
-                        j = np.int64(t2_r[i, t2_r_top[i] - 1])
+                    while empty_r_top[i] > 0:
+                        j = np.int64(empty_r[i, empty_r_top[i] - 1])
                         if cnt[i, j] > 0 and dir_arr[i, j] == 0:
                             u = n + j; break
-                        t2_r_top[i] -= 1
+                        empty_r_top[i] -= 1
                 if u == -1 and split_tier != 0 and split_before_free == 0 and split_last == 0:
-                    while tr_r_top[i] > 0:
-                        j = np.int64(tr_r[i, tr_r_top[i] - 1])
+                    while ncons_r_top[i] > 0:
+                        j = np.int64(ncons_r[i, ncons_r_top[i] - 1])
                         if cnt[i, j] > 0:
                             u = n + j; break
-                        tr_r_top[i] -= 1
+                        ncons_r_top[i] -= 1
                 if u == -1:
-                    while t3_r_top[i] > 0:
-                        j = np.int64(t3_r[i, t3_r_top[i] - 1])
+                    while opp_r_top[i] > 0:
+                        j = np.int64(opp_r[i, opp_r_top[i] - 1])
                         if cnt[i, j] > 0:
                             u = n + j; break
-                        t3_r_top[i] -= 1
+                        opp_r_top[i] -= 1
                 if u == -1 and split_tier != 0 and split_last != 0:
-                    while tr_r_top[i] > 0:
-                        j = np.int64(tr_r[i, tr_r_top[i] - 1])
+                    while ncons_r_top[i] > 0:
+                        j = np.int64(ncons_r[i, ncons_r_top[i] - 1])
                         if cnt[i, j] > 0:
                             u = n + j; break
-                        tr_r_top[i] -= 1
+                        ncons_r_top[i] -= 1
             else:
                 j = v - n
-                while t1_c_top[j] > 0:
-                    i2 = np.int64(t1_c[j, t1_c_top[j] - 1])
+                while cons_c_top[j] > 0:
+                    i2 = np.int64(cons_c[j, cons_c_top[j] - 1])
                     if cnt[i2, j] > 0 and dir_arr[i2, j] == 2:
                         u = i2; break
-                    t1_c_top[j] -= 1
+                    cons_c_top[j] -= 1
                 if u == -1 and split_tier != 0 and split_before_free != 0:
-                    while tr_c_top[j] > 0:
-                        i2 = np.int64(tr_c[j, tr_c_top[j] - 1])
+                    while ncons_c_top[j] > 0:
+                        i2 = np.int64(ncons_c[j, ncons_c_top[j] - 1])
                         if cnt[i2, j] > 0:
                             u = i2; break
-                        tr_c_top[j] -= 1
+                        ncons_c_top[j] -= 1
                 if u == -1:
-                    while t2_c_top[j] > 0:
-                        i2 = np.int64(t2_c[j, t2_c_top[j] - 1])
+                    while empty_c_top[j] > 0:
+                        i2 = np.int64(empty_c[j, empty_c_top[j] - 1])
                         if cnt[i2, j] > 0 and dir_arr[i2, j] == 0:
                             u = i2; break
-                        t2_c_top[j] -= 1
+                        empty_c_top[j] -= 1
                 if u == -1 and split_tier != 0 and split_before_free == 0 and split_last == 0:
-                    while tr_c_top[j] > 0:
-                        i2 = np.int64(tr_c[j, tr_c_top[j] - 1])
+                    while ncons_c_top[j] > 0:
+                        i2 = np.int64(ncons_c[j, ncons_c_top[j] - 1])
                         if cnt[i2, j] > 0:
                             u = i2; break
-                        tr_c_top[j] -= 1
+                        ncons_c_top[j] -= 1
                 if u == -1:
-                    while t3_c_top[j] > 0:
-                        i2 = np.int64(t3_c[j, t3_c_top[j] - 1])
+                    while opp_c_top[j] > 0:
+                        i2 = np.int64(opp_c[j, opp_c_top[j] - 1])
                         if cnt[i2, j] > 0:
                             u = i2; break
-                        t3_c_top[j] -= 1
+                        opp_c_top[j] -= 1
                 if u == -1 and split_tier != 0 and split_last != 0:
-                    while tr_c_top[j] > 0:
-                        i2 = np.int64(tr_c[j, tr_c_top[j] - 1])
+                    while ncons_c_top[j] > 0:
+                        i2 = np.int64(ncons_c[j, ncons_c_top[j] - 1])
                         if cnt[i2, j] > 0:
                             u = i2; break
-                        tr_c_top[j] -= 1
+                        ncons_c_top[j] -= 1
 
             if u == -1:
                 deg[v] = 0
@@ -277,31 +277,31 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
                 red[i, j] += 1
                 if dir_arr[i, j] == 0:
                     dir_arr[i, j] = 1
-                    t1_r[i, t1_r_top[i]] = np.int32(j); t1_r_top[i] += 1
-                    t3_c[j, t3_c_top[j]] = np.int32(i); t3_c_top[j] += 1
+                    cons_r[i, cons_r_top[i]] = np.int32(j); cons_r_top[i] += 1
+                    opp_c[j, opp_c_top[j]] = np.int32(i); opp_c_top[j] += 1
                 elif split_tier != 0 and dir_arr[i, j] == 2 and is_split[i, j] == 0:
                     # a blue-locked pair traversed red: its lock side is column j
                     is_split[i, j] = 1
                     if split_leaves_t1 != 0:
                         dir_arr[i, j] = 3
-                    tr_c[j, tr_c_top[j]] = np.int32(i); tr_c_top[j] += 1
+                    ncons_c[j, ncons_c_top[j]] = np.int32(i); ncons_c_top[j] += 1
                     if split_tier_opposite != 0:
-                        tr_r[i, tr_r_top[i]] = np.int32(j); tr_r_top[i] += 1
+                        ncons_r[i, ncons_r_top[i]] = np.int32(j); ncons_r_top[i] += 1
             else:
                 i = u; j = v - n
                 blue[i, j] += 1
                 if dir_arr[i, j] == 0:
                     dir_arr[i, j] = 2
-                    t1_c[j, t1_c_top[j]] = np.int32(i); t1_c_top[j] += 1
-                    t3_r[i, t3_r_top[i]] = np.int32(j); t3_r_top[i] += 1
+                    cons_c[j, cons_c_top[j]] = np.int32(i); cons_c_top[j] += 1
+                    opp_r[i, opp_r_top[i]] = np.int32(j); opp_r_top[i] += 1
                 elif split_tier != 0 and dir_arr[i, j] == 1 and is_split[i, j] == 0:
                     # a red-locked pair traversed blue: its lock side is row i
                     is_split[i, j] = 1
                     if split_leaves_t1 != 0:
                         dir_arr[i, j] = 3
-                    tr_r[i, tr_r_top[i]] = np.int32(j); tr_r_top[i] += 1
+                    ncons_r[i, ncons_r_top[i]] = np.int32(j); ncons_r_top[i] += 1
                     if split_tier_opposite != 0:
-                        tr_c[j, tr_c_top[j]] = np.int32(i); tr_c_top[j] += 1
+                        ncons_c[j, ncons_c_top[j]] = np.int32(i); ncons_c_top[j] += 1
 
             cnt[i, j] -= 1
             deg[v] -= 1
