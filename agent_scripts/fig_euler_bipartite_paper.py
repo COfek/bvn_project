@@ -83,8 +83,8 @@ fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.3))
 draw(axes[0], mat, r_e, b_e, "(a) alternating colouring")
 draw(axes[1], mat, r_h, b_h, "(b) same-direction heuristic")
 fig.legend(handles=[
-    mpatches.Patch(color=C_RED, label="consistent pair, red half"),
-    mpatches.Patch(color=C_BLUE, label="consistent pair, blue half"),
+    mpatches.Patch(color=C_RED, label="consistent pair, red"),
+    mpatches.Patch(color=C_BLUE, label="consistent pair, blue"),
     mpatches.Patch(color=C_SPLIT, label="non-consistent pair, in both ($r$R+$b$B)")],
     loc="lower center", ncol=3, fontsize=7, frameon=False, bbox_to_anchor=(.5, -.02))
 fig.tight_layout(rect=[0, .06, 1, 1])
