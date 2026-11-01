@@ -29,8 +29,8 @@ C_RED, C_BLUE, C_SPLIT = "#CC2222", "#1144BB", "#882299"
 
 
 def draw(ax, matrix, red, blue, title, max_labels=1):
-    """Only SPLIT (purple) pairs are labelled, and at most `max_labels` of them:
-    colour already distinguishes whole from split, the panel title carries the counts,
+    """Only non-consistent (purple) pairs are labelled, and at most `max_labels` of them:
+    colour already distinguishes consistent from non-consistent, the panel title carries the counts,
     and a label on every arc makes the figure unreadable at column scale."""
     n = matrix.shape[0]
     row_ys = np.linspace(n - 1, 0, n)
@@ -70,7 +70,7 @@ def draw(ax, matrix, red, blue, title, max_labels=1):
     clean = int(np.sum((red > 0) ^ (blue > 0)))
     nsplit = int(np.sum((red > 0) & (blue > 0)))
     ax.set_xlim(-0.22, 1.22); ax.set_ylim(-0.55, n - 0.45)
-    ax.set_title(f"{title}\nwhole pairs = {clean}    split pairs = {nsplit}",
+    ax.set_title(f"{title}\nconsistent pairs = {clean}    non-consistent pairs = {nsplit}",
                  fontsize=8.5, pad=6)
     ax.axis("off")
 
@@ -83,9 +83,9 @@ fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.3))
 draw(axes[0], mat, r_e, b_e, "(a) alternating colouring")
 draw(axes[1], mat, r_h, b_h, "(b) same-direction heuristic")
 fig.legend(handles=[
-    mpatches.Patch(color=C_RED, label="whole pair, red half"),
-    mpatches.Patch(color=C_BLUE, label="whole pair, blue half"),
-    mpatches.Patch(color=C_SPLIT, label="pair split across both ($r$R+$b$B)")],
+    mpatches.Patch(color=C_RED, label="consistent pair, red half"),
+    mpatches.Patch(color=C_BLUE, label="consistent pair, blue half"),
+    mpatches.Patch(color=C_SPLIT, label="non-consistent pair, in both ($r$R+$b$B)")],
     loc="lower center", ncol=3, fontsize=7, frameon=False, bbox_to_anchor=(.5, -.02))
 fig.tight_layout(rect=[0, .06, 1, 1])
 for ext in ("pdf", "png"):
