@@ -19,13 +19,17 @@ timed call, so rep2_vs_paper measures what the held memory costs the campaign's 
 The 3-tier/paper time ratio shows how far tonight's machine state is from
 the August sweeps, the 4-tier/3-tier ratio is the effect at campaign level (one sweep
 each, so inside the between-run spread of a few percent; the paired comparison,
-euler_ruined_tier_compare.py, is the precise measurement).
+euler_ruined_tier_compare.py, is the precise measurement). leaf_4_vs_3 is the ratio of the
+100-matrix means; leaf_geo_4_vs_3 is the geometric mean of the per-matrix ratio, with a
+bootstrap 95% interval over matrices (the two campaigns share their matrices but not their
+run). leaf_ms_paper_min/max and split_ms_paper_min/max give the range of the three sweeps.
 
 Output: euler_exp/ruined_tier/campaigns_summary.csv and a printout.
 """
 import glob
 import sys
 
+import numpy as np
 import pandas as pd
 
 from _paths import REPO  # repository-relative paths
@@ -34,6 +38,14 @@ WARMUP = 5
 DEPTHS = (1, 2, 3, 4)
 ENGINES = {"maximum": "Hungarian", "heavy": "GW Dynamic", "heavy_static": "GW Static", "wfa": "WFA"}
 DIR = REPO / "euler_exp" / "ruined_tier"
+rng = np.random.default_rng(0)
+
+
+def geo_ratio(x, y, reps=4000):
+    """Geometric mean of y/x over the matrices, with a bootstrap 95% interval."""
+    lr = np.log(np.asarray(y) / np.asarray(x))
+    boot = lr[rng.integers(0, len(lr), (reps, len(lr)))].mean(axis=1)
+    return np.exp(lr.mean()), np.exp(np.percentile(boot, 2.5)), np.exp(np.percentile(boot, 97.5))
 
 
 def load(pattern):
@@ -65,9 +77,16 @@ def main():
                 assert (pr.C - camp[f"{pre}_cycle"]).abs().max() < 1e-6, (name, d, method, "C")
             leaf_paper = sum(x[f"{p3}_time"].mean() for x in paper) / 3 * 1000
             split_paper = sum(x[f"{p3}_split"].mean() for x in paper) / 3 * 1000
+            g, glo, ghi = geo_ratio(three[f"{p3}_time"], four[f"{p4}_time"])
             rows.append(dict(
                 engine=name, depth=d, matrices=len(three),
-                leaf_ms_paper=leaf_paper, leaf_ms_3tier=three[f"{p3}_time"].mean() * 1000,
+                leaf_ms_paper=leaf_paper,
+                leaf_ms_paper_min=min(x[f"{p3}_time"].mean() for x in paper) * 1000,
+                leaf_ms_paper_max=max(x[f"{p3}_time"].mean() for x in paper) * 1000,
+                split_ms_paper_min=min(x[f"{p3}_split"].mean() for x in paper) * 1000,
+                split_ms_paper_max=max(x[f"{p3}_split"].mean() for x in paper) * 1000,
+                leaf_geo_4_vs_3=g, leaf_geo_4_vs_3_lo=glo, leaf_geo_4_vs_3_hi=ghi,
+                leaf_ms_3tier=three[f"{p3}_time"].mean() * 1000,
                 leaf_ms_4tier=four[f"{p4}_time"].mean() * 1000,
                 split_ms_paper=split_paper, split_ms_3tier=three[f"{p3}_split"].mean() * 1000,
                 split_ms_4tier=four[f"{p4}_split"].mean() * 1000,
@@ -86,6 +105,11 @@ def main():
         out["split_ms_rep2"] = [r2.loc[(names[e], d), "split_ms"] for e, d in zip(out.engine, out.depth)]
         out["rep2_vs_paper"] = out.leaf_ms_rep2 / out.leaf_ms_paper
         out["split_rep2_vs_paper"] = out.split_ms_rep2 / out.split_ms_paper
+        # the same night's three-tier campaign, memory held, as a second reference
+        out["rep2_vs_tonight"] = out.leaf_ms_rep2 / out.leaf_ms_3tier
+        out["split_rep2_vs_tonight"] = out.split_ms_rep2 / out.split_ms_3tier
+        out["total_rep2_vs_tonight"] = ((out.leaf_ms_rep2 + out.split_ms_rep2)
+                                        / (out.leaf_ms_3tier + out.split_ms_3tier))
     out.to_csv(DIR / "campaigns_summary.csv", index=False)
     print(f"{out.matrices.iloc[0]} matrices per campaign; N and cycle of tonight's three-tier "
           f"campaign equal all three paper sweeps on every matrix, and both campaigns equal "

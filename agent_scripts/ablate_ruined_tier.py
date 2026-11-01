@@ -31,11 +31,30 @@ Expected, and checked here leaf by leaf: a_only, 4tier_swap and a_swap split exa
   ranking split pairs above free pairs reproduces the exchange.
 - Ranking split pairs below free pairs at their lock-side vertex (b) is the one change
   that leaves a split pair with copies for later; at its other vertex it is reached first
-  anyway, so the extra split tier there (a) changes nothing even with (b).
-Three read-only reviews (2026-11-01) checked this argument against the code and with an
-exact transliteration of the kernel, and found no counterexample. b_last is the one other
-ranking of (b) that splits differently; small fuzz matrices suggested it might split fewer
-pairs than 4tier, which is why it is here.
+  anyway, so the extra split tier there (a) never changes a pick, even with (b).
+The steps this sketch relies on:
+- Locks never change under three tiers (dir is written only from 0), and every validity
+  test is monotone (cnt only falls; dir only moves 0 -> 1/2, and -> 3 where split pairs
+  leave tier 1). So lazy deletion only drops entries that stay invalid, and a stack's top
+  valid entry is its most recently pushed valid entry, whenever the pops happen.
+- Neither a pop nor a restart can interrupt an exchange: both ends of the split pair keep
+  degree >= its copies >= 1, and the outer loop advances only on an empty stack.
+- 4tier_swap equals 3tier at the lock-side vertex only because its split stack is read
+  before the free pairs; at the other vertex all three of a_only, a_swap and 4tier_swap
+  take the pair from that vertex's split stack, where it is the last push.
+- b_only equals 4tier because at any vertex the two kinds of split pair never both have
+  copies: the vertex's own lock-side split pairs are all used up before its first forced
+  pick (after it the vertex is never locked again), and a split against the lock there
+  happens only when its split stack has no valid entry.
+- The odd-S matching taken out first is the same for every variant.
+Three read-only reviews (2026-11-01) checked this against the code, with an exact
+transliteration of the kernel on small matrices (n <= 40), and found no counterexample to
+the identities. One review showed that "below the free pairs" does not fix the rule: the
+four-tier rule takes a split pair after the free pairs but before the pairs locked the
+other way, most recently split first, and other rankings that also put it below the free
+pairs (after the opposite pairs, oldest split first, or mixed into the opposite pairs)
+split differently. b_last, the first of these, is the one tested here; small fuzz
+matrices suggested it splits fewer pairs than 4tier.
 
 On the paper's workload (n=256, k=256, max weight 64, matrices i = 5..104 from seed 42),
 for every variant and depth 1-4: the leaf non-zeros (all leaves, and the largest leaf), the

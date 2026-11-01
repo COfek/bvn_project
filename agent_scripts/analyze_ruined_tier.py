@@ -56,6 +56,11 @@ def main():
                 continue
             dN = b.N - a.N
             lr, llo, lhi = geo_ratio(a.leaf_ms, b.leaf_ms)
+            # the same ratio on each order class: the alternation cancels a position
+            # effect p only on average (3-tier first gives r*p, 4-tier first r/p)
+            first3 = a.order == 0
+            lr3 = float(np.exp(np.log(b.leaf_ms[first3] / a.leaf_ms[first3]).mean()))
+            lr4 = float(np.exp(np.log(b.leaf_ms[~first3] / a.leaf_ms[~first3]).mean()))
             sr, slo, shi = geo_ratio(a.split_ms, b.split_ms)
             tr, tlo, thi = geo_ratio(a.leaf_ms + a.split_ms, b.leaf_ms + b.split_ms)
             rows.append(dict(
@@ -66,6 +71,7 @@ def main():
                 C_shorter=int((b.C < a.C - 1e-9).sum()), C_longer=int((b.C > a.C + 1e-9).sum()),
                 leaf_ms_3tier=a.leaf_ms.mean(), leaf_ms_4tier=b.leaf_ms.mean(),
                 leaf_ratio=lr, leaf_ratio_lo=llo, leaf_ratio_hi=lhi,
+                leaf_ratio_3tier_first=lr3, leaf_ratio_4tier_first=lr4,
                 split_ms_3tier=a.split_ms.mean(), split_ms_4tier=b.split_ms.mean(),
                 split_ratio=sr, split_ratio_lo=slo, split_ratio_hi=shi,
                 total_ratio=tr, total_ratio_lo=tlo, total_ratio_hi=thi))

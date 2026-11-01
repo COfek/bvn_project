@@ -11,6 +11,10 @@ last 20 matrices (i = 85..104) divided by the median over the first 20 kept (i =
   drift_paired_blocks.csv  the paired four-tier / three-tier leaf-time ratio (geometric
                        mean) per block of 10 matrices, to show whether the comparison
                        itself moves with the drift
+  split_vs_hungarian.csv  in each paired run, the split time of every engine's call over
+                       the Hungarian call's on the same matrix, depth and rule (the split
+                       is the same work in all of them): geometric mean over matrices
+                       5..104 with a bootstrap 95% interval
 
 Usage: python agent_scripts/analyze_timing_drift.py
 """
@@ -76,6 +80,26 @@ def main():
                                  leaf_ms_3tier_median=float(a.loc[lo:lo + 9].median())))
     pd.DataFrame(prow).to_csv(DIR / "drift_paired.csv", index=False)
     pd.DataFrame(brow).to_csv(DIR / "drift_paired_blocks.csv", index=False)
+
+    rng = np.random.default_rng(0)
+    srow = []
+    for tag in TAGS:
+        f = DIR / f"paired_results{tag}.csv"
+        if not f.exists():
+            continue
+        res = pd.read_csv(f)
+        res = res[res.matrix >= FIRST[0]].set_index(["engine", "depth", "method", "matrix"]).sort_index()
+        for d in sorted(res.index.get_level_values("depth").unique()):
+            for m in ("heuristic", "heuristic_ruined"):
+                ref = res.loc[("maximum", d, m)].split_ms
+                for eng in ("heavy", "heavy_static", "wfa"):
+                    lr = np.log(res.loc[(eng, d, m)].split_ms.loc[ref.index] / ref)
+                    boot = lr.to_numpy()[rng.integers(0, len(lr), (4000, len(lr)))].mean(axis=1)
+                    srow.append(dict(run=tag or "_rep1", depth=d, method=m, engine=eng,
+                                     ratio=float(np.exp(lr.mean())),
+                                     lo=float(np.exp(np.percentile(boot, 2.5))),
+                                     hi=float(np.exp(np.percentile(boot, 97.5)))))
+    pd.DataFrame(srow).to_csv(DIR / "split_vs_hungarian.csv", index=False)
 
     pd.set_option("display.width", 220); pd.set_option("display.max_rows", 300)
     print("August variance campaign: drift (last 20 / first 20 matrices), per sweep")

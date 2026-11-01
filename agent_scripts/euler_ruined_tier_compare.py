@@ -11,11 +11,12 @@ comparison is paired and does not see the between-run spread of separate campaig
 N, C and the leaf non-zeros are deterministic; only the times are measured.
 
 Every configuration is stored as a dense n x n matrix (about 6 GB for a WFA depth-4
-result), and in the first run (paired_results.csv) the previous call's result was still
-alive while the next one was timed. That makes the first and second run of a pair differ
-by up to ~12% whichever method runs first; the alternating order cancels it as bias but
-not as noise. Since the _rep2 run, the previous result is freed before every timed call
-(environment.json: free_between_runs).
+result). The first run (paired_results.csv, 2026-11-01) used this script as of commit
+ff5a7e2, which kept the previous call's result alive while the next one was timed; that
+made the first and second run of a pair differ by up to ~12% whichever method ran first,
+and the times drift over the run. Since commit 156bbbf the previous result is freed before
+every timed call (environment.json records free_between_runs), so rerunning the script
+reproduces the protocol of the second run (paired_results_rep2.csv), not the first.
 
 Usage: python agent_scripts/euler_ruined_tier_compare.py [matrices=105] [tag]
 
