@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
 
 from src.algorithms.euler_splitting import euler_split_once
 from tests.test_euler_splitting import _make_matrix
@@ -25,7 +25,10 @@ OUT = str(PLOTS)
 plt.rcParams.update({"font.family": "serif"})
 
 N, K, SEED, MAXW = 6, 3, 0, 6
-C_RED, C_BLUE, C_SPLIT = "#CC2222", "#1144BB", "#882299"
+# Okabe-Ito colours, safe under the common colour-vision deficiencies, and a different line
+# style per class, so the figure also reads in greyscale (Chen M5)
+C_RED, C_BLUE, C_SPLIT = "#D55E00", "#0072B2", "#000000"
+LS_RED, LS_BLUE, LS_SPLIT = "-", (0, (4, 1.5)), (0, (1, 1.2))
 
 
 def draw(ax, matrix, red, blue, title, max_labels=1):
@@ -47,12 +50,13 @@ def draw(ax, matrix, red, blue, title, max_labels=1):
             if m == 0:
                 continue
             r, b = int(red[i, j]), int(blue[i, j])
-            ec = C_RED if (r > 0 and b == 0) else C_BLUE if (b > 0 and r == 0) else C_SPLIT
+            ec, ls = ((C_RED, LS_RED) if (r > 0 and b == 0) else
+                      (C_BLUE, LS_BLUE) if (b > 0 and r == 0) else (C_SPLIT, LS_SPLIT))
             lw = 1.0 + m ** 0.55
             sign = 1 if (i + j) % 2 == 0 else -1
             rad = sign * (0.12 + 0.22 * abs(i - j) / max(n - 1, 1))
             ax.annotate("", xy=(1.0, col_ys[j]), xytext=(0.0, row_ys[i]),
-                        arrowprops=dict(arrowstyle="-", color=ec, lw=lw, alpha=.8,
+                        arrowprops=dict(arrowstyle="-", color=ec, lw=lw, alpha=.85, linestyle=ls,
                                         connectionstyle=f"arc3,rad={rad:.3f}"), zorder=2)
             if (i, j) in labelled:
                 ax.text(0.5, (row_ys[i] + col_ys[j]) / 2 + rad * 0.65, f"{r}R+{b}B",
@@ -61,10 +65,10 @@ def draw(ax, matrix, red, blue, title, max_labels=1):
                         bbox=dict(boxstyle="round,pad=0.15", fc="white", ec=ec,
                                   linewidth=0.5, alpha=.95))
     for i in range(n):
-        ax.plot(0, row_ys[i], "o", color="#4472C4", ms=15, zorder=6)
+        ax.plot(0, row_ys[i], "o", color="#444444", ms=15, zorder=6)
         ax.text(0, row_ys[i], f"r{i}", ha="center", va="center", fontsize=6.5,
                 color="white", fontweight="bold", zorder=7)
-        ax.plot(1, col_ys[i], "o", color="#548235", ms=15, zorder=6)
+        ax.plot(1, col_ys[i], "o", color="#888888", ms=15, zorder=6)
         ax.text(1, col_ys[i], f"c{i}", ha="center", va="center", fontsize=6.5,
                 color="white", fontweight="bold", zorder=7)
     clean = int(np.sum((red > 0) ^ (blue > 0)))
@@ -81,11 +85,13 @@ r_h, b_h = euler_split_once(mat, split_method="heuristic")
 
 fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.3))
 draw(axes[0], mat, r_e, b_e, "(a) alternating colouring")
-draw(axes[1], mat, r_h, b_h, "(b) same-direction heuristic")
+draw(axes[1], mat, r_h, b_h, "(b) sparse Euler splitting")
 fig.legend(handles=[
-    mpatches.Patch(color=C_RED, label="consistent pair, red"),
-    mpatches.Patch(color=C_BLUE, label="consistent pair, blue"),
-    mpatches.Patch(color=C_SPLIT, label="non-consistent pair, in both ($r$R+$b$B)")],
+    Line2D([], [], color=C_RED, ls=LS_RED, lw=2, label="consistent pair, red"),
+    Line2D([], [], color=C_BLUE, ls=LS_BLUE, lw=2, label="consistent pair, blue"),
+    Line2D([], [], color=C_SPLIT, ls=LS_SPLIT, lw=2,
+           label="non-consistent pair, in both ($r$R+$b$B)")],
+    handlelength=3,
     loc="lower center", ncol=3, fontsize=7, frameon=False, bbox_to_anchor=(.5, -.02))
 fig.tight_layout(rect=[0, .06, 1, 1])
 for ext in ("pdf", "png"):
