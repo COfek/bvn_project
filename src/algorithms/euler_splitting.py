@@ -812,6 +812,10 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
     pair costs no new non-zero in either direction, so it is held back until
     the walk would otherwise split a whole pair. ("ruined" is the parameter's
     historical name for non consistent.)
+    ruined_tier == 2: as 1, but at its lock-side vertex a non-consistent pair is
+    taken last, after the opposite pairs; at the vertex where it was split it is
+    found among the opposite pairs (split_method="heuristic_ruined_last", the
+    b_last variant of agent_scripts/ablate_ruined_tier.py).
     """
     cnt = np.zeros((n, n), dtype=np.int64)          # remaining copies per pair
     deg = np.zeros(2 * n, dtype=np.int64)           # remaining unit-degree
@@ -909,7 +913,7 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                         if cnt[i, j] > 0 and dir_arr[i, j] == 0:
                             u = n + j; break
                         empty_r_top[i] -= 1
-                if u == -1:
+                if u == -1 and ruined_tier != 2:
                     while ncons_r_top[i] > 0:
                         j = np.int64(ncons_r[i, ncons_r_top[i] - 1])
                         if cnt[i, j] > 0:
@@ -921,6 +925,12 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                         if cnt[i, j] > 0:
                             u = n + j; break
                         opp_r_top[i] -= 1
+                if u == -1 and ruined_tier == 2:   # non consistent last
+                    while ncons_r_top[i] > 0:
+                        j = np.int64(ncons_r[i, ncons_r_top[i] - 1])
+                        if cnt[i, j] > 0:
+                            u = n + j; break
+                        ncons_r_top[i] -= 1
             else:
                 j = v - n
                 while cons_c_top[j] > 0:
@@ -934,7 +944,7 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                         if cnt[i2, j] > 0 and dir_arr[i2, j] == 0:
                             u = i2; break
                         empty_c_top[j] -= 1
-                if u == -1:
+                if u == -1 and ruined_tier != 2:
                     while ncons_c_top[j] > 0:
                         i2 = np.int64(ncons_c[j, ncons_c_top[j] - 1])
                         if cnt[i2, j] > 0:
@@ -946,6 +956,12 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                         if cnt[i2, j] > 0:
                             u = i2; break
                         opp_c_top[j] -= 1
+                if u == -1 and ruined_tier == 2:   # non consistent last
+                    while ncons_c_top[j] > 0:
+                        i2 = np.int64(ncons_c[j, ncons_c_top[j] - 1])
+                        if cnt[i2, j] > 0:
+                            u = i2; break
+                        ncons_c_top[j] -= 1
 
             if u == -1:
                 # Safety guard: deg and stacks disagree (should be impossible;
@@ -964,9 +980,11 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                     cons_r[i, cons_r_top[i]] = np.int32(j); cons_r_top[i] += 1
                     opp_c[j, opp_c_top[j]] = np.int32(i); opp_c_top[j] += 1
                 elif ruined_tier != 0 and dir_arr[i, j] == 2:
+                    # a blue-locked pair traversed red: its lock side is column j
                     dir_arr[i, j] = 3
-                    ncons_r[i, ncons_r_top[i]] = np.int32(j); ncons_r_top[i] += 1
                     ncons_c[j, ncons_c_top[j]] = np.int32(i); ncons_c_top[j] += 1
+                    if ruined_tier == 1:
+                        ncons_r[i, ncons_r_top[i]] = np.int32(j); ncons_r_top[i] += 1
             else:
                 i = u; j = v - n
                 blue[i, j] += 1
@@ -975,9 +993,11 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
                     cons_c[j, cons_c_top[j]] = np.int32(i); cons_c_top[j] += 1
                     opp_r[i, opp_r_top[i]] = np.int32(j); opp_r_top[i] += 1
                 elif ruined_tier != 0 and dir_arr[i, j] == 1:
+                    # a red-locked pair traversed blue: its lock side is row i
                     dir_arr[i, j] = 3
                     ncons_r[i, ncons_r_top[i]] = np.int32(j); ncons_r_top[i] += 1
-                    ncons_c[j, ncons_c_top[j]] = np.int32(i); ncons_c_top[j] += 1
+                    if ruined_tier == 1:
+                        ncons_c[j, ncons_c_top[j]] = np.int32(i); ncons_c_top[j] += 1
 
             cnt[i, j] -= 1
             deg[v] -= 1
@@ -989,15 +1009,16 @@ def _euler_split_heuristic_fast_jit(M, n, ruined_tier):
 
 
 def _euler_split_heuristic_fast(
-    int_matrix: np.ndarray, ruined_tier: bool = False
+    int_matrix: np.ndarray, ruined_tier: int = 0
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Same-direction heuristic via O(1) tier stacks - the default fast path.
 
-    ruined_tier=True adds the fourth tier (split_method="heuristic_ruined").
+    ruined_tier=True (or 1) adds the fourth tier (split_method="heuristic_ruined");
+    ruined_tier=2 takes it last at its lock side ("heuristic_ruined_last").
     """
     n = int_matrix.shape[0]
     M = np.round(int_matrix).astype(np.int64)
-    return _euler_split_heuristic_fast_jit(M, n, 1 if ruined_tier else 0)
+    return _euler_split_heuristic_fast_jit(M, n, int(ruined_tier))
 
 
 def _choose_next_neighbor(
@@ -1198,6 +1219,9 @@ def euler_split_once(
                                           walk would otherwise split a whole
                                           pair (tiers: consistent, empty,
                                           non consistent, opposite).
+                      "heuristic_ruined_last" — as "heuristic_ruined", but a
+                                          non-consistent pair is taken last at
+                                          the vertex of its lock.
                       "heuristic_scan" — original O(n)-scan same-direction
                                           split, kept as reference.
 
@@ -1226,7 +1250,10 @@ def euler_split_once(
         red, blue = _euler_split_heuristic_fast(int_matrix)
     elif split_method == "heuristic_ruined":
         # Four tiers: non-consistent pairs are held back (see the JIT kernel).
-        red, blue = _euler_split_heuristic_fast(int_matrix, ruined_tier=True)
+        red, blue = _euler_split_heuristic_fast(int_matrix, ruined_tier=1)
+    elif split_method == "heuristic_ruined_last":
+        # Non-consistent pairs taken last at their lock side (see the JIT kernel).
+        red, blue = _euler_split_heuristic_fast(int_matrix, ruined_tier=2)
     elif split_method == "heuristic_scan":
         # Original O(n)-scan implementation, kept as a reference/cross-check.
         red, blue = _euler_split_heuristic(int_matrix)
