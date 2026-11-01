@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 26bcde8f-a14e-4d6d-9736-b16700cca933
-  modified: 2026-08-29T13:44:08.346Z
+  modified: 2026-11-01T07:32:38.971Z
 ---
 
 Established by audit on 2026-08-29. Any number in the paper must trace to one of these.
@@ -15,7 +15,12 @@ Established by audit on 2026-08-29. Any number in the paper must trace to one of
 - **Radix and the BvN baseline**: `run/rerun_2026/{max,heavy,heavy_static,wfa}/<timestamp>/`
   — 1000 matrices, first 5 discarded, `n=256 k=256 max_weight=64 seed=42`. ~57 min per engine.
 - **Euler**: `euler_exp/eng_{maximum,heavy,heavy_static,wfa}_dense_d4/<timestamp>/`
-  — **105 matrices**, depths 1–4.
+  — **105 matrices**, depths 1–4. The tables' times (tab_euler_all_engines.tex as generated 2026-10-04) are the mean of
+  `run/variance_2026/sweep{1,2,3}/euler/<engine>/` (same parameters; N and C identical to
+  eng_*_dense_d4 on every matrix). GW Static and WFA Euler times there are inflated by
+  memory the runner holds: see [[euler-timing-held-memory]].
+- **Experimental, never cite as canonical**: `euler_exp/ruined_tier/` (the 2026-11-01
+  four-tier comparison and ablation, see [[four-tier-euler-split]]).
 - **Superseded, never cite**: `final_runs/20260522_*` (its Hungarian run had 16 matrices with
   impossible `C < S`), `euler_exp/eng_*_dense/20260612_*`, `euler_exp/final_task2_dense/`.
 
