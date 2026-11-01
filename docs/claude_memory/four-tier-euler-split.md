@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 26bcde8f-a14e-4d6d-9736-b16700cca933
-  modified: 2026-11-01T07:32:33.233Z
+  modified: 2026-11-01T16:32:35.543Z
 ---
 
 Overnight 2026-11-01. Report: bvn_project `euler_exp/ruined_tier/REPORT.md`. Data are
@@ -27,8 +27,9 @@ experimental, never the paper's canonical source.
   - "Split pairs before whole ones at the other vertex" changes nothing. Ranking split pairs
     above the free pairs reproduces three tiers.
 - **`b_last`** (split pairs taken last at their lock-side vertex) is better still: 12.7% of
-  the excess removed, N -1.43% for Hungarian and -1.14% for GW Dynamic at depth 4. It exists
-  only in the ablation script and is untimed.
+  the excess removed, N -1.43% for Hungarian and -1.14% for GW Dynamic at depth 4. It is
+  now `--euler-split-method heuristic_ruined_last` in `src/`; first timed in the overnight
+  run of 2026-11-02 (`euler_exp/tier_rules_freed/`).
 
 **Why:** adopting any new rule means re-running every Euler experiment (the dense campaign,
 TM, MoE, skew, §7) and telling Chen, who agreed the three-tier text (changelog line 656).
@@ -38,3 +39,7 @@ TM, MoE, skew, §7) and telling Chen, who agreed the three-tier text (changelog 
   SUGGESTED) is in the report, section 6.
 - Tie the decision to [[euler-timing-held-memory]]: change the rule only if the Euler
   campaigns are re-run for that reason.
+- **Decision pending (M19, 2026-11-01):** Ofek chose to decide after the 2026-11-02 run.
+  Options: A keep three tiers plus a one-sentence remark on the fourth; B adopt four tiers or
+  b_last (regenerate every Euler number). Tiers in the paper are already named consistent /
+  empty / opposite (paper commit e15f8e8).
