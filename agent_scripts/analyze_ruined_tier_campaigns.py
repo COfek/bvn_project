@@ -8,7 +8,11 @@ leaf's time, the split time, the cycle length and N, for
   3-tier  tonight's rerun of the same campaign
   4-tier  tonight's campaign with --euler-split-method heuristic_ruined
 N and the cycle length are deterministic, so 3-tier must equal every paper sweep exactly,
-matrix by matrix; the script asserts it, and that all the campaigns cover the same matrices. The 3-tier/paper time ratio shows how far tonight's machine state is from
+matrix by matrix; the script asserts it, and that all the campaigns cover the same matrices.
+Both campaigns must also agree, matrix by matrix, with the paired comparison's N and C for
+the same method (paired_results.csv), which reaches the decomposition through a different
+route (the paired script calls decompose_euler_framework directly, the campaign goes
+through main.py). The 3-tier/paper time ratio shows how far tonight's machine state is from
 the August sweeps, the 4-tier/3-tier ratio is the effect at campaign level (one sweep
 each, so inside the between-run spread of a few percent; the paired comparison,
 euler_ruined_tier_compare.py, is the precise measurement).
@@ -37,6 +41,8 @@ def load(pattern):
 
 
 def main():
+    paired = pd.read_csv(DIR / "paired_results.csv")
+    paired = paired[paired.matrix >= WARMUP].set_index(["engine", "depth", "method", "matrix"]).sort_index()
     rows = []
     for eng, name in ENGINES.items():
         paper = [load(f"run/variance_2026/sweep{s}/euler/{eng}/*/results_stats.csv") for s in (1, 2, 3)]
@@ -48,6 +54,11 @@ def main():
             for q in ("perms", "cycle"):
                 for x in paper:
                     assert (three[f"{p3}_{q}"] - x[f"{p3}_{q}"]).abs().max() < 1e-6, (name, d, q)
+            for camp, method, pre in ((three, "heuristic", p3), (four, "heuristic_ruined", p4)):
+                pr = paired.loc[(eng, d, method)].reindex(camp.index)
+                assert pr.N.notna().all(), (name, d, method, "matrix missing from the paired run")
+                assert (pr.N - camp[f"{pre}_perms"]).abs().max() < 1e-6, (name, d, method, "N")
+                assert (pr.C - camp[f"{pre}_cycle"]).abs().max() < 1e-6, (name, d, method, "C")
             leaf_paper = sum(x[f"{p3}_time"].mean() for x in paper) / 3 * 1000
             split_paper = sum(x[f"{p3}_split"].mean() for x in paper) / 3 * 1000
             rows.append(dict(
@@ -63,7 +74,8 @@ def main():
     out["leaf_4_vs_3"] = out.leaf_ms_4tier / out.leaf_ms_3tier
     out.to_csv(DIR / "campaigns_summary.csv", index=False)
     print(f"{out.matrices.iloc[0]} matrices per campaign; N and cycle of tonight's three-tier "
-          f"campaign equal all three paper sweeps on every matrix.\n")
+          f"campaign equal all three paper sweeps on every matrix, and both campaigns equal "
+          f"the paired comparison's N and C on every matrix.\n")
     for r in out.itertuples():
         print(f"{r.engine:10s} d{r.depth}  slowest leaf (ms) paper {r.leaf_ms_paper:7.1f}  "
               f"3-tier {r.leaf_ms_3tier:7.1f} (x{r.tonight_vs_paper:.3f})  4-tier {r.leaf_ms_4tier:7.1f} "
