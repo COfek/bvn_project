@@ -5,8 +5,8 @@ rule ("heuristic") in two ways:
   (a) where a pair is locked to the opposite direction, pairs already split are taken
       before whole ones (the three-tier rule mixes them, most recently locked first);
   (b) on its lock side, a split pair leaves tier 1 and waits with the other split pairs.
-It also ranks split pairs below the pairs not yet locked. Six variants of one kernel, a
-copy of _euler_split_heuristic_fast_jit with four switches, separate the pieces:
+It also ranks split pairs below the pairs not yet locked. Seven variants of one kernel, a
+copy of _euler_split_heuristic_fast_jit with five switches, separate the pieces:
   3tier       the paper's rule                          (= "heuristic")
   4tier       (a) + (b), split pairs after free pairs   (= "heuristic_ruined")
   a_only      (a) only: a split pair stays tier 1 on its lock side
@@ -14,6 +14,7 @@ copy of _euler_split_heuristic_fast_jit with four switches, separate the pieces:
               most recently locked first, as in the three-tier rule
   4tier_swap  (a) + (b), split pairs before free pairs
   a_swap      (a) only, split pairs before free pairs
+  b_last      b_only with split pairs after the opposite pairs too, i.e. last
 The copy is checked against the production kernel first: 3tier and 4tier must reproduce
 "heuristic" and "heuristic_ruined" exactly, leaf by leaf, on every matrix and depth.
 
@@ -31,10 +32,17 @@ Expected, and checked here leaf by leaf: a_only, 4tier_swap and a_swap split exa
 - Ranking split pairs below free pairs at their lock-side vertex (b) is the one change
   that leaves a split pair with copies for later; at its other vertex it is reached first
   anyway, so the extra split tier there (a) changes nothing even with (b).
+Three read-only reviews (2026-11-01) checked this argument against the code and with an
+exact transliteration of the kernel, and found no counterexample. b_last is the one other
+ranking of (b) that splits differently; small fuzz matrices suggested it might split fewer
+pairs than 4tier, which is why it is here.
 
 On the paper's workload (n=256, k=256, max weight 64, matrices i = 5..104 from seed 42),
 for every variant and depth 1-4: the leaf non-zeros (all leaves, and the largest leaf), the
-pairs split at that level, and whether the leaves equal those of 3tier and of 4tier. With
+pairs in both halves created at that level (split_at_level = non-zeros of the two halves
+minus those of the parent, summed over the level; at an odd-S level this includes pairs
+that are in both halves only because the matching taken out first is added to red), and
+whether the leaves equal those of 3tier and of 4tier. With
 N=1, N and the cycle length C for each engine are also counted, for the variants in
 N_VARIANTS and for 3tier and 4tier on the first N_CHECK matrices (a check against
 paired_results.csv), through the same engine calls the Euler framework makes (_leaf_bvn)
@@ -66,20 +74,24 @@ from src.utils.matrix_generator import generate_matrix
 N_DIM, K, W, SEED, SKIP = 256, 256, 64.0, 42, 5
 DEPTHS = (1, 2, 3, 4)
 ENGINES = ("maximum", "heavy", "heavy_static", "wfa")
-# variant: (split_tier, split_leaves_t1, split_before_free, split_tier_opposite)
-VARIANTS = {"3tier": (0, 0, 0, 0), "4tier": (1, 1, 0, 1), "a_only": (1, 0, 0, 1),
-            "b_only": (1, 1, 0, 0), "4tier_swap": (1, 1, 1, 1), "a_swap": (1, 0, 1, 1)}
+# variant: (split_tier, split_leaves_t1, split_before_free, split_tier_opposite, split_last)
+VARIANTS = {"3tier": (0, 0, 0, 0, 0), "4tier": (1, 1, 0, 1, 0), "a_only": (1, 0, 0, 1, 0),
+            "b_only": (1, 1, 0, 0, 0), "4tier_swap": (1, 1, 1, 1, 0), "a_swap": (1, 0, 1, 1, 0),
+            "b_last": (1, 1, 0, 0, 1)}
 PRODUCTION = {"3tier": "heuristic", "4tier": "heuristic_ruined"}
-N_VARIANTS, N_CHECK = ("b_only",), 5
+N_VARIANTS, N_CHECK = ("b_last",), 5
 OUT = REPO / "euler_exp" / "ruined_tier"
 
 
 @jit(nopython=True, nogil=True, cache=True)
-def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, split_tier_opposite):
+def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, split_tier_opposite,
+                       split_last):
     """_euler_split_heuristic_fast_jit with switches (see the module docstring).
     dir_arr: 0 free, 1 red, 2 blue, 3 split (only when split_leaves_t1). A pair split
     enters the split list of its lock-side vertex, and of the other vertex too when
-    split_tier_opposite; otherwise it is found there among the opposite pairs (t3)."""
+    split_tier_opposite; otherwise it is found there among the opposite pairs (t3).
+    The split list is read before the free pairs (split_before_free), after them, or
+    after the opposite pairs too (split_last)."""
     cnt = np.zeros((n, n), dtype=np.int64)
     deg = np.zeros(2 * n, dtype=np.int64)
     nnz_per_row = np.zeros(n, dtype=np.int64)
@@ -180,7 +192,7 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
                         if cnt[i, j] > 0 and dir_arr[i, j] == 0:
                             u = n + j; break
                         t2_r_top[i] -= 1
-                if u == -1 and split_tier != 0 and split_before_free == 0:
+                if u == -1 and split_tier != 0 and split_before_free == 0 and split_last == 0:
                     while tr_r_top[i] > 0:
                         j = np.int64(tr_r[i, tr_r_top[i] - 1])
                         if cnt[i, j] > 0:
@@ -192,6 +204,12 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
                         if cnt[i, j] > 0:
                             u = n + j; break
                         t3_r_top[i] -= 1
+                if u == -1 and split_tier != 0 and split_last != 0:
+                    while tr_r_top[i] > 0:
+                        j = np.int64(tr_r[i, tr_r_top[i] - 1])
+                        if cnt[i, j] > 0:
+                            u = n + j; break
+                        tr_r_top[i] -= 1
             else:
                 j = v - n
                 while t1_c_top[j] > 0:
@@ -211,7 +229,7 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
                         if cnt[i2, j] > 0 and dir_arr[i2, j] == 0:
                             u = i2; break
                         t2_c_top[j] -= 1
-                if u == -1 and split_tier != 0 and split_before_free == 0:
+                if u == -1 and split_tier != 0 and split_before_free == 0 and split_last == 0:
                     while tr_c_top[j] > 0:
                         i2 = np.int64(tr_c[j, tr_c_top[j] - 1])
                         if cnt[i2, j] > 0:
@@ -223,6 +241,12 @@ def _split_variant_jit(M, n, split_tier, split_leaves_t1, split_before_free, spl
                         if cnt[i2, j] > 0:
                             u = i2; break
                         t3_c_top[j] -= 1
+                if u == -1 and split_tier != 0 and split_last != 0:
+                    while tr_c_top[j] > 0:
+                        i2 = np.int64(tr_c[j, tr_c_top[j] - 1])
+                        if cnt[i2, j] > 0:
+                            u = i2; break
+                        tr_c_top[j] -= 1
 
             if u == -1:
                 deg[v] = 0
