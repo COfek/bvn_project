@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 26bcde8f-a14e-4d6d-9736-b16700cca933
-  modified: 2026-11-01T16:32:35.543Z
+  modified: 2026-11-02T10:15:45.061Z
 ---
 
 Overnight 2026-11-01. Report: bvn_project `euler_exp/ruined_tier/REPORT.md`. Data are
@@ -39,7 +39,7 @@ TM, MoE, skew, §7) and telling Chen, who agreed the three-tier text (changelog 
   SUGGESTED) is in the report, section 6.
 - Tie the decision to [[euler-timing-held-memory]]: change the rule only if the Euler
   campaigns are re-run for that reason.
-- **Decision pending (M19, 2026-11-01):** Ofek chose to decide after the 2026-11-02 run.
-  Options: A keep three tiers plus a one-sentence remark on the fourth; B adopt four tiers or
-  b_last (regenerate every Euler number). Tiers in the paper are already named consistent /
-  empty / opposite (paper commit e15f8e8).
+- **Decided 2026-11-02 (M19): option A.** The 2026-11-02 run (`euler_exp/tier_rules_freed/`,
+  committed abdb073 with REPORT.md) showed N -0.94% (four tiers) / -1.41% (b_last) at best,
+  times unchanged within noise. Paper keeps three tiers plus one sentence ("less than 1%",
+  paper commit c417e90). Revisit only if the Euler campaigns are re-run anyway.
