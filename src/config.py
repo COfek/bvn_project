@@ -46,10 +46,10 @@ class ExperimentConfig:
 
     # Free every earlier result before each timed call (the BvN baseline's once its
     # statistics are taken, the previous Radix base's and Euler depth's), with
-    # gc.collect(). Off by default, so the published campaigns stay reproducible;
-    # with it off, results held in memory slow the timed calls of the engines with
-    # many configurations (euler_exp/ruined_tier/REPORT.md, section 4).
-    free_between_runs: bool = False
+    # gc.collect(). On by default since 2026-11-02 (R12): held results slow the timed
+    # calls of the engines with many configurations (euler_exp/ruined_tier/REPORT.md,
+    # section 4). --no-free-between-runs reproduces the campaigns run before that date.
+    free_between_runs: bool = True
 
     # BvN matching engine used on the Euler leaves AND for the BvN baseline
     # when engine == "euler_bvn" (so baseline vs. leaves is a fair
