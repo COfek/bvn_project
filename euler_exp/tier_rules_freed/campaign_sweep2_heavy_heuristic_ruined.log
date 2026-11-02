@@ -1,0 +1,62 @@
+Logging configured. Log file: 
+euler_exp\tier_rules_freed\sweep2\eng_heavy_heuristic_ruined\20261102_034901\lo
+g.txt
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ BvN-Arbiter Benchmark Started ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+[11/02/26 03:49:01] INFO     Run directory:                                    
+                             euler_exp\tier_rules_freed\sweep2\eng_heavy_heuris
+                             tic_ruined\20261102_034901 |  Engine: euler_bvn | 
+                             Bases: []                                         
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=105,        
+                             parallel=False                                    
+[11/02/26 03:49:27] INFO     Progress: 5/105 matrices processed (5%)           
+[11/02/26 03:49:52] INFO     Progress: 10/105 matrices processed (10%)         
+[11/02/26 03:50:17] INFO     Progress: 15/105 matrices processed (14%)         
+[11/02/26 03:50:41] INFO     Progress: 20/105 matrices processed (19%)         
+[11/02/26 03:51:06] INFO     Progress: 25/105 matrices processed (24%)         
+[11/02/26 03:51:30] INFO     Progress: 30/105 matrices processed (29%)         
+[11/02/26 03:51:56] INFO     Progress: 35/105 matrices processed (33%)         
+[11/02/26 03:52:20] INFO     Progress: 40/105 matrices processed (38%)         
+[11/02/26 03:52:45] INFO     Progress: 45/105 matrices processed (43%)         
+[11/02/26 03:53:09] INFO     Progress: 50/105 matrices processed (48%)         
+[11/02/26 03:53:34] INFO     Progress: 55/105 matrices processed (52%)         
+[11/02/26 03:53:58] INFO     Progress: 60/105 matrices processed (57%)         
+[11/02/26 03:54:23] INFO     Progress: 65/105 matrices processed (62%)         
+[11/02/26 03:54:47] INFO     Progress: 70/105 matrices processed (67%)         
+[11/02/26 03:55:11] INFO     Progress: 75/105 matrices processed (71%)         
+[11/02/26 03:55:35] INFO     Progress: 80/105 matrices processed (76%)         
+[11/02/26 03:56:00] INFO     Progress: 85/105 matrices processed (81%)         
+[11/02/26 03:56:24] INFO     Progress: 90/105 matrices processed (86%)         
+[11/02/26 03:56:48] INFO     Progress: 95/105 matrices processed (90%)         
+[11/02/26 03:57:13] INFO     Progress: 100/105 matrices processed (95%)        
+[11/02/26 03:57:38] INFO     Progress: 105/105 matrices processed (100%)       
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             516.849 seconds                                   
+                    INFO     Saved CSV:                                        
+                             euler_exp\tier_rules_freed\sweep2\eng_heavy_heuris
+                             tic_ruined\20261102_034901\results_stats.csv      
+==============================================================================
+Euler framework comparison summary  (100 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = sequential splitting phase, reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -     1299.67       1.000        -      8174    1122
+euler_heuristic_ruined_depth1    2.0     16.08      481.22       0.370    0.370      8174    1408
+euler_heuristic_ruined_depth2    4.0     25.47      192.35       0.148    0.400      8174    1838
+euler_heuristic_ruined_depth3    8.0     31.83       87.02       0.067    0.452      8174    2445
+euler_heuristic_ruined_depth4   16.0     38.31       44.10       0.034    0.507      8174    3256
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+                    INFO     Saved comparison summary:                         
+                             euler_exp\tier_rules_freed\sweep2\eng_heavy_heuris
+                             tic_ruined\20261102_034901\euler_comparison_summar
+                             y.txt                                             
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ Benchmark Complete! ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
