@@ -66,7 +66,11 @@ def test_metrics_cycle_and_permutations():
     cycle_length = float(sum(comp.weight for comp in radix_components))
     num_permutations = len(radix_components)
     
-    assert cycle_length >= k, "Cycle length should at least be K (usually more due to overhead)."
+    # The lower bound is the row sum S (Proposition: C >= S, equality for exact BvN), not k
+    S = float(matrix.sum(axis=1)[0])
+    assert cycle_length >= S - 1e-9, "Cycle length cannot fall below the row sum S."
+    rebuilt = sum(c.matrix for c in radix_components)
+    np.testing.assert_allclose(rebuilt, matrix, atol=1e-7)
     assert num_permutations == len(radix_components), "Permutation count strictly equals number of components."
 
 
