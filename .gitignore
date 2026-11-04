@@ -90,3 +90,6 @@ config.json
 *.swo
 *.log
 *.err
+
+# Claude Code worktrees (each is its own checkout)
+.claude/worktrees/
