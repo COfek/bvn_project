@@ -74,7 +74,7 @@ def draw(ax, matrix, red, blue, title, max_labels=1):
     clean = int(np.sum((red > 0) ^ (blue > 0)))
     nsplit = int(np.sum((red > 0) & (blue > 0)))
     ax.set_xlim(-0.22, 1.22); ax.set_ylim(-0.55, n - 0.45)
-    ax.set_title(f"{title}\nconsistent pairs = {clean}    non-consistent pairs = {nsplit}",
+    ax.set_title(f"{title}\ncommunication pairs: {clean} consistent, {nsplit} non-consistent",
                  fontsize=8.5, pad=6)
     ax.axis("off")
 
@@ -87,10 +87,10 @@ fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.3))
 draw(axes[0], mat, r_e, b_e, "(a) alternating colouring")
 draw(axes[1], mat, r_h, b_h, "(b) sparse Euler splitting")
 fig.legend(handles=[
-    Line2D([], [], color=C_RED, ls=LS_RED, lw=2, label="consistent pair, red"),
-    Line2D([], [], color=C_BLUE, ls=LS_BLUE, lw=2, label="consistent pair, blue"),
+    Line2D([], [], color=C_RED, ls=LS_RED, lw=2, label="consistent comm. pair, red"),
+    Line2D([], [], color=C_BLUE, ls=LS_BLUE, lw=2, label="consistent comm. pair, blue"),
     Line2D([], [], color=C_SPLIT, ls=LS_SPLIT, lw=2,
-           label="non-consistent pair, in both ($r$R+$b$B)")],
+           label="non-consistent comm. pair, in both ($r$R+$b$B)")],
     handlelength=3,
     loc="lower center", ncol=3, fontsize=7, frameon=False, bbox_to_anchor=(.5, -.02))
 fig.tight_layout(rect=[0, .06, 1, 1])
