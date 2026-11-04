@@ -21,7 +21,8 @@ A modular Python framework for decomposing K-regular / doubly-stochastic traffic
 
 ## Setup
 
-Requires **Python 3.11+**. From a fresh clone:
+Requires **Python 3.11+** (the paper's timings were measured with Python 3.13, NumPy 2.3.5,
+SciPy 1.17.0 and Numba 0.63.1). From a fresh clone:
 
 ```bash
 # 1. Clone and enter the project
@@ -82,7 +83,13 @@ Each input matrix is generated as a sum of $k$ random permutations, each scaled 
 The suite evaluates engines based on three competing parameters:
 1. **Permutation Count** — total unique configurations required (minimizes reconfiguration overhead).
 2. **Cycle Length** — total weight / duration of the schedule (maximizes throughput).
-3. **Runtime** — CPU time required to compute the decomposition (critical for real-time scheduling). For Radix, runtime is the **maximum** plane runtime, simulating ideal hardware parallelism across digit planes.
+3. **Runtime** — time to compute the decomposition (critical for real-time scheduling). For Radix, runtime is the digit extraction plus the **maximum** plane runtime, simulating ideal hardware parallelism across digit planes; for Euler it is the split phase (each level charged its slowest split) plus the slowest leaf.
+
+**What the clock covers.** Every timed call (BvN baseline, each Radix plane, each Euler split and
+leaf) runs alone, one after another, with every earlier result freed. The time covers finding the
+matchings and their weights; turning each matching into a dense $n 	imes n$ matrix happens after the
+clock stops. Campaigns run before 2026-11-04 included that step and timed the Euler split as a
+threaded wall clock (see `docs/code_review_2026-11-04.md`).
 
 ---
 
@@ -107,12 +114,14 @@ bvn_project/
 │       ├── analysis.py                  # Post-run Euler comparison summary
 │       ├── run_utils.py                 # Run-folder + config persistence
 │       ├── logging_utils.py             # Rich logging + timed sections
-│       └── stats.py                     # DecompositionStats dataclass
+│       ├── stats.py                     # DecompositionStats dataclass
+│       ├── griner_avin_tm.py            # Griner-Avin traffic-matrix workloads
+│       └── moe_trace.py                 # Mixture-of-Experts trace workloads
 ├── tests/                               # pytest correctness tests
-├── agent_scripts/                       # Sweep drivers, analysis, debug helpers
-├── run/                                 # Timestamped per-run outputs (created at runtime)
-├── summary/                             # Headline experiment grid (engine × generator)
-├── logs/                                # Historical run logs
+├── agent_scripts/                       # Campaign launchers, paper tables and figures, analysis
+├── run/                                 # Per-run outputs; the paper's campaigns in named folders
+├── euler_exp/                           # Euler-splitting campaigns and experiments
+├── docs/                                # Code review, accumulated project notes
 ├── requirements.txt
 └── README.md
 ```
@@ -135,12 +144,12 @@ The compound engine modes (`wfa_bvn`, `heavy_bvn`, `heavy_static_bvn`, `maximum_
 
 ## Matching Engines
 
-All four engines are heavily optimized with Numba JIT (`nopython=True, nogil=True`).
+The `wfa`, `heavy` and `heavy_static` engines are compiled with Numba (`nopython=True, nogil=True`); `maximum` calls SciPy's compiled assignment routine, so a comparison of times between engines compares implementations as well as algorithms.
 
 | Engine (`-e`) | Strategy | Complexity | Notes |
 | :--- | :--- | :--- | :--- |
 | `wfa` | Wavefront diagonal sweep | $O(N^2)$ per match | Hardware-style maximal matching, lowest latency. |
-| `maximum` | Hungarian (`scipy.optimize.linear_sum_assignment`) | $O(N^3)$ | True maximum-weight matching, minimizes permutation count. |
+| `max` | Hungarian (`scipy.optimize.linear_sum_assignment`) | $O(N^3)$ | True maximum-weight matching, minimizes permutation count. |
 | `heavy` | Greedy sorted-edge matching, **resorted every iteration** | $O(L \log L)$ per iter | Targets cycle length / throughput. |
 | `heavy_static` | Greedy sorted-edge matching, **sorted once at startup** | $O(L \log L)$ once | Faster variant of `heavy`; trades some optimality for speed. |
 
@@ -180,9 +189,10 @@ python main.py --size 256 --k 256 --engine all --samples 100
 | `--unit-weight` | — | `float` | Scale factor applied to the matrix after generation (use powers of the radix base to shift digit-plane significance). | `1.0` |
 | `--float-weights` | — | flag | Sample real-valued weights instead of integers. | off |
 | `--radix-bases` | — | `int*` | List of radix bases to test. Not given → `[2 4 8 16 32]` for radix engines, **none** for `euler_bvn` (pass explicitly to add Radix to an Euler run). | (per engine) |
-| `--step-strategy` | — | `str` | Radix step-size: `min` / `max` / `median` / `all`. | `min` |
+| `--step-strategy` | — | `str` | Step size of each peel: `min` / `max` / `median`, for the baseline, Radix planes and Euler leaves; `all` runs Radix with each of the three. | `min` |
 | `--random-seed` | — | `int` | Base seed (each sample uses `seed + index`). | `42` |
-| `--max-workers` | — | `int` | Worker count for parallel plane/leaf processing. | `None` |
+| `--max-workers` | — | `int` | Process workers when matrices run in parallel; no effect on the timings (planes, splits and leaves are always timed alone). | `None` |
+| `--free-between-runs` / `--no-free-between-runs` | — | flag | Free every earlier result before each timed call. The second form reproduces campaigns run before 2026-11-02. | on |
 | `--plot-from-csv` | — | `str` | Path to an existing `results_stats.csv`; regenerates plots only and exits. | `None` |
 
 #### Euler-splitting flags (used with `-e euler_bvn`)
@@ -190,7 +200,8 @@ python main.py --size 256 --k 256 --engine all --samples 100
 | Flag | Type | Description | Default |
 | :--- | :--- | :--- | :--- |
 | `--euler-depths` | `int*` | Split depths to test (depth $d$ → $2^d$ leaves; depth 0 = plain BvN). | `[1]` |
-| `--euler-split-method` | `str` | `heuristic` (same-direction, sparser leaves), `euler` (plain 2-colouring), `euler_grouped` (O(nnz) bulk), `greedy`. | `heuristic` |
+| `--euler-colors` | `int*` | Number of leaves instead of depths (powers of 2; overrides `--euler-depths`). | — |
+| `--euler-split-method` | `str` | `heuristic` (same-direction, three tiers: the paper's sparse Euler splitting), `heuristic_ruined` / `heuristic_ruined_last` (four-tier variants), `heuristic_scan` (reference implementation), `euler` (plain 2-colouring), `euler_grouped` (O(nnz) bulk), `greedy`. | `heuristic` |
 | `--euler-leaf-engine` | `str` | Matching engine for the leaves **and** the BvN baseline/Radix planes in this run: `heavy`, `heavy_static`, `wfa`, `maximum`, `minimum`. | `heavy_static` |
 
 ### Execution Examples
@@ -229,7 +240,7 @@ Each invocation creates a timestamped folder under the `--output` directory cont
 run/
 └── 20260227_113213/
     ├── config.json              # Snapshot of ExperimentConfig
-    ├── log.txt                  # Per-run log (also mirrored to logs/)
+    ├── log.txt                  # Per-run log
     ├── results_stats.csv        # One row per matrix; runtime/cycle/perms for BvN + every engine_base combo
     └── plots/
         ├── cycle_length_all_methods.png
@@ -268,7 +279,9 @@ The tests live in `tests/` and verify:
 - Cycle-length invariants hold ($C = S$ for strong engines, $C \ge S$ for WFA).
 - Permutation count and cycle length metrics are computed correctly.
 
-A GitHub Actions workflow (`.github/workflows/python-tests.yml`) runs pytest on push.
+A GitHub Actions workflow (`.github/workflows/python-tests.yml`) runs the fast suite on every push.
+A run in which any matrix fails exits with code 1 and writes the finished matrices to
+`results_stats_INCOMPLETE.csv` instead of `results_stats.csv`.
 
 ---
 
