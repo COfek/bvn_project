@@ -47,14 +47,15 @@ import time
 import numpy as np
 import pandas as pd
 
-from src.algorithms.bvn import bvn_decomposition
+from src.algorithms.bvn import bvn_decomposition_timed
 from src.algorithms.euler_splitting import decompose_euler_framework
 from src.algorithms.radix_decomposition import decompose_radix
 from src.utils.moe_trace import load_all
 
 ROOT = str(REPO)
 TRACES = os.path.join(ROOT, "paper_traces")
-OUTDIR = os.path.join(ROOT, "run", "moe_workload")
+# BVN_RUN_ROOT redirects a rerun away from the committed campaign (default: run/)
+OUTDIR = os.path.join(ROOT, os.environ.get("BVN_RUN_ROOT", "run"), "moe_workload")
 
 ENGINES = [("Hungarian", "maximum"), ("WFA", "wfa"),
            ("GW Dynamic", "heavy"), ("GW Static", "heavy_static")]
@@ -84,9 +85,8 @@ def run_all(M, engine_key):
     # --- BvN baseline ---
     ts = []
     for _ in range(REPEATS):
-        t0 = time.perf_counter()
-        comps = bvn_decomposition(M.copy(), matching_algorithm=engine_key)
-        ts.append((time.perf_counter() - t0) * 1000)
+        comps, seconds = bvn_decomposition_timed(M.copy(), matching_algorithm=engine_key)
+        ts.append(seconds * 1000)
     rt = _med(ts)
     recon = sum(c.weight * c.permutation for c in comps)
     out.append(dict(config="BvN", N=len(comps), C=_cycle(comps), runtime_ms=rt,
@@ -98,11 +98,9 @@ def run_all(M, engine_key):
     for b in BASES:
         ts = []
         for _ in range(REPEATS):
-            t0 = time.perf_counter()
             comps, max_plane_s, n_planes = decompose_radix(
                 M.copy(), base=b, matching_method=engine_key)
             ts.append(max_plane_s * 1000)
-            _ = time.perf_counter() - t0
         rt = _med(ts)
         recon = sum(c.matrix for c in comps)
         out.append(dict(config=f"B{b}", N=len(comps), C=_cycle(comps), runtime_ms=rt,

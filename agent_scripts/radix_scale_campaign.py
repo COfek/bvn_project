@@ -31,7 +31,8 @@ from src.utils.griner_avin_tm import tm_integer
 from src.utils.matrix_generator import generate_matrix
 
 ROOT = str(REPO)
-OUTDIR = os.path.join(ROOT, "run", "radix_scale")
+# BVN_RUN_ROOT redirects a rerun away from the committed campaign (default: run/)
+OUTDIR = os.path.join(ROOT, os.environ.get("BVN_RUN_ROOT", "run"), "radix_scale")
 
 N = 256
 N_MATRICES = 4

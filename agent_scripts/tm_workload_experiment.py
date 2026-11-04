@@ -27,14 +27,15 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from src.algorithms.bvn import bvn_decomposition
+from src.algorithms.bvn import bvn_decomposition_timed
 from src.algorithms.radix_decomposition import decompose_radix
 from src.algorithms.euler_splitting import decompose_euler_framework
 from src.utils.griner_avin_tm import tm_integer
 from src.utils.matrix_generator import generate_matrix
 
 ROOT = str(REPO)
-OUTDIR = os.path.join(ROOT, "run", "tm_workload")
+# BVN_RUN_ROOT redirects a rerun away from the committed campaign (default: run/)
+OUTDIR = os.path.join(ROOT, os.environ.get("BVN_RUN_ROOT", "run"), "tm_workload")
 PLOTS = str(PLOTS)
 
 N = 256
@@ -64,9 +65,8 @@ def run_all(M, engine_key):
     out = []
 
     # --- BvN baseline ---
-    t0 = time.perf_counter()
-    comps = bvn_decomposition(M.copy(), matching_algorithm=engine_key)
-    rt = (time.perf_counter() - t0) * 1000
+    comps, seconds = bvn_decomposition_timed(M.copy(), matching_algorithm=engine_key)
+    rt = seconds * 1000
     out.append(dict(config="BvN", N=len(comps), C=_cycle(comps), runtime_ms=rt,
                     split_ms=0.0, unit_ms=rt, units=1))
 
