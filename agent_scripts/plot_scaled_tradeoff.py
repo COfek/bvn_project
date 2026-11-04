@@ -1,4 +1,7 @@
-"""Runtime vs cycle-length trade-off, with the scale-tuned Radix points.
+"""
+Writes scaled_tradeoff_all_scales.pdf: the paper's scaled_tradeoff.pdf comes from
+fig_paper_tradeoffs.py, and this script used to overwrite it with a different figure.
+Runtime vs cycle-length trade-off, with the scale-tuned Radix points.
 
 Solid = Radix with the per-base tuned scale; faint dashed = the original (untuned)
 trajectory. Cycle is reported in the ORIGINAL matrix's units (C_scaled / c), so all
@@ -63,6 +66,6 @@ ax.tick_params(labelsize=6.5)
 ax.grid(True, which="both", ls=":", lw=.35, alpha=.6)
 ax.legend(fontsize=6, framealpha=.95, loc="upper right")
 fig.tight_layout()
-fig.savefig(os.path.join(PLOTS, "scaled_tradeoff.pdf"), bbox_inches="tight")
-fig.savefig(os.path.join(PLOTS, "scaled_tradeoff.png"), dpi=145, bbox_inches="tight")
+fig.savefig(os.path.join(PLOTS, "scaled_tradeoff_all_scales.pdf"), bbox_inches="tight")
+fig.savefig(os.path.join(PLOTS, "scaled_tradeoff_all_scales.png"), dpi=145, bbox_inches="tight")
 print("saved scaled_tradeoff")

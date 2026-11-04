@@ -100,6 +100,8 @@ def random_permutation_matrix_no_dig(size_of_perm):
 def _derangement(n: int, rng: np.random.Generator) -> NDArray[np.int64]:
     """Random derangement (no fixed point), same semantics as the authors'
     `random_permutation_matrix_no_dig` but with an explicit rng for seeding."""
+    if n < 2:
+        raise ValueError(f"a derangement needs n >= 2, got n={n}")
     arr = rng.permutation(n)
     while np.any(arr == np.arange(n)):
         arr = rng.permutation(n)

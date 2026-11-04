@@ -1,8 +1,11 @@
+# Lower bounds for running the code. The paper's timings were measured with exactly
+# numpy 2.3.5, scipy 1.17.0, numba 0.63.1 and pandas 3.0.0 on Python 3.13: install those
+# versions to reproduce a timing.
 numpy>=2.0
 scipy>=1.17
 matplotlib>=3.10
-networkx>=3.6
 rich>=14.0
-pytest>=9.0
 numba>=0.63
 pandas>=2.0
+# tests
+pytest>=9.0
