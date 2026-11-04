@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 import multiprocessing
+import sys
 from pathlib import Path
 
 from src.cli import parse_args
 from src.config import ExperimentConfig
 from src.plotting import plot_results
-from src.runner import run_experiment
+from src.runner import ExperimentIncomplete, run_experiment
 from src.utils.analysis import write_euler_comparison_summary
 from src.utils.io_utils import parse_stats_from_csv, write_stats_to_csv
 from src.utils.logging_utils import configure_logging, print_banner, timed_section
@@ -70,7 +71,7 @@ def main() -> None:
         csv_path = Path(args.plot_from_csv)
         if not csv_path.exists():
             print(f"Error: CSV not found at {csv_path}")
-            return
+            sys.exit(2)
             
         configure_logging(level=logging.INFO) # Console only basically
         print(f"Regenerating plots from: {csv_path}")
@@ -125,16 +126,22 @@ def main() -> None:
         pass
 
     # 3. Execution
+    incomplete = None
     try:
         with timed_section("Running Decomposition Experiment"):
             stats_list = run_experiment(config)
-    except KeyboardInterrupt:
-        if is_main_process:
-            logger.warning("Interrupted by user.")
-        return
+    except ExperimentIncomplete as exc:
+        # keep what finished, but under a name no table script reads, and fail the run
+        incomplete, stats_list = exc, exc.results
+        logger.error(f"Run incomplete: {exc}")
 
     # 4. Teardown & Results
     if is_main_process:
+        if incomplete is not None:
+            csv_path = run_dir / "results_stats_INCOMPLETE.csv"
+            write_stats_to_csv(stats_list, csv_path)
+            logger.error(f"Saved the {len(stats_list)} finished matrices to {csv_path}")
+            sys.exit(1)
         csv_path = run_dir / "results_stats.csv"
         write_stats_to_csv(stats_list, csv_path)
         logger.info(f"Saved CSV: {csv_path}")

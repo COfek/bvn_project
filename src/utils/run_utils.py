@@ -14,9 +14,16 @@ def create_run_folder(base_dir: str = "runs") -> Path:
         Path object of the new directory.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = Path(base_dir) / timestamp
-    run_dir.mkdir(parents=True, exist_ok=True)
-    return run_dir
+    Path(base_dir).mkdir(parents=True, exist_ok=True)
+    # two runs started in the same second must not share a folder
+    run_dir, n = Path(base_dir) / timestamp, 1
+    while True:
+        try:
+            run_dir.mkdir()
+            return run_dir
+        except FileExistsError:
+            n += 1
+            run_dir = Path(base_dir) / f"{timestamp}_{n}"
 
 
 def save_config(config, run_dir: Path):

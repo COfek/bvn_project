@@ -80,6 +80,7 @@ Thumbs.db
 secrets.json
 config.json
 *.ini
+!pytest.ini
 # ----------------------------
 # Backup files
 # ----------------------------

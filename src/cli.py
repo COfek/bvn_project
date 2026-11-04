@@ -6,7 +6,7 @@ def parse_args() -> argparse.Namespace:
         description="BvN-Arbiter: High-Performance Matrix Decomposition Suite"
     )
     
-    # Core Arguments from README
+    # Core arguments
     parser.add_argument("--size", "-n", type=int, default=128, dest="n", 
                         help="Dimension of the N x N traffic matrix.")
     parser.add_argument("--k", "-k", type=int, default=10,
@@ -21,8 +21,8 @@ def parse_args() -> argparse.Namespace:
                             "euler_bvn",
                         ],
                         help=(
-                            "Matching algorithm / compound mode. "
-                            "New variants: minimum_bvn (min-weight Hungarian), "
+                            "Matching algorithm / compound mode (see README). "
+                            "Diagnostic variants: minimum_bvn (min-weight Hungarian), "
                             "heavy_noaug_bvn / heavy_static_noaug_bvn (greedy without augmenting paths)."
                         ))
     parser.add_argument("--samples", "-s", type=int, default=10, dest="samples",
@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--float-weights", action="store_true",
                         help="Generate float weights instead of integer weights.")
 
-    # Advanced / Legacy Arguments
+    # Splitting
     parser.add_argument("--radix-bases", type=int, nargs='*', default=None,
                         help="Radix bases to test. For radix engines the default is "
                              "[2, 4, 8, 16, 32]. For --engine euler_bvn, Radix does NOT "
@@ -52,9 +52,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--euler-depths", type=int, nargs='*', default=[1],
                         help="Euler splitting depths to test (depth=d gives 2^d leaf matrices). "
                              "depth=0 is plain BvN with no splitting. "
-                             "Defaults to [1] (one split → 2 leaves).")
+                             "Defaults to [1] (one split -> 2 leaves).")
     parser.add_argument("--euler-colors", type=int, nargs='*', default=None,
-                        help="Number of colors (leaves) for Euler splitting — must be powers of 2. "
+                        help="Number of colors (leaves) for Euler splitting - must be powers of 2. "
                              "Converted to depths internally (colors=2^depth). "
                              "Overrides --euler-depths when given. "
                              "E.g. --euler-colors 2 4 8 is equivalent to --euler-depths 1 2 3.")
@@ -77,13 +77,18 @@ def parse_args() -> argparse.Namespace:
                              "--no-free-between-runs reproduces campaigns run before "
                              "2026-11-02.")
     parser.add_argument("--random-seed", type=int, default=42, help="Base random seed.")
-    parser.add_argument("--max-workers", type=int, default=None, help="Workers for Radix planes.")
+    parser.add_argument("--max-workers", type=int, default=None,
+                        help="Process workers when matrices run in parallel. main.py runs them "
+                             "one at a time, and Radix planes, Euler splits and leaves are "
+                             "always timed alone, so this has no effect on the timings.")
     
     # Plotting utilities
     parser.add_argument("--plot-from-csv", type=str, default=None,
                         help="Path to results CSV file. If set, generates plots for this CSV and exits.")
     
     parser.add_argument("--step-strategy", type=str, default="min", choices=["min", "max", "median", "all"],
-                        help="Strategy for choosing step size in Radix Decomposition: min, max, median, or all.")
+                        help="Step size of each peel (min = classic BvN). Applies to the BvN "
+                             "baseline, the Radix planes and the Euler leaves; 'all' runs Radix "
+                             "with each of the three and the baseline and Euler with min.")
 
     return parser.parse_args()

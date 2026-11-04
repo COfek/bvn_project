@@ -28,4 +28,4 @@ jobs:
       env:
         MPLBACKEND: Agg   # plotting tests run headless
       run: |
-        pytest tests/ -v
+        pytest tests/ -q -k "not visual"   # the visual tests write PNGs into the tree

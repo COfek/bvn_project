@@ -204,10 +204,25 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     )
 
 
+class ExperimentIncomplete(RuntimeError):
+    """Some matrices failed or the run was interrupted; `results` holds the ones that finished."""
+
+    def __init__(self, message: str, results: List[DecompositionStats], failed: List[int]):
+        super().__init__(message)
+        self.results = results
+        self.failed = failed
+
+
 # ------------------------------------------------------------
 # Parallel experiment runner
 # ------------------------------------------------------------
 def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
+    """Run every matrix and return their statistics, sorted by matrix index.
+
+    Raises ExperimentIncomplete, carrying the finished results, if any matrix failed
+    or the run was interrupted, so that a partial campaign is never mistaken for a
+    complete one.
+    """
     console = Console(force_terminal=True)
 
     logger.info(
@@ -217,6 +232,7 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
     )
 
     results: List[DecompositionStats] = []
+    failed: List[int] = []
 
     update_interval = max(1, config.num_matrices // 20)  # Log every 5%
 
@@ -225,8 +241,13 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
             try:
                 stats = _compute_for_index(idx, config)
                 results.append(stats)
+            except KeyboardInterrupt:
+                results.sort(key=lambda s: s.matrix_index)
+                raise ExperimentIncomplete(f"interrupted after {len(results)} matrices",
+                                           results, failed) from None
             except Exception as e:
-                logger.error(f"Error at index {idx}: {e}")
+                logger.exception(f"Error at index {idx}: {e}")
+                failed.append(idx)
 
             if (idx + 1) % update_interval == 0 or (idx + 1) == config.num_matrices:
                 percent = ((idx + 1) / config.num_matrices) * 100
@@ -242,7 +263,8 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
                 try:
                     results.append(future.result())
                 except Exception as e:
-                    logger.error(f"Worker error: {e}")
+                    logger.exception(f"Worker error at index {futures[future]}: {e}")
+                    failed.append(futures[future])
 
                 completed_count += 1
                 if completed_count % update_interval == 0 or completed_count == config.num_matrices:
@@ -250,5 +272,8 @@ def run_experiment(config: ExperimentConfig) -> List[DecompositionStats]:
                     logger.info(f"Progress: {completed_count}/{config.num_matrices} matrices processed ({percent:.0f}%)")
 
     results.sort(key=lambda s: s.matrix_index)
+    if failed:
+        raise ExperimentIncomplete(f"{len(failed)} of {config.num_matrices} matrices failed: "
+                                   f"{sorted(failed)[:20]}", results, sorted(failed))
     logger.info("Experiment completed successfully.")
     return results
