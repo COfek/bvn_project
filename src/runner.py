@@ -3,14 +3,13 @@ from __future__ import annotations
 import gc
 import logging
 import os
-import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import List
 
 import numpy as np
 from rich.console import Console
 
-from .algorithms.bvn import bvn_decomposition
+from .algorithms.bvn import bvn_decomposition_timed
 from .algorithms.euler_splitting import euler_decomposition, decompose_euler_framework
 from .algorithms.radix_decomposition import decompose_radix
 from .config import ExperimentConfig
@@ -71,12 +70,11 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         "heavy_noaug_bvn", "heavy_static_noaug_bvn",
         "euler_bvn",
     ]:
-        t0 = time.perf_counter()
         _strat = getattr(config, 'radix_strategy', 'min')
         _strat = _strat if _strat in ('min', 'median', 'max') else 'min'
-        bvn_components = bvn_decomposition(matrix=matrix, matching_algorithm=bvn_engine,
-                                           step_strategy=_strat)
-        runtime_bvn = time.perf_counter() - t0
+        # the time covers the decomposition, not building its dense matrices
+        bvn_components, runtime_bvn = bvn_decomposition_timed(
+            matrix=matrix, matching_algorithm=bvn_engine, step_strategy=_strat)
 
         cycle_length_bvn = float(sum(comp.weight for comp in bvn_components))
 
@@ -171,6 +169,9 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         # what makes the per-leaf BvN cheaper. Other strategies remain
         # selectable via --euler-split-method for comparison runs.
         split_method = getattr(config, 'euler_split_method', 'heuristic')
+        if getattr(config, "free_between_runs", False):
+            radix_components = None    # the last Radix result, if Radix ran
+            gc.collect()
         for depth in euler_depths:
             _strat = getattr(config, 'radix_strategy', 'min')
             _strat = _strat if _strat in ('min', 'median', 'max') else 'min'
@@ -188,9 +189,9 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
             c_len = float(sum(comp.weight for comp in comps))
             n_perm = len(comps)
             key = f"euler_{split_method}_depth{depth}"
-            # 5-tuple: the trailing split_rt is the sequential time of the
-            # splitting phase only; max_rt is the max single-leaf BvN time
-            # (simulated parallel matching extraction).
+            # 5-tuple: the trailing split_rt is the splitting phase (sum over the
+            # levels of each level's slowest split); max_rt is the max single-leaf
+            # BvN time (simulated parallel matching extraction).
             radix_multi_data[key] = (max_rt, c_len, n_perm, n_leaves, split_rt)
 
     return DecompositionStats(

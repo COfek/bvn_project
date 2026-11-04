@@ -18,7 +18,7 @@ class DecompositionStats:
     #   {key_str: (runtime, cycle, num_perms, num_planes[, split_time])}
     # num_planes is the number of non-empty digit planes (radix) or leaves
     # (Euler framework). The optional 5th element split_time is the
-    # sequential splitting-phase time, populated only by Euler framework
+    # splitting-phase time (the sum over levels of each level's slowest split), populated only by Euler framework
     # keys ("euler_<split_method>_depth<d>"); for those keys, `runtime` is
     # the MAX single-leaf BvN time (simulated parallel extraction).
     # Older CSVs lacking the planes/split columns load with num_planes=0

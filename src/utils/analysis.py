@@ -91,7 +91,7 @@ def write_euler_comparison_summary(
     add("")
     add("[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)")
     add("    'max-leaf' = slowest single leaf (simulated parallel extraction);")
-    add("    'split' = sequential splitting phase, reported separately.")
+    add("    'split' = splitting phase (sum over levels of the slowest split), reported separately.")
     add("")
     add(f"{'config':<28} {'units':>6} {'split ms':>9} {'max-leaf ms':>11} "
         f"{'vs baseline':>11} {'vs lvl':>8} {'cycle':>9} {'perms':>7}")

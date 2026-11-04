@@ -36,20 +36,23 @@ euler_decomposition(matrix)                     → List[DecompositionComponent]
 from __future__ import annotations
 
 import time
-from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from numba import jit
 from numpy.typing import NDArray
 
-from .bvn import DecompositionComponent, bvn_decomposition
+from .bvn import (DecompositionComponent, bvn_decomposition_timed,
+                  materialise, strategy_index)
 from .sorted_array_matching import (
     sorted_array_matching,
     _jit_decompose_sorted_dynamic,
     _jit_decompose_sorted_static,
 )
 from .wfa import _jit_decompose_wfa
+
+SPLIT_METHODS = ("heuristic", "heuristic_ruined", "heuristic_ruined_last", "heuristic_scan",
+                 "euler", "euler_grouped", "greedy")
 
 FloatMatrix = NDArray[np.float64]
 AdjType = List[Dict[int, int]]  # adj[u][v] = remaining edge count
@@ -1259,8 +1262,10 @@ def euler_split_once(
         red, blue = _euler_split_heuristic(int_matrix)
     elif split_method == "euler_grouped":
         red, blue = _euler_split_grouped(int_matrix)
-    else:  # default: "euler"
+    elif split_method == "euler":
         red, blue = _euler_split(int_matrix)
+    else:
+        raise ValueError(f"Unknown split method {split_method!r}; expected one of {SPLIT_METHODS}")
 
     if extra_perm is not None:
         red = red + extra_perm
@@ -1283,46 +1288,27 @@ def _leaf_bvn(
     available.  Mirrors the "min" strategy fast path in radix_decomposition so
     that simulated runtimes are on the same footing for fair comparison.
 
-    Returns (components, wall_clock_seconds).
+    Returns (components, seconds). The seconds cover finding the matchings and
+    weights; the components are built as dense matrices after the clock stops,
+    as in bvn.bvn_decomposition_timed and radix_decomposition.
     """
-    t0 = time.perf_counter()
-    strategy_int = {"min": 0, "median": 1, "max": 2}.get(step_strategy, 0)
+    strategy_int = strategy_index(step_strategy)
 
-    if matching_method in ("heavy", "heavy_static"):
+    if matching_method in ("heavy", "heavy_static", "wfa"):
+        t0 = time.perf_counter()
         work = leaf_float.copy()
         if matching_method == "heavy":
             weights, all_matches = _jit_decompose_sorted_dynamic(work, strategy_int, tol)
-        else:
+        elif matching_method == "heavy_static":
             weights, all_matches = _jit_decompose_sorted_static(work, strategy_int, tol)
-        comps = _matches_to_components(weights, all_matches, leaf_float)
+        else:
+            weights, all_matches = _jit_decompose_wfa(work, work.shape[0], tol, strategy_int)
+        seconds = time.perf_counter() - t0
+        return materialise(weights, all_matches, leaf_float.shape[0]), seconds
 
-    elif matching_method == "wfa":
-        work = leaf_float.copy()
-        weights, all_matches = _jit_decompose_wfa(work, work.shape[0], tol, strategy_int)
-        comps = _matches_to_components(weights, all_matches, leaf_float)
-
-    else:
-        # maximum / minimum — fall back to scipy Hungarian via Python BvN
-        comps = bvn_decomposition(leaf_float.copy(), matching_algorithm=matching_method,
-                                  step_strategy=step_strategy)
-
-    return comps, time.perf_counter() - t0
-
-
-def _matches_to_components(
-    weights: List[float],
-    all_matches: List[List[Tuple[int, int]]],
-    template: np.ndarray,
-) -> List[DecompositionComponent]:
-    """Convert JIT output (weights + match lists) → DecompositionComponent list."""
-    n = template.shape[0]
-    comps: List[DecompositionComponent] = []
-    for w, matches in zip(weights, all_matches):
-        p = np.zeros((n, n), dtype=np.float64)
-        for r, c in matches:
-            p[r, c] = 1.0
-        comps.append(DecompositionComponent(permutation=p, weight=float(w)))
-    return comps
+    # maximum / minimum: scipy Hungarian via the Python BvN
+    return bvn_decomposition_timed(leaf_float, matching_algorithm=matching_method,
+                                   step_strategy=step_strategy)
 
 
 # ===========================================================================
@@ -1342,8 +1328,8 @@ def decompose_euler_framework(
 
     Splits the input matrix *depth* times using the chosen split strategy,
     producing up to 2^depth doubly-stochastic leaf sub-matrices.  Each leaf is
-    decomposed with BvN (matching_method).  Parallelism is simulated as the
-    maximum leaf runtime.
+    decomposed with BvN (matching_method).  Parallelism is simulated: every split
+    and every leaf is timed alone, one after another.
 
     Args:
         matrix:         n×n non-negative integer matrix with equal row/col sums.
@@ -1352,43 +1338,45 @@ def decompose_euler_framework(
         depth:          Number of splitting rounds (≥ 0).
                         depth=0 → plain BvN on the full matrix.
                         depth=d → up to 2^d leaf matrices, each (S/2^d)-regular.
-        split_method:   "euler" or "greedy".
-        max_workers:    Reserved (currently ignored; sequential loop with max
-                        runtime simulates hardware parallelism).
+        split_method:   one of SPLIT_METHODS.
+        max_workers:    Ignored, kept for the callers' signature.
 
     Returns:
         (components, split_time_s, max_leaf_runtime_s, num_leaves)
 
-        split_time_s is the wall-clock time spent in the splitting phase only
-        (building the leaf tree), so callers can separate "cost of splitting"
-        from "cost of extracting matchings from the leaves".
+        split_time_s is the splitting phase under the same parallel model as the
+        leaves: the splits of one level are independent, so a level costs its
+        slowest split, and split_time_s is the sum of those over the levels. Until
+        2026-11-04 the levels ran on real threads and split_time_s was their
+        wall clock (docs/code_review_2026-11-04.md, A2).
     """
+    if depth < 0:
+        raise ValueError(f"depth must be non-negative, got {depth}")
+    if split_method not in SPLIT_METHODS:
+        raise ValueError(f"Unknown split method {split_method!r}; expected one of {SPLIT_METHODS}")
     int_matrix = np.round(matrix).astype(np.int64)
+    if not np.allclose(matrix, int_matrix, rtol=0, atol=1e-9):
+        raise ValueError("Euler splitting needs an integer matrix (it splits parallel edges)")
+    row_sums, col_sums = int_matrix.sum(axis=1), int_matrix.sum(axis=0)
+    if (int_matrix < 0).any() or (row_sums != row_sums[0]).any() or (col_sums != row_sums[0]).any():
+        raise ValueError("Euler splitting needs a non-negative matrix with equal row and column sums")
 
-    # Build list of leaf matrices by iteratively splitting.
-    # Splits within one tree level are independent, so they run concurrently
-    # on threads: the split JIT kernels are nogil, so threads achieve real
-    # parallelism with negligible spawn overhead (unlike processes, which
-    # would pickle the matrices). Level 1 is a single split and runs inline;
-    # split_time is therefore the measured PARALLEL wall-clock of the
-    # splitting phase, consistent with max-leaf as the parallel
-    # extraction time.
     def _split_or_keep(leaf: np.ndarray):
         S_leaf = int(leaf.sum(axis=1).max())
         if S_leaf <= 1:
             return (leaf,)                 # cannot split further
         return euler_split_once(leaf, split_method=split_method)
 
-    t_split0 = time.perf_counter()
+    split_time = 0.0
     leaves: List[np.ndarray] = [int_matrix]
     for _ in range(depth):
-        if len(leaves) == 1:
-            results = [_split_or_keep(leaves[0])]
-        else:
-            with ThreadPoolExecutor(max_workers=max_workers or len(leaves)) as pool:
-                results = list(pool.map(_split_or_keep, leaves))
+        results, slowest = [], 0.0
+        for leaf in leaves:
+            t0 = time.perf_counter()
+            results.append(_split_or_keep(leaf))
+            slowest = max(slowest, time.perf_counter() - t0)
+        split_time += slowest
         leaves = [m for pair in results for m in pair]
-    split_time = time.perf_counter() - t_split0
 
     non_empty = [lf for lf in leaves if np.any(lf > 0)]
 
