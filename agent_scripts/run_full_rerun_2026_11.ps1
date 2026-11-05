@@ -21,8 +21,11 @@
 #         campaign.log, environment.json, memtrace.csv, FAILED.txt (if any), DONE.marker.
 # Launch: Start-Process pwsh -ArgumentList '-NoProfile','-File','agent_scripts\run_full_rerun_2026_11.ps1' -WindowStyle Hidden
 # Smoke test: -StartAt now -RadixSamples 7 -EulerSamples 7 -Root run/_smoke -SkipWorkloads
+# Resume after a pause: add -Resume. Every step that campaign.log already records as
+# "done ... exit 0" is skipped; a step stopped part-way must first be moved out of $Root
+# (to $Root/_aborted/), since it is rerun from the start.
 param([string]$StartAt = '02:00', [int]$RadixSamples = 1000, [int]$EulerSamples = 105,
-      [string]$Root = 'run/rerun_2026_11', [switch]$SkipWorkloads)
+      [string]$Root = 'run/rerun_2026_11', [switch]$SkipWorkloads, [switch]$Resume)
 $ErrorActionPreference = 'Continue'
 Add-Type -Namespace Win32 -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);'
 [Win32.Power]::SetThreadExecutionState(0x80000001) | Out-Null   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
@@ -46,6 +49,11 @@ function LoadNow {
     } catch { return "load unavailable" }
 }
 function Step($label, $log, [scriptblock]$cmd) {
+    if ($Resume -and (Test-Path $master) -and
+        (Select-String -Path $master -Pattern ("\] " + [regex]::Escape($label) + "  done in .* exit 0$") -Quiet)) {
+        Say "$label  already done, skipped (resume)"
+        return
+    }
     Say "$label  starting  $(LoadNow)"
     $t = Get-Date
     & $cmd *>> $log
@@ -59,6 +67,7 @@ if ($start -lt (Get-Date).AddMinutes(-1)) { $start = $start.AddDays(1) }
 Say "waiting until $($start.ToString('s'))"
 while ((Get-Date) -lt $start) { Start-Sleep -Seconds 30 }
 
+$envFile = if ($Resume) { "$root/environment_resume_$(Get-Date -Format 'yyyyMMdd_HHmm').json" } else { "$root/environment.json" }
 & $py -c @"
 import json, platform, sys, os, subprocess
 git = lambda *a: subprocess.run(['git', *a], capture_output=True, text=True).stdout.strip()
@@ -72,13 +81,13 @@ for m in ('numpy', 'scipy', 'numba', 'pandas'):
     except Exception as e:
         info[m] = f'unavailable ({e})'
 print(json.dumps(info, indent=2))
-"@ > "$root/environment.json" 2>&1
-Say "environment recorded -> $root/environment.json"
+"@ > $envFile 2>&1
+Say "environment recorded -> $envFile"
 
 $sampler = Start-Job -ScriptBlock {
     param($dir)
     $log = Join-Path $dir 'memtrace.csv'
-    'time,pid,start,cpu_s,ws_mb,priv_mb,free_mb' | Set-Content $log
+    if (-not (Test-Path $log)) { 'time,pid,start,cpu_s,ws_mb,priv_mb,free_mb' | Set-Content $log }
     while (-not (Test-Path (Join-Path $dir 'FINISHED.marker'))) {
         $f = [int]((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1024)
         Get-Process python -ErrorAction SilentlyContinue |
