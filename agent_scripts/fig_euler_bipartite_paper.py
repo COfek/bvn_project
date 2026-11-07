@@ -1,12 +1,16 @@
-"""Paper-shaped version of the bipartite split figure (Figure Y).
+"""Figure 2: the colouring itself, on Figure 1's matrix (Chen P1, P11).
 
-The test-suite figure (tests/.../bipartite_seed00.png) is 3427x1647 px and carries six
-heatmaps alongside the two graphs; at full text width in a two-column layout its edge
-labels render at ~4pt. This version keeps ONLY the two bipartite graphs, sized so that the
-labels remain legible after scaling to \\linewidth in a two-column paper, and leaves the
-matrix-level view to the companion heatmap figure.
+Every parallel edge drawn, under (a) the alternating colouring and (b) sparse Euler splitting
+(four tiers). The colouring always comes from splitting the WHOLE matrix of
+fig_splitting_paper.py; an option with fewer rows and columns is only a smaller drawing of it.
 
-Output: paper/plots_pdf/euler_bipartite_paper.pdf|png
+Three options to show Chen, each saved under its own name; the one chosen becomes
+euler_bipartite_paper.pdf, the name the paper includes:
+    whole   all 6 rows and columns
+    small   r1, r3 and c0, c2
+    medium  r1, r3, r4 and c0, c2, c5
+
+Output: paper/plots_pdf/euler_bipartite_option_<name>.pdf|png
 """
 from __future__ import annotations
 from _paths import PLOTS, REPO  # repository-relative paths
@@ -19,87 +23,78 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from src.algorithms.euler_splitting import euler_split_once
-from tests.test_euler_splitting import _make_matrix
+from src.utils.matrix_generator import generate_matrix
 
 OUT = str(PLOTS)
 plt.rcParams.update({"font.family": "serif"})
 
-N, K, SEED, MAXW = 6, 3, 0, 6
-# Okabe-Ito colours, safe under the common colour-vision deficiencies, and a different line
-# style per class, so the figure also reads in greyscale (Chen M5)
-C_RED, C_BLUE, C_SPLIT = "#D55E00", "#0072B2", "#000000"
-LS_RED, LS_BLUE, LS_SPLIT = "-", (0, (4, 1.5)), (0, (1, 1.2))
+N, SEED, MAXW = 6, 40, 4.0          # the matrix of fig_splitting_paper.py
+# The two colours also differ by line style, so the figure reads in greyscale (Chen M5)
+C_RED, C_BLUE = "#D62728", "#0072B2"
+LS_RED, LS_BLUE = "-", (0, (3, 1.2))
+
+#          rows                columns             edge gap, width, figure size
+OPTIONS = {
+    "whole":  (tuple(range(6)), tuple(range(6)), 0.018, 0.9, (7.2, 4.2)),
+    "small":  ((1, 3),          (0, 2),          0.085, 1.7, (6.4, 2.7)),
+    "medium": ((1, 3, 4),       (0, 2, 5),       0.050, 1.4, (6.8, 3.3)),
+}
 
 
-def draw(ax, matrix, red, blue, title, max_labels=1):
-    """Only non-consistent (purple) pairs are labelled, and at most `max_labels` of them:
-    colour already distinguishes consistent from non-consistent, the panel title carries the counts,
-    and a label on every arc makes the figure unreadable at column scale."""
-    n = matrix.shape[0]
-    row_ys = np.linspace(n - 1, 0, n)
-    col_ys = np.linspace(n - 1, 0, n)
-
-    # choose which split pairs get a label: the heaviest, as exemplars of the format
-    splits = [(int(matrix[i, j]), i, j) for i in range(n) for j in range(n)
-              if matrix[i, j] > 0 and red[i, j] > 0 and blue[i, j] > 0]
-    labelled = {(i, j) for _, i, j in sorted(splits, reverse=True)[:max_labels]}
-
-    for i in range(n):
-        for j in range(n):
-            m = int(matrix[i, j])
-            if m == 0:
+def draw(ax, red, blue, title, rows, cols, gap, lw):
+    """One curve per parallel edge, fanned out between its two vertices; red before blue."""
+    ys = dict(enumerate(np.linspace(1, 0, len(rows))))
+    consistent = total = 0
+    t = np.linspace(0, 1, 60)
+    for a, i in enumerate(rows):
+        for b, j in enumerate(cols):
+            r, bl = int(red[i, j]), int(blue[i, j])
+            k = r + bl
+            if k == 0:
                 continue
-            r, b = int(red[i, j]), int(blue[i, j])
-            ec, ls = ((C_RED, LS_RED) if (r > 0 and b == 0) else
-                      (C_BLUE, LS_BLUE) if (b > 0 and r == 0) else (C_SPLIT, LS_SPLIT))
-            lw = 1.0 + m ** 0.55
-            sign = 1 if (i + j) % 2 == 0 else -1
-            rad = sign * (0.12 + 0.22 * abs(i - j) / max(n - 1, 1))
-            ax.annotate("", xy=(1.0, col_ys[j]), xytext=(0.0, row_ys[i]),
-                        arrowprops=dict(arrowstyle="-", color=ec, lw=lw, alpha=.85, linestyle=ls,
-                                        connectionstyle=f"arc3,rad={rad:.3f}"), zorder=2)
-            if (i, j) in labelled:
-                ax.text(0.5, (row_ys[i] + col_ys[j]) / 2 + rad * 0.65, f"{r}R+{b}B",
-                        ha="center", va="center", fontsize=6.5, color=ec,
-                        fontweight="bold", zorder=4,
-                        bbox=dict(boxstyle="round,pad=0.15", fc="white", ec=ec,
-                                  linewidth=0.5, alpha=.95))
-    for i in range(n):
-        ax.plot(0, row_ys[i], "o", color="#444444", ms=15, zorder=6)
-        ax.text(0, row_ys[i], f"r{i}", ha="center", va="center", fontsize=6.5,
-                color="white", fontweight="bold", zorder=7)
-        ax.plot(1, col_ys[i], "o", color="#888888", ms=15, zorder=6)
-        ax.text(1, col_ys[i], f"c{i}", ha="center", va="center", fontsize=6.5,
-                color="white", fontweight="bold", zorder=7)
-    clean = int(np.sum((red > 0) ^ (blue > 0)))
-    nsplit = int(np.sum((red > 0) & (blue > 0)))
-    ax.set_xlim(-0.22, 1.22); ax.set_ylim(-0.55, n - 0.45)
-    ax.text(0.5, -0.01, f"{title}\ncommunication pairs: {clean} consistent, {nsplit} non-consistent",
-            transform=ax.transAxes, ha="center", va="top", fontsize=8.5)
+            total += 1
+            consistent += (r == 0) or (bl == 0)
+            for e in range(k):
+                off = (e - (k - 1) / 2) * gap
+                y = ys[a] + (ys[b] - ys[a]) * t + off * 4 * t * (1 - t)
+                is_red = e < r
+                ax.plot(t, y, color=C_RED if is_red else C_BLUE, ls=LS_RED if is_red else LS_BLUE,
+                        lw=lw, zorder=3, solid_capstyle="round")
+    for side, verts, tag, col in ((0, rows, "r", "#444444"), (1, cols, "c", "#888888")):
+        for a, v in enumerate(verts):
+            ax.plot(side, ys[a], "o", color=col, ms=17, zorder=6)
+            ax.text(side, ys[a], f"{tag}{v}", ha="center", va="center", fontsize=8, color="white",
+                    fontweight="bold", zorder=7)
+    ax.set_xlim(-0.12, 1.12)
+    ax.set_ylim(-0.2, 1.2)
+    ax.text(0.5, -0.01, f"{title}\n{consistent} consistent, {total - consistent} non-consistent",
+            transform=ax.transAxes, ha="center", va="top", fontsize=9)
     ax.axis("off")
+    return consistent, total
 
 
-mat = _make_matrix(N, K, SEED, max_weight=MAXW).astype(np.int64)
-r_e, b_e = euler_split_once(mat, split_method="euler")
-r_h, b_h = euler_split_once(mat, split_method="heuristic")
+rng = np.random.default_rng(SEED)
+D = generate_matrix(N, k=N, max_weight=MAXW, rng=rng).astype(np.int64)
+r_e, b_e = euler_split_once(D, split_method="euler")
+r_h, b_h = euler_split_once(D, split_method="heuristic_ruined")
 
-fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.3))
-draw(axes[0], mat, r_e, b_e, "(a) alternating colouring")
-draw(axes[1], mat, r_h, b_h, "(b) sparse Euler splitting")
-fig.legend(handles=[
-    Line2D([], [], color=C_RED, ls=LS_RED, lw=2, label="consistent comm. pair, red"),
-    Line2D([], [], color=C_BLUE, ls=LS_BLUE, lw=2, label="consistent comm. pair, blue"),
-    Line2D([], [], color=C_SPLIT, ls=LS_SPLIT, lw=2,
-           label="non-consistent comm. pair, in both ($r$R+$b$B)")],
-    handlelength=3,
-    loc="lower center", ncol=3, fontsize=7, frameon=False, bbox_to_anchor=(.5, -.02))
-fig.tight_layout(rect=[0, .06, 1, 1])
-for ext in ("pdf", "png"):
-    fig.savefig(os.path.join(OUT, f"euler_bipartite_paper.{ext}"),
-                dpi=200, bbox_inches="tight")
-print("saved euler_bipartite_paper")
-print(f"  alternating: whole={int(np.sum((r_e>0)^(b_e>0)))} split={int(np.sum((r_e>0)&(b_e>0)))}"
-      f"  red nnz={np.count_nonzero(r_e)} blue nnz={np.count_nonzero(b_e)}")
-print(f"  heuristic  : whole={int(np.sum((r_h>0)^(b_h>0)))} split={int(np.sum((r_h>0)&(b_h>0)))}"
-      f"  red nnz={np.count_nonzero(r_h)} blue nnz={np.count_nonzero(b_h)}")
-print(f"  original nnz={np.count_nonzero(mat)}  S={int(mat.sum(1)[0])}")
+for name, (rows, cols, gap, lw, size) in OPTIONS.items():
+    fig, axes = plt.subplots(1, 2, figsize=size)
+    ca = draw(axes[0], r_e, b_e, "(a) alternating colouring", rows, cols, gap, lw)
+    cb = draw(axes[1], r_h, b_h, "(b) sparse Euler splitting", rows, cols, gap, lw)
+    fig.legend(handles=[
+        Line2D([], [], color=C_RED, ls=LS_RED, lw=2, label="red edge"),
+        Line2D([], [], color=C_BLUE, ls=LS_BLUE, lw=2, label="blue edge")],
+        handlelength=3, loc="lower center", ncol=2, fontsize=8.5, frameon=False,
+        bbox_to_anchor=(.5, -.03))
+    fig.tight_layout(rect=[0, .08, 1, 1])
+    for ext in ("pdf", "png"):
+        fig.savefig(os.path.join(OUT, f"euler_bipartite_option_{name}.{ext}"), dpi=200,
+                    bbox_inches="tight")
+    plt.close(fig)
+    edges = sum(int(D[i, j]) for i in rows for j in cols)
+    print(f"{name}: {edges} edges; consistent (a) {ca[0]} of {ca[1]}, (b) {cb[0]} of {cb[1]}")
+
+pairs = int(np.count_nonzero(D))
+print(f"whole matrix: {int(np.sum((r_e > 0) & (b_e > 0)))} of {pairs} non-consistent in (a), "
+      f"{int(np.sum((r_h > 0) & (b_h > 0)))} of {pairs} in (b)")
