@@ -74,8 +74,8 @@ def draw(ax, matrix, red, blue, title, max_labels=1):
     clean = int(np.sum((red > 0) ^ (blue > 0)))
     nsplit = int(np.sum((red > 0) & (blue > 0)))
     ax.set_xlim(-0.22, 1.22); ax.set_ylim(-0.55, n - 0.45)
-    ax.set_title(f"{title}\ncommunication pairs: {clean} consistent, {nsplit} non-consistent",
-                 fontsize=8.5, pad=6)
+    ax.text(0.5, -0.01, f"{title}\ncommunication pairs: {clean} consistent, {nsplit} non-consistent",
+            transform=ax.transAxes, ha="center", va="top", fontsize=8.5)
     ax.axis("off")
 
 
