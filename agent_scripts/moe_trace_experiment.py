@@ -7,7 +7,7 @@ used exactly as recorded -- no regularisation, no scaling, no rounding.
 This mirrors agent_scripts/tm_workload_experiment.py configuration for configuration,
 so the two workloads can be read side by side:
     for each of {Hungarian, WFA, GW Dynamic, GW Static}:
-        BvN baseline | Radix B16, B8, B4, B2 | Euler d1..d4 (split-inclusive runtime)
+        BvN baseline | Radix B16, B8, B4, B2
 
 It supersedes two earlier scripts:
   * moe_workload_experiment.py -- a synthetic MoE-*style* stand-in written before the
@@ -48,7 +48,6 @@ import numpy as np
 import pandas as pd
 
 from src.algorithms.bvn import bvn_decomposition_timed
-from src.algorithms.euler_splitting import decompose_euler_framework
 from src.algorithms.radix_decomposition import decompose_radix
 from src.utils.moe_trace import load_all
 
@@ -60,7 +59,6 @@ OUTDIR = os.path.join(ROOT, os.environ.get("BVN_RUN_ROOT", "run"), "moe_workload
 ENGINES = [("Hungarian", "maximum"), ("WFA", "wfa"),
            ("GW Dynamic", "heavy"), ("GW Static", "heavy_static")]
 BASES = [16, 8, 4, 2]
-DEPTHS = [1, 2, 3, 4]
 REPEATS = 9          # timed runs per configuration
 WARMUP = 4           # leading runs discarded (Numba JIT + cache warm-up)
 
@@ -108,23 +106,6 @@ def run_all(M, engine_key):
                         full_perms=sum(1 for c in comps if (c.matrix > 0).sum() == M.shape[0]),
                         recon_err=float(np.abs(recon - M).max())))
 
-    # --- Euler (runtime = split + slowest leaf, end-to-end) ---
-    # NOTE: split_method="heuristic" is the same-direction split the paper measures.
-    # The function's own default is "euler" (plain alternating) -- passing this
-    # explicitly is required to match the runner and the published campaigns.
-    for d in DEPTHS:
-        ts, sp = [], []
-        for _ in range(REPEATS):
-            comps, split_s, max_leaf_s, n_leaves = decompose_euler_framework(
-                M.copy(), matching_method=engine_key, depth=d, split_method="heuristic")
-            ts.append((split_s + max_leaf_s) * 1000)
-            sp.append(split_s * 1000)
-        recon = sum(c.weight * c.permutation for c in comps)
-        out.append(dict(config=f"Euler d{d}", N=len(comps), C=_cycle(comps),
-                        runtime_ms=_med(ts), split_ms=_med(sp),
-                        unit_ms=_med(ts) - _med(sp), units=n_leaves,
-                        full_perms=sum(1 for c in comps if c.permutation.sum() == M.shape[0]),
-                        recon_err=float(np.abs(recon - M).max())))
     return out
 
 
@@ -166,7 +147,7 @@ def main():
     worst = df.recon_err.max()
     print(f"\nmax reconstruction error over all {len(df)} runs: {worst:.3g}")
 
-    order = ["BvN"] + [f"B{b}" for b in BASES] + [f"Euler d{d}" for d in DEPTHS]
+    order = ["BvN"] + [f"B{b}" for b in BASES]
     for regime in df.regime.unique():
         sub = summary[summary.regime == regime]
         print(f"\n================ {regime.upper()}  (n=8, 6 traces) "

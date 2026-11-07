@@ -5,7 +5,7 @@ groups, one column wide.  The two column groups are the two trace families
 (throughput bench vs MMLU) rather than two generators, and each cell is a mean
 over the six traces in that family.
 
-Configs follow tm_tab_comparison (BvN / B2 / Euler d4) so the two workloads can be
+Configs follow tm_tab_comparison (BvN / B2, without Euler: these traces are irregular) so the two workloads can be
 read against each other, plus the best radix base for each family -- which is not
 the same base for both.  The full grid is in run/moe_workload/.
 
@@ -47,7 +47,7 @@ print("best radix base per regime:", best_base)
 
 rows = []
 for eng in ENGINES:
-    cfgs = ["BvN", None, "B2", "Euler d4"]
+    cfgs = ["BvN", None, "B2"]
     block = []
     for cfg in cfgs:
         cells = []
@@ -73,7 +73,7 @@ L = [r"\begin{tabular}{ll rr rr rr}", r"\toprule",
 for i, (eng, block) in enumerate(rows):
     if i:
         L.append(r"\midrule")
-    L.append(r"\multirow{4}{*}{%s}" % eng)
+    L.append(r"\multirow{3}{*}{%s}" % eng)
     for label, cells in block:
         (t0, n0, c0), (t1, n1, c1) = cells
         L.append(f"  & {label} & {num(t0,2)} & {num(t1,2)} & {num(n0)} & {num(n1)}"
