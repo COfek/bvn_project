@@ -186,7 +186,7 @@ def table_euler() -> str:
 
     out = [header("Euler splitting across engines, dense generated workload", sources, n),
            r"\begin{tabular}{llrrr}", r"\toprule",
-           r"\textbf{Engine} & \textbf{Splitting} & \textbf{Max-leaf (ms)} & "
+           r"\textbf{Engine} & \textbf{Splitting} & \textbf{Slowest $D_k$ (ms)} & "
            r"\textbf{Cycle} & $N$ \\", r"\midrule"]
     for i, (name, labels, tc, tl, tp) in enumerate(rows):
         out.append(r"\multirow{5}{*}{" + name + "}")
