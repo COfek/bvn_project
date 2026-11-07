@@ -163,7 +163,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     if config.engine == "euler_bvn":
         euler_depths = getattr(config, 'euler_depths', [1])
         euler_matching = getattr(config, 'euler_leaf_engine', 'heavy_static')
-        # Default split is "heuristic" (same-direction): by keeping all
+        # Default split is "heuristic_ruined" (same-direction, four tiers): by keeping all
         # M[i,j] copies of a pair on one side whenever possible it produces
         # SPARSER leaves than the plain/grouped alternating split, which is
         # what makes the per-leaf BvN cheaper. Other strategies remain

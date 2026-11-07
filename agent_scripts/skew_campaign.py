@@ -30,7 +30,8 @@ from src.utils.griner_avin_tm import tm_integer
 from src.utils.matrix_generator import generate_matrix
 
 ROOT = str(REPO)
-OUTDIR = os.path.join(ROOT, "run", "skew")
+# BVN_RUN_ROOT redirects a rerun away from the committed campaign (default: run/)
+OUTDIR = os.path.join(ROOT, os.environ.get("BVN_RUN_ROOT", "run"), "skew")
 
 N = 256
 N_MATRICES = 6
@@ -67,7 +68,7 @@ def run_all(M, engine_key):
                         unit_ms=float(mp_s) * 1000, units=n_planes))
     for d in DEPTHS:
         comps, sp_s, leaf_s, n_leaves = decompose_euler_framework(
-            M.copy(), matching_method=engine_key, depth=d, split_method="heuristic")
+            M.copy(), matching_method=engine_key, depth=d, split_method="heuristic_ruined")
         out.append(dict(config=f"Euler d{d}", N=len(comps), C=_cycle(comps),
                         runtime_ms=(sp_s + leaf_s) * 1000, split_ms=sp_s * 1000,
                         unit_ms=leaf_s * 1000, units=n_leaves))

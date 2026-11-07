@@ -39,10 +39,10 @@ class ExperimentConfig:
     euler_depths: List[int] = field(default_factory=lambda: [1])
 
     # Split strategy used by the Euler framework:
-    # "heuristic" (same-direction, sparser leaves), "euler" (classic
+    # "heuristic_ruined" (four tiers, the paper's), "heuristic" (three tiers), "euler" (classic
     # alternating 2-colouring), "euler_grouped" (bulk O(nnz) variant),
     # or "greedy" (integral block assignment with Euler fallback).
-    euler_split_method: str = "heuristic"
+    euler_split_method: str = "heuristic_ruined"
 
     # Free every earlier result before each timed call (the BvN baseline's once its
     # statistics are taken, the previous Radix base's and Euler depth's), with

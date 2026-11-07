@@ -58,7 +58,7 @@ def parse_args() -> argparse.Namespace:
                              "Converted to depths internally (colors=2^depth). "
                              "Overrides --euler-depths when given. "
                              "E.g. --euler-colors 2 4 8 is equivalent to --euler-depths 1 2 3.")
-    parser.add_argument("--euler-split-method", type=str, default="heuristic",
+    parser.add_argument("--euler-split-method", type=str, default="heuristic_ruined",
                         choices=["heuristic", "heuristic_ruined", "heuristic_ruined_last", "heuristic_scan", "euler", "euler_grouped", "greedy"],
                         help="Split strategy for the Euler framework. 'heuristic' "
                              "(same-direction split, sparser leaves) is the default; "

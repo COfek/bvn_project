@@ -52,10 +52,10 @@ for name, re, pre in ENG:
     for d in EULER_DEPTHS:
         # T_compute for Euler = split phase + max-leaf parallel extraction (the
         # split is NOT free and grows with depth; Radix's digit extraction is ~0).
-        tcalc = (de[f"euler_heuristic_depth{d}_time"].mean()
-                 + de[f"euler_heuristic_depth{d}_split"].mean()) * 1000
-        configs[f"{name} Euler d{d}"] = (de[f"euler_heuristic_depth{d}_perms"].mean(),
-                                          de[f"euler_heuristic_depth{d}_cycle"].mean(),
+        tcalc = (de[f"euler_heuristic_ruined_depth{d}_time"].mean()
+                 + de[f"euler_heuristic_ruined_depth{d}_split"].mean()) * 1000
+        configs[f"{name} Euler d{d}"] = (de[f"euler_heuristic_ruined_depth{d}_perms"].mean(),
+                                          de[f"euler_heuristic_ruined_depth{d}_cycle"].mean(),
                                           tcalc)
 labels = list(configs)
 NCT = np.array([configs[l] for l in labels])  # (M,3): N, C, Tcalc
@@ -249,8 +249,8 @@ for _name, _re, _pre in ENG:
     for _b in [16, 8, 4, 2]:
         configs_c[f"{_name} B{_b}"] = (_dr[f"{_pre}_{_b}_perms"].mean(), _dr[f"{_pre}_{_b}_cycle"].mean(), _dr[f"{_pre}_{_b}_time"].mean()*1000)
     for _d in EULER_DEPTHS:
-        _tc = (_de[f"euler_heuristic_depth{_d}_time"].mean() + _de[f"euler_heuristic_depth{_d}_split"].mean())*1000
-        configs_c[f"{_name} Euler d{_d}"] = (_de[f"euler_heuristic_depth{_d}_perms"].mean(), _de[f"euler_heuristic_depth{_d}_cycle"].mean(), _tc)
+        _tc = (_de[f"euler_heuristic_ruined_depth{_d}_time"].mean() + _de[f"euler_heuristic_ruined_depth{_d}_split"].mean())*1000
+        configs_c[f"{_name} Euler d{_d}"] = (_de[f"euler_heuristic_ruined_depth{_d}_perms"].mean(), _de[f"euler_heuristic_ruined_depth{_d}_cycle"].mean(), _tc)
 labels = list(configs_c)                       # shadow for this figure onward
 NCT = np.array([configs_c[l] for l in labels])
 

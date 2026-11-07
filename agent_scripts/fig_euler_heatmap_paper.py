@@ -26,7 +26,7 @@ plt.rcParams.update({"font.family": "serif"})
 N, K, SEED, MAXW = 8, 4, 5, 8
 mat = _make_matrix(N, K, SEED, max_weight=MAXW).astype(np.int64)
 r_e, b_e = euler_split_once(mat, split_method="euler")
-r_h, b_h = euler_split_once(mat, split_method="heuristic")
+r_h, b_h = euler_split_once(mat, split_method="heuristic_ruined")
 S = int(mat.sum(axis=1)[0])
 vmax = int(mat.max())
 

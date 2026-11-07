@@ -105,11 +105,11 @@ fig.subplots_adjust(wspace=0.35, bottom=0.25)
 S_ref = None
 for name, re_, pre in KEYS:
     de = euler_frame(pre)
-    N = [de["bvn_perms"].mean()] + [de[f"euler_heuristic_depth{d}_perms"].mean() for d in DEPTHS]
-    C = [de["bvn_cycle"].mean()] + [de[f"euler_heuristic_depth{d}_cycle"].mean() for d in DEPTHS]
+    N = [de["bvn_perms"].mean()] + [de[f"euler_heuristic_ruined_depth{d}_perms"].mean() for d in DEPTHS]
+    C = [de["bvn_cycle"].mean()] + [de[f"euler_heuristic_ruined_depth{d}_cycle"].mean() for d in DEPTHS]
     T = [de["bvn_runtime"].mean()*1000] + [
-        (de[f"euler_heuristic_depth{d}_time"].mean()
-         + de[f"euler_heuristic_depth{d}_split"].mean())*1000 for d in DEPTHS]
+        (de[f"euler_heuristic_ruined_depth{d}_time"].mean()
+         + de[f"euler_heuristic_ruined_depth{d}_split"].mean())*1000 for d in DEPTHS]
     if name == "Hungarian":
         S_ref = C[0]
     for ax, xs in ((axes[0], N), (axes[1], C)):

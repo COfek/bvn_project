@@ -174,12 +174,12 @@ def table_euler() -> str:
         sources.append((name, f"sweep{{1,2,3}}/euler/{col_key}/"))
         n = len(frame(1, "euler", col_key))
         times = [across("euler", col_key, "bvn_runtime") * 1000] + \
-                [across("euler", col_key, f"euler_heuristic_depth{k}_time") * 1000
+                [across("euler", col_key, f"euler_heuristic_ruined_depth{k}_time") * 1000
                  for k in DEPTHS]
         cycles = [fixed("euler", col_key, "bvn_cycle")] + \
-                 [fixed("euler", col_key, f"euler_heuristic_depth{k}_cycle") for k in DEPTHS]
+                 [fixed("euler", col_key, f"euler_heuristic_ruined_depth{k}_cycle") for k in DEPTHS]
         perms = [fixed("euler", col_key, "bvn_perms")] + \
-                [fixed("euler", col_key, f"euler_heuristic_depth{k}_perms") for k in DEPTHS]
+                [fixed("euler", col_key, f"euler_heuristic_ruined_depth{k}_perms") for k in DEPTHS]
         labels = ["BvN baseline"] + [f"depth {k}" for k in DEPTHS]
         rows.append((name, labels, bold_min(times, f1),
                      bold_min(cycles, f0), bold_min(perms, f0)))
@@ -231,7 +231,7 @@ def table_evr() -> str:
            r"\midrule"]
 
     for j, (depth, bases) in enumerate(pairs):
-        pre = f"euler_heuristic_depth{depth}"
+        pre = f"euler_heuristic_ruined_depth{depth}"
         e_unit = across("euler", "maximum", f"{pre}_time") * 1000
         e_split = across("euler", "maximum", f"{pre}_split") * 1000
         block = [(f"Euler depth {depth}", 2 ** depth, e_unit, e_split,

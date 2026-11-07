@@ -82,7 +82,7 @@ assert S % 2 == 0, f"S={S} must be even for a clean depth-1 split"
 p2, p4 = planes_of(D, 2), planes_of(D, 4)
 red, blue = (x.astype(int) for x in euler_split_once(D.astype(float)))
 red_h, blue_h = (x.astype(int) for x in
-                 euler_split_once(D.astype(float), split_method="heuristic"))
+                 euler_split_once(D.astype(float), split_method="heuristic_ruined"))
 
 cols = [
     ("radix-split\n$(D,2)$", [(coeff(2, len(p2), i), m) for i, m in enumerate(p2)]),

@@ -81,7 +81,7 @@ def run_all(M, engine_key):
     # --- Euler (runtime = split + max leaf, end-to-end) ---
     for d in DEPTHS:
         comps, split_s, max_leaf_s, n_leaves = decompose_euler_framework(
-            M.copy(), matching_method=engine_key, depth=d, split_method="heuristic")
+            M.copy(), matching_method=engine_key, depth=d, split_method="heuristic_ruined")
         out.append(dict(config=f"Euler d{d}", N=len(comps), C=_cycle(comps),
                         runtime_ms=(split_s + max_leaf_s) * 1000,
                         split_ms=split_s * 1000, unit_ms=max_leaf_s * 1000,
