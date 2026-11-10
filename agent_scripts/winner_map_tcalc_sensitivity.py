@@ -44,8 +44,8 @@ for name, re_, pre in ENG:
     # BvN from the SAME run as Euler (same matrices) so BvN-vs-Euler is artifact-free
     configs[f"{name} BvN"] = (de["bvn_perms"].mean(), de["bvn_cycle"].mean(), de["bvn_runtime"].mean()*1000)
     for d in [1, 2, 3, 4]:
-        tc = (de[f"euler_heuristic_depth{d}_time"].mean() + de[f"euler_heuristic_depth{d}_split"].mean())*1000
-        configs[f"{name} Euler d{d}"] = (de[f"euler_heuristic_depth{d}_perms"].mean(), de[f"euler_heuristic_depth{d}_cycle"].mean(), tc)
+        tc = (de[f"euler_heuristic_ruined_depth{d}_time"].mean() + de[f"euler_heuristic_ruined_depth{d}_split"].mean())*1000
+        configs[f"{name} Euler d{d}"] = (de[f"euler_heuristic_ruined_depth{d}_perms"].mean(), de[f"euler_heuristic_ruined_depth{d}_cycle"].mean(), tc)
 labels = list(configs)
 NCT = np.array([configs[l] for l in labels])
 
