@@ -23,7 +23,7 @@ param([int]$RadixSamples = 1000, [int]$EulerSamples = 105,
       [string]$Root = 'run/rerun_2026_11b', [switch]$SkipWorkloads, [switch]$Resume)
 $ErrorActionPreference = 'Continue'
 Add-Type -Namespace Win32 -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);'
-[Win32.Power]::SetThreadExecutionState(0x80000001) | Out-Null   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+[Win32.Power]::SetThreadExecutionState(0x80000001u) | Out-Null   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
 $Repo = Split-Path -Parent $PSScriptRoot
 Set-Location $Repo
 $py   = (Join-Path $Repo '.venv\Scripts\python.exe')

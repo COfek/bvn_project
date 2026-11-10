@@ -13,7 +13,7 @@
 param([string]$StartAt = '01:00')
 $ErrorActionPreference = 'Continue'
 Add-Type -Namespace Win32 -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);'
-[Win32.Power]::SetThreadExecutionState(0x80000001) | Out-Null   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+[Win32.Power]::SetThreadExecutionState(0x80000001u) | Out-Null   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
 $Repo = Split-Path -Parent $PSScriptRoot
 Set-Location $Repo
 $py = '.\.venv\Scripts\python.exe'
