@@ -1,0 +1,73 @@
+[MoE throughput] Mixtral-8x22B / throughput / L1  S=19613  density=100%
+[MoE throughput] Mixtral-8x22B / throughput / L5  S=22188  density=100%
+[MoE mmlu] Mixtral-8x22B / mmlu / L1  S=2250  density=100%
+[MoE mmlu] Mixtral-8x22B / mmlu / L5  S=2250  density=100%
+[MoE throughput] Mixtral-8x7B / throughput / L1  S=16384  density=100%
+[MoE throughput] Mixtral-8x7B / throughput / L5  S=16384  density=100%
+[MoE mmlu] Mixtral-8x7B / mmlu / L1  S=2498  density=100%
+[MoE mmlu] Mixtral-8x7B / mmlu / L5  S=2498  density=100%
+[MoE throughput] deepseek-moe-16b-chat / throughput / L1  S=36831  density=100%
+[MoE throughput] deepseek-moe-16b-chat / throughput / L5  S=39201  density=100%
+[MoE mmlu] deepseek-moe-16b-chat / mmlu / L1  S=8652  density=100%
+[MoE mmlu] deepseek-moe-16b-chat / mmlu / L5  S=9119  density=100%
+
+max reconstruction error over all 300 runs: 0
+
+================ MOE THROUGHPUT  (n=8, 6 traces) S=25100 ================
+engine      config      runtime(ms)        N         C    C/S    eta   full
+Hungarian   BvN               1.247       64     25105  1.000  1.000    21%
+Hungarian   B16               0.730      120     31997  1.194  0.864    29%
+Hungarian   B8                0.551      111     32705  1.225  0.842    27%
+Hungarian   B4                0.307       97     34035  1.285  0.797    31%
+Hungarian   B2                0.221       82     39993  1.563  0.644    20%
+WFA         BvN               0.022       64     27360  1.089  0.920    26%
+WFA         B16               0.062      134     33478  1.266  0.810    20%
+WFA         B8                0.058      131     34135  1.299  0.787    15%
+WFA         B4                0.058      107     35331  1.357  0.750    12%
+WFA         B2                0.076       86     40322  1.575  0.639     5%
+GW Dynamic  BvN               0.098       64     25355  1.016  0.985    29%
+GW Dynamic  B16               0.108      122     31357  1.180  0.869    36%
+GW Dynamic  B8                0.098      120     32108  1.212  0.845    32%
+GW Dynamic  B4                0.075      102     33352  1.268  0.804    34%
+GW Dynamic  B2                0.081       81     38304  1.514  0.663    20%
+GW Static   BvN               0.033       64     25539  1.027  0.975    48%
+GW Static   B16               0.065      131     31456  1.184  0.866    45%
+GW Static   B8                0.050      121     32620  1.235  0.831    38%
+GW Static   B4                0.053      101     33363  1.269  0.803    35%
+GW Static   B2                0.070       82     38631  1.522  0.660    20%
+WWFA        BvN               0.029       63     25224  1.003  0.997    13%
+WWFA        B16               0.055      131     31326  1.178  0.871    20%
+WWFA        B8                0.057      128     32030  1.208  0.849    17%
+WWFA        B4                0.056      106     33525  1.278  0.796    14%
+WWFA        B2                0.077       80     38281  1.513  0.664     4%
+
+================ MOE MMLU  (n=8, 6 traces) S=4544 ================
+engine      config      runtime(ms)        N         C    C/S    eta   full
+Hungarian   BvN               1.119       64      4943  1.045  0.961    23%
+Hungarian   B16               0.629       92      5157  1.212  0.837    23%
+Hungarian   B8                0.457       88      5083  1.085  0.924    22%
+Hungarian   B4                0.290       76      6791  1.417  0.712    23%
+Hungarian   B2                0.165       64      7104  1.507  0.666    15%
+WFA         BvN               0.022       63      5023  1.103  0.907    12%
+WFA         B16               0.044       99      5420  1.252  0.806    19%
+WFA         B8                0.041       96      5369  1.174  0.853    11%
+WFA         B4                0.043       81      7142  1.463  0.694    10%
+WFA         B2                0.053       67      7392  1.543  0.652     4%
+GW Dynamic  BvN               0.079       64      4549  1.002  0.998    26%
+GW Dynamic  B16               0.089       94      5028  1.171  0.863    28%
+GW Dynamic  B8                0.070       89      4912  1.065  0.940    26%
+GW Dynamic  B4                0.061       77      6745  1.386  0.731    26%
+GW Dynamic  B2                0.060       64      7094  1.476  0.684    16%
+GW Static   BvN               0.027       64      4598  1.009  0.991    31%
+GW Static   B16               0.049       95      5029  1.172  0.863    35%
+GW Static   B8                0.042       89      4934  1.067  0.937    30%
+GW Static   B4                0.044       76      6701  1.380  0.734    27%
+GW Static   B2                0.057       64      7175  1.484  0.681    16%
+WWFA        BvN               0.030       63      4653  1.019  0.981    13%
+WWFA        B16               0.049       95      5203  1.191  0.846    18%
+WWFA        B8                0.047       95      5118  1.096  0.915    12%
+WWFA        B4                0.051       79      6577  1.366  0.740     7%
+WWFA        B2                0.055       64      6916  1.452  0.694     2%
+
+saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run/rerun_2026_11e\moe_workload\moe_results.csv
+saved -> C:\Users\ofekc\Desktop\Msc\Thesis\bvn_project\run/rerun_2026_11e\moe_workload\moe_summary.csv
