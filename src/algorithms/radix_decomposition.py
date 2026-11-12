@@ -59,6 +59,12 @@ def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
     each iteration. By extracting the m x n submatrix of active rows we pay
     O(m * n^2) instead, which is a meaningful saving when m < n (e.g. as rows
     are progressively drained during digit-plane decomposition).
+
+    The rule is the one of bvn.py's "maximum" engine (since 2026-11-11; before, the
+    planes took the plain maximum-weight assignment, whatever its number of edges):
+    a zero entry costs more than any matching weighs, so the assignment has as many
+    positive edges as possible and, among those, maximum total weight. When the
+    plane has a perfect matching this is the perfect matching of maximum weight.
     """
     tol = 1e-9
     active_rows = np.where(matrix.max(axis=1) > tol)[0]
@@ -66,7 +72,8 @@ def maximum_matching_wrapper(matrix: np.ndarray) -> List[Tuple[int, int]]:
         return []
 
     sub = matrix[active_rows, :]
-    row_ind, col_ind = linear_sum_assignment(sub, maximize=True)
+    big = float(sub.max() + 1.0) * matrix.shape[0]   # more than any matching weighs
+    row_ind, col_ind = linear_sum_assignment(np.where(sub > tol, -sub, big))
 
     matches = []
     for r, c in zip(row_ind, col_ind):
