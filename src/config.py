@@ -53,7 +53,7 @@ class ExperimentConfig:
 
     # BvN matching engine used on the Euler leaves AND for the BvN baseline
     # when engine == "euler_bvn" (so baseline vs. leaves is a fair
-    # comparison): "heavy", "heavy_static", "wfa", "maximum", "minimum".
+    # comparison): "heavy", "heavy_static", "wfa", "wwfa", "maximum", "minimum".
     euler_leaf_engine: str = "heavy_static"
 
     engine: str = field(default="bvn", metadata={"help": "Decomposition engine: 'bvn', 'wfa', 'heavy', 'maximum', 'all', 'wfa_bvn'"})

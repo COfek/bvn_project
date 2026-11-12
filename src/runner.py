@@ -46,6 +46,8 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
     bvn_engine = "maximum"
     if config.engine == "wfa_bvn":
         bvn_engine = "wfa"
+    elif config.engine == "wwfa_bvn":
+        bvn_engine = "wwfa"
     elif config.engine == "heavy_bvn":
         bvn_engine = "heavy"
     elif config.engine == "heavy_static_bvn":
@@ -63,7 +65,7 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         bvn_engine = getattr(config, "euler_leaf_engine", "heavy_static")
 
     if config.engine in [
-        "all", "wfa_bvn", "shuffled",
+        "all", "wfa_bvn", "wwfa_bvn", "shuffled",
         "heavy_bvn", "heavy_static_bvn",
         "maximum_bvn", "maximum",
         "minimum_bvn",
@@ -109,6 +111,8 @@ def _compute_for_index(index: int, config: ExperimentConfig) -> DecompositionSta
         target_engines = ["wfa", "maximum", "heavy", "heavy_static"]
     elif config.engine == "wfa_bvn":
         target_engines = ["wfa"]
+    elif config.engine == "wwfa_bvn":
+        target_engines = ["wwfa"]
     elif config.engine == "heavy_bvn":
         target_engines = ["heavy"]
     elif config.engine == "heavy_static_bvn":

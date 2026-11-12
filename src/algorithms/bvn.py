@@ -14,11 +14,12 @@ from .sorted_array_matching import (
     _jit_decompose_sorted_static_noaug,
 )
 from .wfa import _jit_decompose_wfa
+from .wwfa import _jit_decompose_wwfa
 
 FloatMatrix = NDArray[np.float64]
 
 STRATEGY_INT = {"min": 0, "median": 1, "max": 2}
-JIT_ENGINES = ("heavy", "heavy_static", "wfa", "heavy_noaug", "heavy_static_noaug")
+JIT_ENGINES = ("heavy", "heavy_static", "wfa", "wwfa", "heavy_noaug", "heavy_static_noaug")
 
 
 @dataclass
@@ -74,7 +75,7 @@ def bvn_decomposition(
     Args:
         matrix: The input matrix (must be Doubly Stochastic / K-regular).
         matching_algorithm: 'maximum' / 'minimum' (Hungarian), 'heavy' / 'heavy_static'
-            (GW Dynamic / GW Static), 'wfa', or the weak '*_noaug' variants.
+            (GW Dynamic / GW Static), 'wfa', 'wwfa' (wrapped WFA), or the weak '*_noaug' variants.
         max_iters: Optional limit on iterations (Hungarian engines only).
         step_strategy: 'min', 'median' or 'max' ('*_noaug' support 'min' only).
 
@@ -143,6 +144,8 @@ def _bvn_plan(matrix, matching_algorithm, max_iters, step_strategy):
             return _jit_decompose_sorted_static(work, strategy_int, 1e-9)
         if matching_algorithm == "wfa":
             return _jit_decompose_wfa(work, n, 1e-9, strategy_int)
+        if matching_algorithm == "wwfa":
+            return _jit_decompose_wwfa(work, n, 1e-9, strategy_int)
         # GW without augmenting paths: weak (partial-matching) decompositions, min step only
         if strategy_int != 0:
             raise ValueError(f"{matching_algorithm!r} supports step_strategy='min' only")

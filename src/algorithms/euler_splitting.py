@@ -50,6 +50,7 @@ from .sorted_array_matching import (
     _jit_decompose_sorted_static,
 )
 from .wfa import _jit_decompose_wfa
+from .wwfa import _jit_decompose_wwfa
 
 SPLIT_METHODS = ("heuristic", "heuristic_ruined", "heuristic_ruined_last", "heuristic_scan",
                  "euler", "euler_grouped", "greedy")
@@ -1294,13 +1295,15 @@ def _leaf_bvn(
     """
     strategy_int = strategy_index(step_strategy)
 
-    if matching_method in ("heavy", "heavy_static", "wfa"):
+    if matching_method in ("heavy", "heavy_static", "wfa", "wwfa"):
         t0 = time.perf_counter()
         work = leaf_float.copy()
         if matching_method == "heavy":
             weights, all_matches = _jit_decompose_sorted_dynamic(work, strategy_int, tol)
         elif matching_method == "heavy_static":
             weights, all_matches = _jit_decompose_sorted_static(work, strategy_int, tol)
+        elif matching_method == "wwfa":
+            weights, all_matches = _jit_decompose_wwfa(work, work.shape[0], tol, strategy_int)
         else:
             weights, all_matches = _jit_decompose_wfa(work, work.shape[0], tol, strategy_int)
         seconds = time.perf_counter() - t0
@@ -1333,7 +1336,7 @@ def decompose_euler_framework(
 
     Args:
         matrix:         n×n non-negative integer matrix with equal row/col sums.
-        matching_method: BvN matching engine ("heavy", "heavy_static", "wfa",
+        matching_method: BvN matching engine ("heavy", "heavy_static", "wfa", "wwfa",
                          "maximum", "minimum").
         depth:          Number of splitting rounds (≥ 0).
                         depth=0 → plain BvN on the full matrix.

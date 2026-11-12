@@ -17,6 +17,7 @@ from .sorted_array_matching import (
     _jit_decompose_sorted_static_noaug,
 )
 from .wfa import wavefront_matching_vectorized, _jit_decompose_wfa
+from .wwfa import _jit_decompose_wwfa
 from .bvn import materialise, strategy_index
 
 
@@ -128,7 +129,7 @@ def extract_digit_planes(matrix: np.ndarray, base: int) -> List[Tuple[float, np.
 
 
 PLANE_ENGINES = ("heavy", "heavy_static", "heavy_noaug", "heavy_static_noaug",
-                 "wfa", "maximum", "minimum")
+                 "wfa", "wwfa", "maximum", "minimum")
 
 
 def decompose_radix(
@@ -206,6 +207,8 @@ def _plane_plan(plane: np.ndarray, strategy_int: int, matching_method: str):
         return _jit_decompose_sorted_static(x, strategy_int=strategy_int, tol=tol)
     if matching_method == "wfa":
         return _jit_decompose_wfa(x, x.shape[0], tol=tol, strategy_int=strategy_int)
+    if matching_method == "wwfa":
+        return _jit_decompose_wwfa(x, x.shape[0], tol, strategy_int)
     if matching_method in ("heavy_noaug", "heavy_static_noaug"):
         if strategy_int != 0:
             raise ValueError(f"{matching_method!r} supports step_strategy='min' only")

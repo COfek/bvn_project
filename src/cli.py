@@ -14,8 +14,8 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--engine", "-e", type=str, default="all",
                         choices=[
-                            "wfa", "max", "heavy", "heavy_static", "all",
-                            "wfa_bvn", "heavy_bvn", "heavy_static_bvn",
+                            "wfa", "wwfa", "max", "heavy", "heavy_static", "all",
+                            "wfa_bvn", "wwfa_bvn", "heavy_bvn", "heavy_static_bvn",
                             "maximum_bvn", "minimum_bvn",
                             "heavy_noaug_bvn", "heavy_static_noaug_bvn",
                             "euler_bvn",
@@ -64,7 +64,7 @@ def parse_args() -> argparse.Namespace:
                              "(same-direction split, sparser leaves) is the default; "
                              "'euler' is the classic alternating 2-colouring.")
     parser.add_argument("--euler-leaf-engine", type=str, default="heavy_static",
-                        choices=["heavy", "heavy_static", "wfa", "maximum", "minimum"],
+                        choices=["heavy", "heavy_static", "wfa", "wwfa", "maximum", "minimum"],
                         help="BvN matching engine for the Euler leaves. Also used for "
                              "the BvN baseline and Radix planes when --engine euler_bvn, "
                              "so all three frameworks are compared with the same engine "
