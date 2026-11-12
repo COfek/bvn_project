@@ -41,13 +41,51 @@ SWEEPS = (1, 2, 3)   # named, never globbed: sweep3_contaminated must stay out
 WARMUP = 5
 
 
-def _one(sweep: int, kind: str, engine: str) -> pd.DataFrame:
+# Which campaign the scripts read. "variance_2026" (the default) is what the paper
+# quotes today; "2026_11" is the November rerun, assembled from the runs below.
+CAMPAIGN = os.environ.get("BVN_CAMPAIGN", "variance_2026")
+
+
+def campaign_dir(sweep: int, kind: str, engine: str) -> str:
+    """The run/ folder holding one sweep of one step, relative to the repository.
+
+    For 2026_11:
+      Radix Hungarian (and its baseline)  rerun_2026_11c, sweeps 1-3 (bvn.py's rule)
+      WWFA, every step                    sweep 1 rerun_2026_11c, sweeps 2-3 wwfa_2026_11
+      Euler, the other engines            rerun_2026_11b, sweeps 1-3 (four tiers)
+      Radix and baseline, GW and WFA      sweeps 1-2 rerun_2026_11, sweep 3 rerun_2026_11b
+    """
+    if CAMPAIGN == "variance_2026":
+        root = "run/variance_2026"
+    elif CAMPAIGN == "2026_11":
+        if engine == "wwfa":
+            root = "run/rerun_2026_11c" if sweep == 1 else "run/wwfa_2026_11"
+        elif kind == "radix" and engine == "max":
+            root = "run/rerun_2026_11c"
+        elif kind == "euler":
+            root = "run/rerun_2026_11b"
+        else:
+            root = "run/rerun_2026_11" if sweep in (1, 2) else "run/rerun_2026_11b"
+    else:
+        raise ValueError(f"unknown BVN_CAMPAIGN {CAMPAIGN!r}")
+    return f"{root}/sweep{sweep}/{kind}/{engine}"
+
+
+def campaign_csv(sweep: int, kind: str, engine: str) -> str:
     hits = sorted(glob.glob(os.path.join(
-        ROOT, f"run/variance_2026/sweep{sweep}/{kind}/{engine}/*/results_stats.csv")))
+        ROOT, campaign_dir(sweep, kind, engine), "*", "results_stats.csv")))
     if not hits:
-        raise FileNotFoundError(f"no results for sweep{sweep}/{kind}/{engine}")
-    d = pd.read_csv(hits[-1])
-    if kind == "radix":
+        raise FileNotFoundError(f"no results for {campaign_dir(sweep, kind, engine)}")
+    return hits[-1]
+
+
+# the campaigns before 2026-10-04 did not time the digit extraction
+CHARGE_EXTRACTION = CAMPAIGN == "variance_2026"
+
+
+def _one(sweep: int, kind: str, engine: str) -> pd.DataFrame:
+    d = pd.read_csv(campaign_csv(sweep, kind, engine))
+    if kind == "radix" and CHARGE_EXTRACTION:
         # the campaign timed the slowest plane only; charge the digit extraction
         d = add_to_radix_times(d, "variance")
     return d.iloc[WARMUP:].reset_index(drop=True)
@@ -99,8 +137,11 @@ EULER_WINDOW = len(_mean_over_sweeps("euler", "maximum"))
 
 
 if __name__ == "__main__":
-    for e, p in (("max", "maximum"), ("wfa", "wfa"),
-                 ("heavy", "heavy"), ("heavy_static", "heavy_static")):
+    engines = [("max", "maximum"), ("wfa", "wfa"),
+               ("heavy", "heavy"), ("heavy_static", "heavy_static")]
+    if CAMPAIGN != "variance_2026":
+        engines.append(("wwfa", "wwfa"))
+    for e, p in engines:
         dr, de = radix_frame(e), euler_frame(p)
         print(f"{e:13s} rows {len(dr):4d}  BvN {dr.bvn_runtime.mean()*1000:7.1f} ms "
               f"N {dr.bvn_perms.mean():8.1f}  C {dr.bvn_cycle.mean():9.2f}   "

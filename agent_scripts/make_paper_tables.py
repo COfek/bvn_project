@@ -42,6 +42,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from radix_extraction import add_to_radix_times, extraction_ms  # noqa: E402
+from variance_data import CAMPAIGN, CHARGE_EXTRACTION, campaign_csv  # noqa: E402
 
 ROOT = str(REPO)
 OUT = str(PAPER)
@@ -54,6 +55,8 @@ ENGINES = [("max", "maximum", "Hungarian"),
            ("wfa", "wfa", "WFA"),
            ("heavy", "heavy", "GW Dynamic"),
            ("heavy_static", "heavy_static", "GW Static")]
+if CAMPAIGN != "variance_2026":   # the November rerun: WWFA is the weak engine, in place of WFA
+    ENGINES = [("wwfa", "wwfa", "WWFA") if e[0] == "wfa" else e for e in ENGINES]
 
 BASES = [16, 8, 4, 2]
 DEPTHS = [1, 2, 3, 4]
@@ -70,8 +73,8 @@ def newest(pattern: str) -> str:
 
 def frame(sweep: int, kind: str, engine: str, rows: int | None = None) -> pd.DataFrame:
     """One sweep's results for one engine. kind is radix, euler or baseline."""
-    d = pd.read_csv(newest(f"run/variance_2026/sweep{sweep}/{kind}/{engine}/*/results_stats.csv"))
-    if kind == "radix":
+    d = pd.read_csv(campaign_csv(sweep, kind, engine))
+    if kind == "radix" and CHARGE_EXTRACTION:
         # the campaign timed the slowest plane only; charge the digit extraction
         d = add_to_radix_times(d, "variance")
     d = d.iloc[WARMUP:]

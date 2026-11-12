@@ -18,7 +18,7 @@ from radix_extraction import correct_summary, correct_scale_results  # noqa: E40
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 # same campaign as Chapter 6's tables and Chapter 7's figures
-from variance_data import radix_frame, euler_frame
+from variance_data import CAMPAIGN, radix_frame, euler_frame
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -28,6 +28,10 @@ ROOT = str(REPO)
 PLOTS = str(PLOTS)
 ENG = [("Hungarian", "#0072B2", "o"), ("GW Dynamic", "#D55E00", "s"),
        ("GW Static", "#009E73", "^"), ("WFA", "#CC79A7", "D")]
+# the workloads of a rerun live under BVN_RUN_ROOT (default run/), as their campaign scripts write them
+RUN = os.environ.get("BVN_RUN_ROOT", "run")
+if CAMPAIGN != "variance_2026":   # the November rerun: WWFA is the weak engine, in place of WFA
+    ENG = [("WWFA", c, m) if n == "WFA" else (n, c, m) for n, c, m in ENG]
 BASES = [16, 8, 4, 2]
 DEPTHS = [1, 2, 3, 4]
 
@@ -44,10 +48,10 @@ def _style(ax, xlab, ylab, logx=False, logy=True):
 
 
 # ============================== RADIX (scaled) ==============================
-res = correct_scale_results(pd.read_csv(os.path.join(ROOT, "run", "radix_scale", "scale_results.csv")))  # charge Radix's digit extraction
+res = correct_scale_results(pd.read_csv(os.path.join(ROOT, RUN, "radix_scale", "scale_results.csv")))  # charge Radix's digit extraction
 res["S_original"] = res.S_scaled / res.scale
 res["C_orig"] = res.C_over_S * res.S_original
-bvn = pd.read_csv(os.path.join(ROOT, "run", "tm_workload", "tm_summary.csv"))
+bvn = pd.read_csv(os.path.join(ROOT, RUN, "tm_workload", "tm_summary.csv"))
 r = res[res.regime == "Uniform"]
 b = bvn[bvn.regime == "Uniform (thesis)"]
 
@@ -99,6 +103,8 @@ KEYS = [("Hungarian", "max", "maximum"), ("GW Dynamic", "heavy", "heavy"),
         ("GW Static", "heavy_static", "heavy_static"), ("WFA", "wfa", "wfa")]
 COL = {n: c for n, c, _ in ENG}
 MK = {n: m for n, _, m in ENG}
+if CAMPAIGN != "variance_2026":
+    KEYS = [("WWFA", "wwfa", "wwfa") if k[1] == "wfa" else k for k in KEYS]
 
 fig, axes = plt.subplots(1, 2, figsize=(3.4, 1.8))
 fig.subplots_adjust(wspace=0.35, bottom=0.25)

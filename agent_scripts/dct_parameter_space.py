@@ -20,7 +20,7 @@ import sys, os as _os
 _os.sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 # Chapter 6's tables and these figures must agree, so both read the
 # three-sweep variance campaign rather than the older rerun_2026.
-from variance_data import radix_frame, euler_frame, EULER_WINDOW
+from variance_data import CAMPAIGN, radix_frame, euler_frame, EULER_WINDOW
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
@@ -36,6 +36,8 @@ ROOT = str(REPO)
 OUT = str(PLOTS)
 ENG = [("Hungarian", "max", "maximum"), ("WFA", "wfa", "wfa"),
        ("GW Dynamic", "heavy", "heavy"), ("GW Static", "heavy_static", "heavy_static")]
+if CAMPAIGN != "variance_2026":   # the November rerun: WWFA is the weak engine, in place of WFA
+    ENG = [("WWFA", "wwfa", "wwfa") if e[1] == "wfa" else e for e in ENG]
 
 def rerun(e): return sorted(glob.glob(f"{ROOT}/run/rerun_2026/{e}/*/results_stats.csv"))[-1]
 def euler(p): return sorted(glob.glob(f"{ROOT}/euler_exp/eng_{p}_dense_d4/*/results_stats.csv"))[-1]
