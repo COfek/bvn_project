@@ -18,6 +18,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
+from winner_colors import color_of, label_regions
 from matplotlib.patches import Patch
 from matplotlib.ticker import FuncFormatter
 def _tfmt(v, _p):
@@ -75,9 +76,8 @@ for s, _ in SCALES:
     wins.append(allD.argmin(axis=0))
 
 winners_all = sorted(set(np.concatenate([w.ravel() for w in wins]).tolist()))
-cmap_cols = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999", "#000000", "#882255"]
 remap = {w: i for i, w in enumerate(winners_all)}
-cmap = ListedColormap(cmap_cols[:len(winners_all)])
+cmap = ListedColormap([color_of(labels[w]) for w in winners_all])
 norm = BoundaryNorm(np.arange(-0.5, len(winners_all)+0.5), cmap.N)
 
 for w, (s, ttl) in zip(wins, SCALES):
@@ -89,23 +89,25 @@ wins = [wins[i] for i in keep]
 SCALES = [SCALES[i] for i in keep]
 winners_all = sorted(set(np.concatenate([w.ravel() for w in wins]).tolist()))
 remap = {w: i for i, w in enumerate(winners_all)}
-cmap = ListedColormap(cmap_cols[:len(winners_all)])
+cmap = ListedColormap([color_of(labels[w]) for w in winners_all])
 norm = BoundaryNorm(np.arange(-0.5, len(winners_all)+0.5), cmap.N)
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharex=True, sharey=True)
 for ax, w, (s, ttl) in zip(axes, wins, SCALES):
     ax.pcolormesh(TC, R, np.vectorize(remap.get)(w), cmap=cmap, norm=norm, shading="auto")
+    label_regions(ax, np.vectorize(remap.get)(w), TC, R,
+                  {remap[x]: labels[x] for x in winners_all}, fontsize=10, min_share=0.015)
     ax.axhline(10, color="k", ls="--", lw=1.1)
     ax.set_xscale("log"); ax.set_yscale("log")
     ax.xaxis.set_major_formatter(TFMT)
     bvn_pct = (w == bvn_i).mean() * 100
     ax.set_title(f"{ttl}\nHungarian BvN wins {bvn_pct:.0f}%", fontsize=10.5,
-                 color=("#0072B2" if bvn_pct > 0.5 else "black"),
+                 color="black",
                  fontweight=("bold" if bvn_pct > 0.5 else "normal"))
 axes[0].set_ylabel("ratio  $r = T_{unit}/T_{config}$")
 for ax in axes:
     ax.set_xlabel("$T_{config}$")
-handles = [Patch(color=cmap_cols[remap[w]], label=labels[w]) for w in winners_all] \
+handles = [Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_all] \
         + [plt.Line2D([], [], color="k", ls="--", lw=1.1, label="$r=10$")]
 fig.legend(handles=handles, title="Winning configuration", ncol=min(len(handles), 5),
            loc="lower center", fontsize=9, title_fontsize=10, framealpha=0.95,

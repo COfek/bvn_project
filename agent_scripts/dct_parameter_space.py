@@ -24,6 +24,7 @@ from variance_data import CAMPAIGN, radix_frame, euler_frame, EULER_WINDOW
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap, BoundaryNorm
+from winner_colors import color_of, label_regions
 from matplotlib.ticker import FuncFormatter
 
 def _tfmt(v, _p):
@@ -97,17 +98,16 @@ axr.set_xlabel("$T_{config}$"); axr.set_ylabel("$T_{unit}$")
 # [point 27] panel title moved to caption: axr.set_title(f"Ratio: {labels[A]} vs {labels[B]}\n(green = {labels[A]} wins, red = {labels[B]} wins)")
 
 # winner map (only dominant winners, discrete colors)
-cmap_cols = ["#E69F00","#56B4E9","#009E73","#F0E442","#0072B2","#D55E00","#CC79A7","#999999","#000000","#882255"]
 remap = {w:i for i,w in enumerate(winners)}
 winimg = np.vectorize(remap.get)(win)
-cmap = ListedColormap(cmap_cols[:len(winners)])
+cmap = ListedColormap([color_of(labels[w]) for w in winners])
 norm = BoundaryNorm(np.arange(-0.5, len(winners)+0.5), cmap.N)
 axw.pcolormesh(TC, TU, winimg, cmap=cmap, norm=norm, shading="auto")
 axw.set_xscale("log"); axw.set_yscale("log")
 axw.set_xlabel("$T_{config}$"); axw.set_ylabel("$T_{unit}$")
 # [point 27] panel title moved to caption: axw.set_title("Winner map (lowest-DCT configuration)")
 from matplotlib.patches import Patch
-axw.legend(handles=[Patch(color=cmap_cols[remap[w]], label=labels[w]) for w in winners],
+axw.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners],
            fontsize=8, loc="upper left", framealpha=0.95)
 
 for ax in (axr, axw):
@@ -151,7 +151,7 @@ figR.colorbar(pcr, ax=axrr, label=f"DCT ratio  ({labels[A]} / {labels[B]})")
 # [point 27] panel title moved to caption: axrr.set_title(f"Ratio: {labels[A]} vs {labels[B]}\n(green = {labels[A]} wins, red = {labels[B]} wins)")
 
 remap_r = {w: i for i, w in enumerate(winners_r)}
-cmap_r = ListedColormap(cmap_cols[:len(winners_r)])
+cmap_r = ListedColormap([color_of(labels[w]) for w in winners_r])
 norm_r = BoundaryNorm(np.arange(-0.5, len(winners_r)+0.5), cmap_r.N)
 axrw.pcolormesh(TCr, R, np.vectorize(remap_r.get)(winr), cmap=cmap_r, norm=norm_r, shading="auto")
 # [point 27] panel title moved to caption: axrw.set_title("Winner map (lowest-DCT configuration)")
@@ -163,7 +163,7 @@ for ax in (axrr, axrw):
     ax.set_xlim(tcfgr.min(), tcfgr.max()); ax.set_ylim(rgrid.min(), rgrid.max())
     ax.xaxis.set_major_formatter(TFMT)
 axrr.legend(fontsize=8, loc="upper left", framealpha=0.9)
-axrw.legend(handles=[Patch(color=cmap_cols[remap_r[w]], label=labels[w]) for w in winners_r]
+axrw.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_r]
                    + [Line2D([], [], color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$"),
                       Line2D([], [], color="navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")],
             title="Winning configuration", title_fontsize=9,
@@ -180,6 +180,8 @@ print("saved dct_param_space_ratio")
 # one pair of configurations, which the winner map already subsumes.
 figW, axW = plt.subplots(figsize=(3.4, 2.7))
 axW.pcolormesh(TCr, R, np.vectorize(remap_r.get)(winr), cmap=cmap_r, norm=norm_r, shading="auto")
+label_regions(axW, np.vectorize(remap_r.get)(winr), TCr, R,
+              {remap_r[w]: labels[w] for w in winners_r}, fontsize=5, min_share=0.015)
 axW.axhline(10, color="k", ls="--", lw=1.0)
 axW.plot(tcfgr, 0.01 / tcfgr, "navy", ls=":", lw=1.0)
 axW.set_xscale("log"); axW.set_yscale("log")
@@ -188,10 +190,10 @@ axW.set_ylabel("ratio  $r = T_{unit}/T_{config}$", fontsize=7)
 axW.set_xlim(tcfgr.min(), tcfgr.max()); axW.set_ylim(rgrid.min(), rgrid.max())
 axW.xaxis.set_major_formatter(TFMT)
 axW.tick_params(labelsize=6)
-axW.legend(handles=[Patch(color=cmap_cols[remap_r[w]], label=labels[w]) for w in winners_r]
+axW.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_r]
                   + [Line2D([], [], color="k", ls="--", lw=1.0, label="$T_{unit}=10\\,T_{config}$"),
                      Line2D([], [], color="navy", ls=":", lw=1.0, label="Paper: $T_{unit}=0.01$ ms")],
-           fontsize=5.2, loc="upper left", framealpha=0.95, handlelength=1.4, borderpad=0.3)
+           fontsize=5.2, loc="upper center", bbox_to_anchor=(0.5, -0.24), ncol=3, frameon=False, handlelength=1.4, columnspacing=1.0)
 figW.tight_layout()
 figW.savefig(f"{OUT}/dct_winner_map.pdf", bbox_inches="tight")
 figW.savefig(f"{OUT}/dct_winner_map.png", dpi=200, bbox_inches="tight")
@@ -217,14 +219,14 @@ ax2 = fig.add_subplot(111, projection="3d")
 minZr = np.log10(allDr.min(axis=0))
 facecol = np.empty(winr.shape + (4,))
 for w in winners_r:
-    facecol[winr == w] = to_rgba(cmap_cols[remap_r[w]])
+    facecol[winr == w] = to_rgba(color_of(labels[w]))
 ax2.plot_surface(LTCr, LR, minZr, facecolors=facecol, alpha=1.0, linewidth=0, antialiased=False, shade=False)
 ax2.set_xticks(_xt); ax2.set_xticklabels(_xtl, fontsize=9)
 ax2.set_yticks(_yt); ax2.set_yticklabels(_ytl, fontsize=9)
 ax2.set_xlabel("$T_{config}$", labelpad=10); ax2.set_ylabel("ratio $r=T_{unit}/T_{config}$", labelpad=10)
 ax2.set_zlabel("log10 DCT", labelpad=6)
 ax2.view_init(elev=22, azim=-52)
-ax2.legend(handles=[Patch(color=cmap_cols[remap_r[w]], label=labels[w]) for w in winners_r],
+ax2.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_r],
            title="Winning configuration", title_fontsize=9,
            fontsize=9, loc="upper left", framealpha=0.95)
 # [point 27] title moved to caption: fig.suptitle("Minimum-DCT surface, coloured by winning configuration\n"
@@ -281,7 +283,7 @@ else:
 
 figE, axE = plt.subplots(figsize=(9, 6))
 remap_e = {w: i for i, w in enumerate(winners_e)}
-cmap_e = ListedColormap(cmap_cols[:len(winners_e)])
+cmap_e = ListedColormap([color_of(labels[w]) for w in winners_e])
 norm_e = BoundaryNorm(np.arange(-0.5, len(winners_e)+0.5), cmap_e.N)
 axE.pcolormesh(TCe, Re, np.vectorize(remap_e.get)(wine), cmap=cmap_e, norm=norm_e, shading="auto")
 axE.axvline(1.0, color="k", ls="-", lw=2.0)      # realistic hardware ceiling (1 ms)
@@ -294,7 +296,7 @@ axE.set_xscale("log"); axE.set_yscale("log")
 axE.set_xlabel("$T_{config}$"); axE.set_ylabel("ratio  $r = T_{unit}/T_{config}$")
 axE.xaxis.set_major_formatter(TFMT)
 axE.set_xlim(tcfg_ext.min(), tcfg_ext.max()); axE.set_ylim(rgrid2.min(), rgrid2.max())
-axE.legend(handles=[Patch(color=cmap_cols[remap_e[w]], label=labels[w]) for w in winners_e]
+axE.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_e]
                    + [Line2D([], [], color="k", ls="-", lw=2.0, label="realistic limit (1 ms)")],
            title="Winning configuration", title_fontsize=9, fontsize=8,
            loc="upper right", framealpha=0.95)
