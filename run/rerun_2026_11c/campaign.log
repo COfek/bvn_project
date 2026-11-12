@@ -1,0 +1,26 @@
+[2026-11-12 03:00:08] environment recorded -> run/rerun_2026_11c/environment.json
+[2026-11-12 03:00:08] --- WWFA sweep 1, measured again ---
+[2026-11-12 03:00:09] sweep 1 radix wwfa  starting  cpu_load=0% processes=306
+[2026-11-12 03:24:13] sweep 1 radix wwfa  done in 24.1 min  exit 0
+[2026-11-12 03:24:14] sweep 1 baseline wwfa  starting  cpu_load=2% processes=306
+[2026-11-12 03:54:50] sweep 1 baseline wwfa  done in 30.6 min  exit 0
+[2026-11-12 03:54:51] sweep 1 euler wwfa  starting  cpu_load=22% processes=321
+[2026-11-12 04:13:22] sweep 1 euler wwfa  done in 18.5 min  exit 0
+[2026-11-12 04:13:22] --- Radix Hungarian, sweep 1 of 3 ---
+[2026-11-12 04:13:23] sweep 1 radix max  starting  cpu_load=0% processes=305
+[2026-11-12 05:06:14] sweep 1 radix max  done in 52.9 min  exit 0
+[2026-11-12 05:06:14] --- Radix Hungarian, sweep 2 of 3 ---
+[2026-11-12 05:06:15] sweep 2 radix max  starting  cpu_load=5% processes=307
+[2026-11-12 05:59:17] sweep 2 radix max  done in 53.0 min  exit 0
+[2026-11-12 05:59:17] --- Radix Hungarian, sweep 3 of 3 ---
+[2026-11-12 05:59:18] sweep 3 radix max  starting  cpu_load=3% processes=309
+[2026-11-12 06:52:17] sweep 3 radix max  done in 53.0 min  exit 0
+[2026-11-12 06:52:18] workload tm  starting  cpu_load=0% processes=306
+[2026-11-12 07:07:16] workload tm  done in 15.0 min  exit 0
+[2026-11-12 07:07:18] workload moe  starting  cpu_load=1% processes=306
+[2026-11-12 07:07:23] workload moe  done in 0.1 min  exit 0
+[2026-11-12 07:07:24] workload radix_scale  starting  cpu_load=1% processes=306
+[2026-11-12 07:11:52] workload radix_scale  done in 4.5 min  exit 0
+[2026-11-12 07:11:53] workload skew  starting  cpu_load=10% processes=305
+[2026-11-12 07:31:33] workload skew  done in 19.7 min  exit 0
+[2026-11-12 07:31:33] === all campaigns finished in 4.52 hours ===
