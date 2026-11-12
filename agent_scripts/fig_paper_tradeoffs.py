@@ -60,11 +60,18 @@ b = bvn[bvn.regime == "Uniform (thesis)"]
 
 fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.0))
 fig.subplots_adjust(wspace=0.30, bottom=0.22)
-S0 = float(r.S_original.iloc[0])
+# C = S line at the mean demand of the matrices the Radix points average over (before, the
+# first matrix's S alone)
+S0 = float(r.groupby("matrix").S_original.first().mean())
 for name, col, mk in ENG:
-    g = (r[r.engine == name].groupby(["base", "scale"])
-         .agg(C=("C_orig", "mean"), N=("N", "mean"), T=("runtime_ms", "mean")).reset_index())
-    tu = g.loc[g.groupby("base").C.idxmin()].set_index("base").reindex(BASES)
+    # The tight scale depends on the matrix's largest entry, so each matrix has its own: pick,
+    # per matrix, the scale with the shortest cycle (c=1 or one of the two tight scales), then
+    # average over the matrices, so every point uses all of them. (Picking the (base, scale)
+    # group with the lowest mean cycle selected single matrices, those with the smallest S.)
+    e = r[r.engine == name]
+    best = e.loc[e.groupby(["base", "matrix"]).C_over_S.idxmin()]
+    tu = (best.groupby("base")
+          .agg(C=("C_orig", "mean"), N=("N", "mean"), T=("runtime_ms", "mean")).reindex(BASES))
     bv = b[(b.engine == name) & (b.config == "BvN")]
     bC, bN, bT = float(bv.C.iloc[0]), float(bv.N.iloc[0]), float(bv.runtime_ms.iloc[0])
     Cs, Ns, Ts = [bC] + tu.C.tolist(), [bN] + tu.N.tolist(), [bT] + tu["T"].tolist()
