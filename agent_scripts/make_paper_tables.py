@@ -201,6 +201,53 @@ def table_euler() -> str:
 
 
 # --------------------------------------------------------------------------
+# Radix scaled against unscaled (the scale sweep)
+# --------------------------------------------------------------------------
+SCALE_RUN = os.environ.get("BVN_RUN_ROOT", "run")   # the scale sweep lives with the workloads
+
+
+def table_scale() -> str:
+    """Radix(B, c) against Radix(B, 1) on the scale sweep's own matrices.
+
+    The tight scale depends on the matrix's largest entry, so each matrix has its own: per
+    matrix we keep the scale with the shortest cycle among c = 1 and the two tight scales (for
+    the natural plane count and one plane more), then average over the matrices. Fig. 3 draws
+    the same selection (fig_paper_tradeoffs.py).
+    """
+    from radix_extraction import correct_scale_results
+    path = os.path.join(ROOT, SCALE_RUN, "radix_scale", "scale_results.csv")
+    res = pd.read_csv(path)
+    if SCALE_RUN == "run":          # only the old campaign lacks the digit-extraction time
+        res = correct_scale_results(res)
+    res = res[res.regime == "Uniform"]
+    n = res.matrix.nunique()
+    names = [name for _d, _c, name in ENGINES]
+    out = [header("Radix scaled against unscaled, dense generated workload",
+                  [("all engines", os.path.relpath(path, ROOT).replace(os.sep, "/"))], n)
+           .replace(f"% Times are the mean over {len(SWEEPS)} full repetitions of the campaign;\n"
+                    "% cycle and permutation counts are identical across all of them.\n", "")
+           .replace(f" per sweep after discarding the first {WARMUP}", ", one run of the scale sweep"),
+           r"\begin{tabular}{ll rr rr rr}", r"\toprule",
+           r"& & \multicolumn{2}{c}{$\Tc$ (ms)} & \multicolumn{2}{c}{$C/S$} "
+           r"& \multicolumn{2}{c}{$N$} \\",
+           r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
+           r"\textbf{Engine} & \textbf{Base} & $c=1$ & scaled & $c=1$ & scaled & $c=1$ & scaled \\",
+           r"\midrule"]
+    for i, name in enumerate(names):
+        e = res[res.engine == name]
+        best = e.loc[e.groupby(["base", "matrix"]).C_over_S.idxmin()].groupby("base").mean(numeric_only=True)
+        unsc = e[e.scale == 1].groupby("base").mean(numeric_only=True)
+        out.append(r"\multirow{4}{*}{" + name + "}")
+        for b in BASES:
+            u, s = unsc.loc[b], best.loc[b]
+            out.append(f"  & $B={b}$ & {u.runtime_ms:.1f} & {s.runtime_ms:.1f} & "
+                       f"{u.C_over_S:.3f} & {s.C_over_S:.3f} & {u.N:.0f} & {s.N:.0f} \\\\")
+        out.append(r"\midrule" if i < len(names) - 1 else r"\bottomrule")
+    out.append(r"\end{tabular}")
+    return "\n".join(out) + "\n"
+
+
+# --------------------------------------------------------------------------
 # Euler against Radix, on the SAME matrices
 # --------------------------------------------------------------------------
 def extraction_mean_ms(base: int, rows: int) -> float:
@@ -268,6 +315,7 @@ def table_evr() -> str:
 
 if __name__ == "__main__":
     for fname, build in (("tab_results_summary.tex", table_radix),
+                         ("tab_radix_scale.tex", table_scale),
                          ("tab_euler_all_engines.tex", table_euler),
                          ("tab_euler_vs_radix.tex", table_evr)):
         text = build()

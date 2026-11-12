@@ -58,8 +58,8 @@ bvn = pd.read_csv(os.path.join(ROOT, RUN, "tm_workload", "tm_summary.csv"))
 r = res[res.regime == "Uniform"]
 b = bvn[bvn.regime == "Uniform (thesis)"]
 
-fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.0))
-fig.subplots_adjust(wspace=0.30, bottom=0.22)
+# stacked, one column wide, so the figure can be pinned where the text needs it
+fig, axes = plt.subplots(3, 1, figsize=(3.4, 5.6))
 # C = S line at the mean demand of the matrices the Radix points average over (before, the
 # first matrix's S alone)
 S0 = float(r.groupby("matrix").S_original.first().mean())
