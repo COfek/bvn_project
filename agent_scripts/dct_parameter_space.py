@@ -112,13 +112,11 @@ axw.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in w
 
 for ax in (axr, axw):
     ax.plot(tcfg, 10*tcfg, "k--", lw=1.4, label="$T_{unit}=10\\,T_{config}$")
-    ax.axhline(0.01, color="navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")
     ax.set_xlim(tcfg.min(), tcfg.max()); ax.set_ylim(tunit.min(), tunit.max())
 from matplotlib.lines import Line2D
 axr.legend(handles=[
     Line2D([], [], color="k", ls="-", lw=1.2, label="break-even (DCT ratio = 1)"),
     Line2D([], [], color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$"),
-    Line2D([], [], color="navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms"),
 ], fontsize=8, loc="lower right", framealpha=0.9)
 # [point 27] title moved to caption: fig.suptitle("DCT Parameter Space — Dense (n=256, k=256, $W_{max}$=64)   |   "
 # [point 27] title moved to caption: "DCT = $T_{compute}+N\\,T_{config}+C\\,T_{unit}$", fontsize=13, y=1.02)
@@ -157,15 +155,13 @@ axrw.pcolormesh(TCr, R, np.vectorize(remap_r.get)(winr), cmap=cmap_r, norm=norm_
 # [point 27] panel title moved to caption: axrw.set_title("Winner map (lowest-DCT configuration)")
 for ax in (axrr, axrw):
     ax.axhline(10, color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$")
-    ax.plot(tcfgr, 0.01/tcfgr, "navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")
     ax.set_xscale("log"); ax.set_yscale("log")
     ax.set_xlabel("$T_{config}$"); ax.set_ylabel("ratio  $r = T_{unit}/T_{config}$")
     ax.set_xlim(tcfgr.min(), tcfgr.max()); ax.set_ylim(rgrid.min(), rgrid.max())
     ax.xaxis.set_major_formatter(TFMT)
 axrr.legend(fontsize=8, loc="upper left", framealpha=0.9)
 axrw.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_r]
-                   + [Line2D([], [], color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$"),
-                      Line2D([], [], color="navy", ls=":", lw=1.4, label="Paper: $T_{unit}=0.01$ ms")],
+                   + [Line2D([], [], color="k", ls="--", lw=1.4, label="$T_{unit}=10\\,T_{config}$")],
             title="Winning configuration", title_fontsize=9,
             fontsize=8, loc="upper left", framealpha=0.95)
 # [point 27] title moved to caption: figR.suptitle("DCT Parameter Space — y-axis as ratio $r=T_{unit}/T_{config}$ (up to 1000)   |   "
@@ -183,7 +179,6 @@ axW.pcolormesh(TCr, R, np.vectorize(remap_r.get)(winr), cmap=cmap_r, norm=norm_r
 label_regions(axW, np.vectorize(remap_r.get)(winr), TCr, R,
               {remap_r[w]: labels[w] for w in winners_r}, fontsize=5, min_share=0.015)
 axW.axhline(10, color="k", ls="--", lw=1.0)
-axW.plot(tcfgr, 0.01 / tcfgr, "navy", ls=":", lw=1.0)
 axW.set_xscale("log"); axW.set_yscale("log")
 axW.set_xlabel("$T_{config}$", fontsize=7)
 axW.set_ylabel("ratio  $r = T_{unit}/T_{config}$", fontsize=7)
@@ -191,8 +186,7 @@ axW.set_xlim(tcfgr.min(), tcfgr.max()); axW.set_ylim(rgrid.min(), rgrid.max())
 axW.xaxis.set_major_formatter(TFMT)
 axW.tick_params(labelsize=6)
 axW.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_r]
-                  + [Line2D([], [], color="k", ls="--", lw=1.0, label="$T_{unit}=10\\,T_{config}$"),
-                     Line2D([], [], color="navy", ls=":", lw=1.0, label="Paper: $T_{unit}=0.01$ ms")],
+                  + [Line2D([], [], color="k", ls="--", lw=1.0, label="$T_{unit}=10\\,T_{config}$")],
            fontsize=5.2, loc="upper center", bbox_to_anchor=(0.5, -0.24), ncol=3, frameon=False, handlelength=1.4, columnspacing=1.0)
 figW.tight_layout()
 figW.savefig(f"{OUT}/dct_winner_map.pdf", bbox_inches="tight")
