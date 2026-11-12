@@ -1,0 +1,36 @@
+Logging configured. Log file: 
+run\rerun_2026_11b\sweep3\baseline\wfa\20261109_155319\log.txt
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ BvN-Arbiter Benchmark Started ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+[11/09/26 15:53:19] INFO     Run directory:                                    
+                             run\rerun_2026_11b\sweep3\baseline\wfa\20261109_15
+                             5319 |  Engine: wfa_bvn | Bases: []               
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=1000,       
+                             parallel=False                                    
+[11/09/26 15:54:55] INFO     Progress: 50/1000 matrices processed (5%)         
+[11/09/26 15:56:29] INFO     Progress: 100/1000 matrices processed (10%)       
+[11/09/26 15:58:04] INFO     Progress: 150/1000 matrices processed (15%)       
+[11/09/26 15:59:39] INFO     Progress: 200/1000 matrices processed (20%)       
+[11/09/26 16:01:12] INFO     Progress: 250/1000 matrices processed (25%)       
+[11/09/26 16:02:47] INFO     Progress: 300/1000 matrices processed (30%)       
+[11/09/26 16:04:23] INFO     Progress: 350/1000 matrices processed (35%)       
+[11/09/26 16:05:57] INFO     Progress: 400/1000 matrices processed (40%)       
+[11/09/26 16:07:32] INFO     Progress: 450/1000 matrices processed (45%)       
+[11/09/26 16:09:08] INFO     Progress: 500/1000 matrices processed (50%)       
+[11/09/26 16:10:42] INFO     Progress: 550/1000 matrices processed (55%)       
+[11/09/26 16:12:16] INFO     Progress: 600/1000 matrices processed (60%)       
+[11/09/26 16:13:52] INFO     Progress: 650/1000 matrices processed (65%)       
+[11/09/26 16:15:27] INFO     Progress: 700/1000 matrices processed (70%)       
+[11/09/26 16:17:00] INFO     Progress: 750/1000 matrices processed (75%)       
+[11/09/26 16:18:35] INFO     Progress: 800/1000 matrices processed (80%)       
+[11/09/26 16:20:09] INFO     Progress: 850/1000 matrices processed (85%)       
+[11/09/26 16:21:42] INFO     Progress: 900/1000 matrices processed (90%)       
+[11/09/26 16:23:17] INFO     Progress: 950/1000 matrices processed (95%)       
+[11/09/26 16:24:52] INFO     Progress: 1000/1000 matrices processed (100%)     
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             1893.029 seconds                                  
+                    INFO     Saved CSV:                                        
+                             run\rerun_2026_11b\sweep3\baseline\wfa\20261109_15
+                             5319\results_stats.csv                            
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ Benchmark Complete! ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ

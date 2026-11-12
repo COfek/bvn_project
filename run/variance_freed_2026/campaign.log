@@ -1,0 +1,27 @@
+[2026-11-02 12:22:20] environment recorded -> run/variance_freed_2026/environment.json
+[2026-11-02 12:22:20] === freed Euler campaign starting: 3 sweeps x 4 engines ===
+[2026-11-02 12:22:21] sweep 1  euler  maximum  starting  cpu_load=0% processes=308
+[2026-11-02 12:28:10] sweep 1  euler  maximum  done in 5.8 min  exit 0
+[2026-11-02 12:28:11] sweep 1  euler  heavy  starting  cpu_load=0% processes=306
+[2026-11-02 12:36:52] sweep 1  euler  heavy  done in 8.7 min  exit 0
+[2026-11-02 12:36:53] sweep 1  euler  heavy_static  starting  cpu_load=0% processes=307
+[2026-11-02 12:47:17] sweep 1  euler  heavy_static  done in 10.4 min  exit 0
+[2026-11-02 12:47:18] sweep 1  euler  wfa  starting  cpu_load=1% processes=304
+[2026-11-02 13:07:23] sweep 1  euler  wfa  done in 20.1 min  exit 0
+[2026-11-02 13:07:24] sweep 2  euler  maximum  starting  cpu_load=1% processes=308
+[2026-11-02 13:13:04] sweep 2  euler  maximum  done in 5.7 min  exit 0
+[2026-11-02 13:13:05] sweep 2  euler  heavy  starting  cpu_load=0% processes=306
+[2026-11-02 13:21:43] sweep 2  euler  heavy  done in 8.6 min  exit 0
+[2026-11-02 13:21:44] sweep 2  euler  heavy_static  starting  cpu_load=3% processes=304
+[2026-11-02 13:32:08] sweep 2  euler  heavy_static  done in 10.4 min  exit 0
+[2026-11-02 13:32:09] sweep 2  euler  wfa  starting  cpu_load=1% processes=306
+[2026-11-02 13:52:08] sweep 2  euler  wfa  done in 20.0 min  exit 0
+[2026-11-02 13:52:09] sweep 3  euler  maximum  starting  cpu_load=1% processes=307
+[2026-11-02 13:57:50] sweep 3  euler  maximum  done in 5.7 min  exit 0
+[2026-11-02 13:57:51] sweep 3  euler  heavy  starting  cpu_load=9% processes=306
+[2026-11-02 14:06:35] sweep 3  euler  heavy  done in 8.7 min  exit 0
+[2026-11-02 14:06:36] sweep 3  euler  heavy_static  starting  cpu_load=2% processes=306
+[2026-11-02 14:16:58] sweep 3  euler  heavy_static  done in 10.4 min  exit 0
+[2026-11-02 14:16:59] sweep 3  euler  wfa  starting  cpu_load=1% processes=304
+[2026-11-02 14:36:57] sweep 3  euler  wfa  done in 20.0 min  exit 0
+[2026-11-02 14:36:57] === done ===

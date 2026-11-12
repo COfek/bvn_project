@@ -1,0 +1,54 @@
+[2026-11-09 10:13:24] environment recorded -> run/rerun_2026_11b/environment.json
+[2026-11-09 10:13:24] --- the Radix step that ran slow in sweep 1 ---
+[2026-11-09 10:13:25] sweep 1 radix max  starting  cpu_load=0% processes=281
+[2026-11-09 11:05:21] sweep 1 radix max  done in 51.9 min  exit 0
+[2026-11-09 11:05:21] --- sweep 1 of 3 ---
+[2026-11-09 11:05:22] sweep 1 euler maximum  starting  cpu_load=3% processes=287
+[2026-11-09 11:11:31] sweep 1 euler maximum  done in 6.1 min  exit 0
+[2026-11-09 11:11:32] sweep 1 euler heavy  starting  cpu_load=2% processes=280
+[2026-11-09 11:20:57] sweep 1 euler heavy  done in 9.4 min  exit 0
+[2026-11-09 11:20:58] sweep 1 euler heavy_static  starting  cpu_load=1% processes=300
+[2026-11-09 11:32:48] sweep 1 euler heavy_static  done in 11.8 min  exit 0
+[2026-11-09 11:32:50] sweep 1 euler wfa  starting  cpu_load=4% processes=307
+[2026-11-09 11:54:52] sweep 1 euler wfa  done in 22.0 min  exit 0
+[2026-11-09 11:54:52] --- sweep 2 of 3 ---
+[2026-11-09 11:54:53] sweep 2 euler maximum  starting  cpu_load=0% processes=305
+[2026-11-09 12:00:47] sweep 2 euler maximum  done in 5.9 min  exit 0
+[2026-11-09 12:00:48] sweep 2 euler heavy  starting  cpu_load=2% processes=304
+[2026-11-09 12:09:31] sweep 2 euler heavy  done in 8.7 min  exit 0
+[2026-11-09 12:09:32] sweep 2 euler heavy_static  starting  cpu_load=0% processes=303
+[2026-11-09 12:19:42] sweep 2 euler heavy_static  done in 10.2 min  exit 0
+[2026-11-09 12:19:43] sweep 2 euler wfa  starting  cpu_load=17% processes=301
+[2026-11-09 12:39:29] sweep 2 euler wfa  done in 19.8 min  exit 0
+[2026-11-09 12:39:29] --- sweep 3 of 3 ---
+[2026-11-09 12:39:30] sweep 3 radix max  starting  cpu_load=0% processes=300
+[2026-11-09 13:29:39] sweep 3 radix max  done in 50.2 min  exit 0
+[2026-11-09 13:29:40] sweep 3 radix heavy  starting  cpu_load=4% processes=299
+[2026-11-09 14:20:38] sweep 3 radix heavy  done in 51.0 min  exit 0
+[2026-11-09 14:20:39] sweep 3 radix heavy_static  starting  cpu_load=2% processes=299
+[2026-11-09 14:43:05] sweep 3 radix heavy_static  done in 22.4 min  exit 0
+[2026-11-09 14:43:06] sweep 3 radix wfa  starting  cpu_load=0% processes=299
+[2026-11-09 15:09:38] sweep 3 radix wfa  done in 26.5 min  exit 0
+[2026-11-09 15:09:39] sweep 3 baseline heavy  starting  cpu_load=9% processes=307
+[2026-11-09 15:31:29] sweep 3 baseline heavy  done in 21.8 min  exit 0
+[2026-11-09 15:31:30] sweep 3 baseline heavy_static  starting  cpu_load=0% processes=298
+[2026-11-09 15:53:17] sweep 3 baseline heavy_static  done in 21.8 min  exit 0
+[2026-11-09 15:53:18] sweep 3 baseline wfa  starting  cpu_load=0% processes=300
+[2026-11-09 16:24:52] sweep 3 baseline wfa  done in 31.6 min  exit 0
+[2026-11-09 16:24:54] sweep 3 euler maximum  starting  cpu_load=0% processes=295
+[2026-11-09 16:30:48] sweep 3 euler maximum  done in 5.9 min  exit 0
+[2026-11-09 16:30:49] sweep 3 euler heavy  starting  cpu_load=0% processes=293
+[2026-11-09 16:39:29] sweep 3 euler heavy  done in 8.7 min  exit 0
+[2026-11-09 16:39:30] sweep 3 euler heavy_static  starting  cpu_load=2% processes=295
+[2026-11-09 16:49:51] sweep 3 euler heavy_static  done in 10.3 min  exit 0
+[2026-11-09 16:49:52] sweep 3 euler wfa  starting  cpu_load=0% processes=297
+[2026-11-09 17:09:55] sweep 3 euler wfa  done in 20.0 min  exit 0
+[2026-11-09 17:09:56] workload tm  starting  cpu_load=1% processes=298
+[2026-11-09 17:24:38] workload tm  done in 14.7 min  exit 0
+[2026-11-09 17:24:39] workload moe  starting  cpu_load=0% processes=293
+[2026-11-09 17:24:44] workload moe  done in 0.1 min  exit 0
+[2026-11-09 17:24:45] workload radix_scale  starting  cpu_load=0% processes=293
+[2026-11-09 17:29:09] workload radix_scale  done in 4.4 min  exit 0
+[2026-11-09 17:29:10] workload skew  starting  cpu_load=2% processes=293
+[2026-11-09 17:48:36] workload skew  done in 19.4 min  exit 0
+[2026-11-09 17:48:36] === all campaigns finished in 7.59 hours ===

@@ -1,0 +1,26 @@
+[2026-11-09 13:29:41] [INFO] [__main__] Run directory: run\rerun_2026_11b\sweep3\radix\heavy\20261109_132941 |  Engine: heavy | Bases: [2, 4, 8, 16]
+[2026-11-09 13:29:41] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-11-09 13:29:41] [INFO] [src.runner] Starting Experiment | n=256, matrices=1000, parallel=False
+[2026-11-09 13:32:18] [INFO] [src.runner] Progress: 50/1000 matrices processed (5%)
+[2026-11-09 13:34:49] [INFO] [src.runner] Progress: 100/1000 matrices processed (10%)
+[2026-11-09 13:37:21] [INFO] [src.runner] Progress: 150/1000 matrices processed (15%)
+[2026-11-09 13:39:53] [INFO] [src.runner] Progress: 200/1000 matrices processed (20%)
+[2026-11-09 13:42:24] [INFO] [src.runner] Progress: 250/1000 matrices processed (25%)
+[2026-11-09 13:44:55] [INFO] [src.runner] Progress: 300/1000 matrices processed (30%)
+[2026-11-09 13:47:27] [INFO] [src.runner] Progress: 350/1000 matrices processed (35%)
+[2026-11-09 13:50:00] [INFO] [src.runner] Progress: 400/1000 matrices processed (40%)
+[2026-11-09 13:52:32] [INFO] [src.runner] Progress: 450/1000 matrices processed (45%)
+[2026-11-09 13:55:05] [INFO] [src.runner] Progress: 500/1000 matrices processed (50%)
+[2026-11-09 13:57:39] [INFO] [src.runner] Progress: 550/1000 matrices processed (55%)
+[2026-11-09 14:00:12] [INFO] [src.runner] Progress: 600/1000 matrices processed (60%)
+[2026-11-09 14:02:45] [INFO] [src.runner] Progress: 650/1000 matrices processed (65%)
+[2026-11-09 14:05:18] [INFO] [src.runner] Progress: 700/1000 matrices processed (70%)
+[2026-11-09 14:07:51] [INFO] [src.runner] Progress: 750/1000 matrices processed (75%)
+[2026-11-09 14:10:24] [INFO] [src.runner] Progress: 800/1000 matrices processed (80%)
+[2026-11-09 14:12:59] [INFO] [src.runner] Progress: 850/1000 matrices processed (85%)
+[2026-11-09 14:15:32] [INFO] [src.runner] Progress: 900/1000 matrices processed (90%)
+[2026-11-09 14:18:04] [INFO] [src.runner] Progress: 950/1000 matrices processed (95%)
+[2026-11-09 14:20:38] [INFO] [src.runner] Progress: 1000/1000 matrices processed (100%)
+[2026-11-09 14:20:38] [INFO] [src.runner] Experiment completed successfully.
+[2026-11-09 14:20:38] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]3056.026[/cyan] seconds
+[2026-11-09 14:20:38] [INFO] [__main__] Saved CSV: run\rerun_2026_11b\sweep3\radix\heavy\20261109_132941\results_stats.csv

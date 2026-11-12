@@ -1,0 +1,100 @@
+workload,n,method,order,step,mean,min,max,count
+ours,256,bitplanes,WFA,unit,1.6405,1.5973,1.6989,20
+ours,256,bitplanes,WWFA fixed,unit,1.3843,1.3555,1.4281,20
+ours,256,bitplanes,WWFA rotating,unit,1.3843,1.3555,1.4281,20
+ours,256,whole,WFA,min,1.4503,1.41,1.4891,20
+ours,256,whole,WFA,unit,1.4503,1.41,1.4891,20
+ours,256,whole,WWFA fixed,min,1.0578,1.0459,1.077,20
+ours,256,whole,WWFA fixed,unit,1.0578,1.0459,1.077,20
+ours,256,whole,WWFA rotating,min,1.0342,1.0291,1.0427,20
+ours,256,whole,WWFA rotating,unit,1.0336,1.0284,1.0425,20
+regular,4,bitplanes,WFA,unit,1.6738,1.0,2.6842,200
+regular,4,bitplanes,WWFA fixed,unit,1.6582,1.0,2.6842,200
+regular,4,bitplanes,WWFA rotating,unit,1.6582,1.0,2.6842,200
+regular,4,whole,WFA,min,1.1425,1.0,1.4762,200
+regular,4,whole,WFA,unit,1.1425,1.0,1.4762,200
+regular,4,whole,WWFA fixed,min,1.1342,1.0,1.4571,200
+regular,4,whole,WWFA fixed,unit,1.1342,1.0,1.4571,200
+regular,4,whole,WWFA rotating,min,1.1209,1.0,1.4571,200
+regular,4,whole,WWFA rotating,unit,1.146,1.0,1.4,200
+regular,8,bitplanes,WFA,unit,2.0223,1.4583,2.8113,200
+regular,8,bitplanes,WWFA fixed,unit,1.9771,1.5067,2.7925,200
+regular,8,bitplanes,WWFA rotating,unit,1.9771,1.5067,2.7925,200
+regular,8,whole,WFA,min,1.3493,1.1111,1.661,200
+regular,8,whole,WFA,unit,1.3493,1.1111,1.661,200
+regular,8,whole,WWFA fixed,min,1.2678,1.1,1.4429,200
+regular,8,whole,WWFA fixed,unit,1.2678,1.1,1.4429,200
+regular,8,whole,WWFA rotating,min,1.229,1.125,1.4889,200
+regular,8,whole,WWFA rotating,unit,1.2128,1.1333,1.3556,200
+regular,16,bitplanes,WFA,unit,2.0112,1.5824,2.4681,200
+regular,16,bitplanes,WWFA fixed,unit,1.9433,1.5816,2.4326,200
+regular,16,bitplanes,WWFA rotating,unit,1.9433,1.5816,2.4326,200
+regular,16,whole,WFA,min,1.4443,1.301,1.6408,200
+regular,16,whole,WFA,unit,1.4443,1.301,1.6408,200
+regular,16,whole,WWFA fixed,min,1.23,1.1391,1.4712,200
+regular,16,whole,WWFA fixed,unit,1.23,1.1391,1.4712,200
+regular,16,whole,WWFA rotating,min,1.1789,1.1111,1.2778,200
+regular,16,whole,WWFA rotating,unit,1.1726,1.1074,1.2593,200
+regular,32,bitplanes,WFA,unit,1.9054,1.7087,2.3393,200
+regular,32,bitplanes,WWFA fixed,unit,1.7953,1.5938,2.1299,200
+regular,32,bitplanes,WWFA rotating,unit,1.7953,1.5938,2.1299,200
+regular,32,whole,WFA,min,1.4845,1.3412,1.6408,200
+regular,32,whole,WFA,unit,1.4845,1.3412,1.6408,200
+regular,32,whole,WWFA fixed,min,1.1706,1.1092,1.2414,200
+regular,32,whole,WWFA fixed,unit,1.1706,1.1092,1.2414,200
+regular,32,whole,WWFA rotating,min,1.1271,1.0903,1.1964,200
+regular,32,whole,WWFA rotating,unit,1.1256,1.0954,1.1957,200
+regular,64,bitplanes,WFA,unit,1.792,1.6231,2.0021,200
+regular,64,bitplanes,WWFA fixed,unit,1.6429,1.4722,1.8541,200
+regular,64,bitplanes,WWFA rotating,unit,1.6429,1.4722,1.8541,200
+regular,64,whole,WFA,min,1.4728,1.372,1.5802,200
+regular,64,whole,WFA,unit,1.4728,1.372,1.5802,200
+regular,64,whole,WWFA fixed,min,1.1232,1.0885,1.1849,200
+regular,64,whole,WWFA fixed,unit,1.1232,1.0885,1.1849,200
+regular,64,whole,WWFA rotating,min,1.0869,1.0694,1.1316,200
+regular,64,whole,WWFA rotating,unit,1.0866,1.0673,1.1118,200
+uniform,4,bitplanes,WFA,unit,1.2267,1.0,1.6176,200
+uniform,4,bitplanes,WWFA fixed,unit,1.1969,1.0,1.6216,200
+uniform,4,bitplanes,WWFA rotating,unit,1.1969,1.0,1.6216,200
+uniform,4,whole,WFA,min,1.0529,1.0,1.3824,200
+uniform,4,whole,WFA,unit,1.0529,1.0,1.3824,200
+uniform,4,whole,WWFA fixed,min,1.0199,1.0,1.3243,200
+uniform,4,whole,WWFA fixed,unit,1.0199,1.0,1.3243,200
+uniform,4,whole,WWFA rotating,min,1.027,1.0,1.3243,200
+uniform,4,whole,WWFA rotating,unit,1.0163,1.0,1.1667,200
+uniform,8,bitplanes,WFA,unit,1.2397,1.0421,1.5312,200
+uniform,8,bitplanes,WWFA fixed,unit,1.1839,1.0211,1.4225,200
+uniform,8,bitplanes,WWFA rotating,unit,1.1839,1.0211,1.4225,200
+uniform,8,whole,WFA,min,1.0844,1.0,1.35,200
+uniform,8,whole,WFA,unit,1.0844,1.0,1.35,200
+uniform,8,whole,WWFA fixed,min,1.0108,1.0,1.1282,200
+uniform,8,whole,WWFA fixed,unit,1.0108,1.0,1.1282,200
+uniform,8,whole,WWFA rotating,min,1.0126,1.0,1.1549,200
+uniform,8,whole,WWFA rotating,unit,1.0101,1.0,1.0833,200
+uniform,16,bitplanes,WFA,unit,1.2335,1.0914,1.4408,200
+uniform,16,bitplanes,WWFA fixed,unit,1.1559,1.0176,1.2886,200
+uniform,16,bitplanes,WWFA rotating,unit,1.1559,1.0176,1.2886,200
+uniform,16,whole,WFA,min,1.135,1.0,1.3245,200
+uniform,16,whole,WFA,unit,1.135,1.0,1.3245,200
+uniform,16,whole,WWFA fixed,min,1.0046,1.0,1.0775,200
+uniform,16,whole,WWFA fixed,unit,1.0046,1.0,1.0775,200
+uniform,16,whole,WWFA rotating,min,1.0052,1.0,1.047,200
+uniform,16,whole,WWFA rotating,unit,1.0048,1.0,1.042,200
+uniform,32,bitplanes,WFA,unit,1.2382,1.1148,1.4449,200
+uniform,32,bitplanes,WWFA fixed,unit,1.1275,1.0489,1.2332,200
+uniform,32,bitplanes,WWFA rotating,unit,1.1275,1.0489,1.2332,200
+uniform,32,whole,WFA,min,1.1845,1.0346,1.3492,200
+uniform,32,whole,WFA,unit,1.1845,1.0346,1.3492,200
+uniform,32,whole,WWFA fixed,min,1.0013,1.0,1.0275,200
+uniform,32,whole,WWFA fixed,unit,1.0013,1.0,1.0275,200
+uniform,32,whole,WWFA rotating,min,1.0026,1.0,1.0199,200
+uniform,32,whole,WWFA rotating,unit,1.0023,1.0,1.0181,200
+uniform,64,bitplanes,WFA,unit,1.2771,1.1634,1.3763,200
+uniform,64,bitplanes,WWFA fixed,unit,1.1072,1.0261,1.1732,200
+uniform,64,bitplanes,WWFA rotating,unit,1.1072,1.0261,1.1732,200
+uniform,64,whole,WFA,min,1.2295,1.1171,1.3467,200
+uniform,64,whole,WFA,unit,1.2295,1.1171,1.3467,200
+uniform,64,whole,WWFA fixed,min,1.0004,1.0,1.0128,200
+uniform,64,whole,WWFA fixed,unit,1.0004,1.0,1.0128,200
+uniform,64,whole,WWFA rotating,min,1.0013,1.0,1.013,200
+uniform,64,whole,WWFA rotating,unit,1.0013,1.0,1.013,200

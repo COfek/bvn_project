@@ -1,0 +1,23 @@
+[2026-11-10 14:50:56] environment recorded -> run/wwfa_2026_11/environment.json
+[2026-11-10 14:50:56] --- sweep 1 of 3 ---
+[2026-11-10 14:50:57] sweep 1 radix wwfa  starting  cpu_load=7% processes=320
+[2026-11-10 15:18:58] sweep 1 radix wwfa  done in 28.0 min  exit 0
+[2026-11-10 15:18:59] sweep 1 baseline wwfa  starting  cpu_load=2% processes=332
+[2026-11-10 15:52:30] sweep 1 baseline wwfa  done in 33.5 min  exit 0
+[2026-11-10 15:52:31] sweep 1 euler wwfa  starting  cpu_load=2% processes=340
+[2026-11-10 16:13:42] sweep 1 euler wwfa  done in 21.2 min  exit 0
+[2026-11-10 16:13:42] --- sweep 2 of 3 ---
+[2026-11-10 16:13:43] sweep 2 radix wwfa  starting  cpu_load=8% processes=333
+[2026-11-10 16:37:44] sweep 2 radix wwfa  done in 24.0 min  exit 0
+[2026-11-10 16:37:45] sweep 2 baseline wwfa  starting  cpu_load=1% processes=306
+[2026-11-10 17:07:59] sweep 2 baseline wwfa  done in 30.2 min  exit 0
+[2026-11-10 17:08:00] sweep 2 euler wwfa  starting  cpu_load=0% processes=311
+[2026-11-10 17:26:56] sweep 2 euler wwfa  done in 18.9 min  exit 0
+[2026-11-10 17:26:56] --- sweep 3 of 3 ---
+[2026-11-10 17:26:57] sweep 3 radix wwfa  starting  cpu_load=0% processes=306
+[2026-11-10 17:50:50] sweep 3 radix wwfa  done in 23.9 min  exit 0
+[2026-11-10 17:50:51] sweep 3 baseline wwfa  starting  cpu_load=0% processes=304
+[2026-11-10 18:20:59] sweep 3 baseline wwfa  done in 30.1 min  exit 0
+[2026-11-10 18:21:00] sweep 3 euler wwfa  starting  cpu_load=1% processes=306
+[2026-11-10 18:39:32] sweep 3 euler wwfa  done in 18.5 min  exit 0
+[2026-11-10 18:39:32] === all campaigns finished in 3.81 hours ===

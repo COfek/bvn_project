@@ -1,0 +1,86 @@
+[2026-11-04 12:51:25] waiting until 2026-11-05T02:00:00
+[2026-11-05 13:05:52] waiting until 2026-11-05T13:05:52
+[2026-11-05 13:05:54] environment recorded -> run/rerun_2026_11/environment.json
+[2026-11-05 13:05:54] --- sweep 1 of 3 ---
+[2026-11-05 13:05:55] sweep 1 radix max  starting  cpu_load=1% processes=336
+[2026-11-05 14:00:22] sweep 1 radix max  done in 54.4 min  exit 0
+[2026-11-05 14:00:23] sweep 1 radix heavy  starting  cpu_load=1% processes=334
+[2026-11-05 14:29:18] PAUSED by Ofek (gaming): stopped during 'sweep 1 radix heavy'; partial step moved to _aborted/
+[2026-11-06 01:11:49] waiting until 2026-11-06T01:11:49
+[2026-11-06 01:11:52] environment recorded -> run/rerun_2026_11/environment_resume_20261106_0111.json
+[2026-11-06 01:11:52] --- sweep 1 of 3 ---
+[2026-11-06 01:11:52] sweep 1 radix max  already done, skipped (resume)
+[2026-11-06 01:11:53] sweep 1 radix heavy  starting  cpu_load=2% processes=321
+[2026-11-06 02:04:27] sweep 1 radix heavy  done in 52.6 min  exit 0
+[2026-11-06 02:04:28] sweep 1 radix heavy_static  starting  cpu_load=0% processes=314
+[2026-11-06 02:27:32] sweep 1 radix heavy_static  done in 23.1 min  exit 0
+[2026-11-06 02:27:33] sweep 1 radix wfa  starting  cpu_load=2% processes=314
+[2026-11-06 02:55:13] sweep 1 radix wfa  done in 27.7 min  exit 0
+[2026-11-06 02:55:14] sweep 1 baseline heavy  starting  cpu_load=5% processes=312
+[2026-11-06 03:17:23] sweep 1 baseline heavy  done in 22.2 min  exit 0
+[2026-11-06 03:17:24] sweep 1 baseline heavy_static  starting  cpu_load=1% processes=315
+[2026-11-06 03:39:30] sweep 1 baseline heavy_static  done in 22.1 min  exit 0
+[2026-11-06 03:39:31] sweep 1 baseline wfa  starting  cpu_load=0% processes=314
+[2026-11-06 04:12:02] sweep 1 baseline wfa  done in 32.5 min  exit 0
+[2026-11-06 04:12:03] sweep 1 euler maximum  starting  cpu_load=6% processes=314
+[2026-11-06 04:18:03] sweep 1 euler maximum  done in 6.0 min  exit 0
+[2026-11-06 04:18:04] sweep 1 euler heavy  starting  cpu_load=1% processes=318
+[2026-11-06 04:27:02] sweep 1 euler heavy  done in 9.0 min  exit 0
+[2026-11-06 04:27:03] sweep 1 euler heavy_static  starting  cpu_load=2% processes=316
+[2026-11-06 04:37:58] sweep 1 euler heavy_static  done in 10.9 min  exit 0
+[2026-11-06 04:37:59] sweep 1 euler wfa  starting  cpu_load=2% processes=314
+[2026-11-06 04:58:22] sweep 1 euler wfa  done in 20.4 min  exit 0
+[2026-11-06 04:58:22] --- sweep 2 of 3 ---
+[2026-11-06 04:58:24] sweep 2 radix max  starting  cpu_load=1% processes=313
+[2026-11-06 05:48:56] sweep 2 radix max  done in 50.5 min  exit 0
+[2026-11-06 05:48:57] sweep 2 radix heavy  starting  cpu_load=2% processes=314
+[2026-11-06 06:40:36] sweep 2 radix heavy  done in 51.6 min  exit 0
+[2026-11-06 06:40:37] sweep 2 radix heavy_static  starting  cpu_load=0% processes=313
+[2026-11-06 07:03:47] sweep 2 radix heavy_static  done in 23.2 min  exit 0
+[2026-11-06 07:03:49] sweep 2 radix wfa  starting  cpu_load=0% processes=314
+[2026-11-06 07:31:16] sweep 2 radix wfa  done in 27.5 min  exit 0
+[2026-11-06 07:31:18] sweep 2 baseline heavy  starting  cpu_load=0% processes=320
+[2026-11-06 07:53:24] sweep 2 baseline heavy  done in 22.1 min  exit 0
+[2026-11-06 07:53:25] sweep 2 baseline heavy_static  starting  cpu_load=0% processes=314
+[2026-11-06 08:15:03] sweep 2 baseline heavy_static  done in 21.6 min  exit 0
+[2026-11-06 08:15:05] sweep 2 baseline wfa  starting  cpu_load=1% processes=314
+[2026-11-06 08:47:43] sweep 2 baseline wfa  done in 32.6 min  exit 0
+[2026-11-06 08:47:44] sweep 2 euler maximum  starting  cpu_load=0% processes=312
+[2026-11-06 08:53:46] sweep 2 euler maximum  done in 6.0 min  exit 0
+[2026-11-06 08:53:47] sweep 2 euler heavy  starting  cpu_load=0% processes=312
+[2026-11-06 09:02:45] sweep 2 euler heavy  done in 9.0 min  exit 0
+[2026-11-06 09:02:46] sweep 2 euler heavy_static  starting  cpu_load=2% processes=315
+[2026-11-06 09:14:13] sweep 2 euler heavy_static  done in 11.5 min  exit 0
+[2026-11-06 09:14:14] sweep 2 euler wfa  starting  cpu_load=17% processes=343
+[2026-11-06 09:38:15] sweep 2 euler wfa  done in 24.0 min  exit 0
+[2026-11-06 09:38:15] --- sweep 3 of 3 ---
+[2026-11-06 09:38:16] sweep 3 radix max  starting  cpu_load=8% processes=338
+[2026-11-06 10:36:53] sweep 3 radix max  done in 58.6 min  exit 0
+[2026-11-06 10:36:54] sweep 3 radix heavy  starting  cpu_load=0% processes=337
+[2026-11-06 11:35:13] sweep 3 radix heavy  done in 58.3 min  exit 0
+[2026-11-06 11:35:14] sweep 3 radix heavy_static  starting  cpu_load=4% processes=320
+[2026-11-06 12:00:41] sweep 3 radix heavy_static  done in 25.4 min  exit 0
+[2026-11-06 12:00:42] sweep 3 radix wfa  starting  cpu_load=6% processes=325
+[2026-11-06 12:30:15] sweep 3 radix wfa  done in 29.5 min  exit 0
+[2026-11-06 12:30:16] sweep 3 baseline heavy  starting  cpu_load=3% processes=320
+[2026-11-06 12:55:19] sweep 3 baseline heavy  done in 25.0 min  exit 0
+[2026-11-06 12:55:20] sweep 3 baseline heavy_static  starting  cpu_load=3% processes=319
+[2026-11-06 13:20:22] sweep 3 baseline heavy_static  done in 25.0 min  exit 0
+[2026-11-06 13:20:23] sweep 3 baseline wfa  starting  cpu_load=18% processes=319
+[2026-11-06 13:56:53] sweep 3 baseline wfa  done in 36.5 min  exit 0
+[2026-11-06 13:56:54] sweep 3 euler maximum  starting  cpu_load=3% processes=323
+[2026-11-06 14:03:43] sweep 3 euler maximum  done in 6.8 min  exit 0
+[2026-11-06 14:03:44] sweep 3 euler heavy  starting  cpu_load=10% processes=321
+[2026-11-06 14:13:20] sweep 3 euler heavy  done in 9.6 min  exit 0
+[2026-11-06 14:13:22] sweep 3 euler heavy_static  starting  cpu_load=1% processes=323
+[2026-11-06 14:24:36] sweep 3 euler heavy_static  done in 11.2 min  exit 0
+[2026-11-06 14:24:37] sweep 3 euler wfa  starting  cpu_load=3% processes=325
+[2026-11-06 14:47:11] sweep 3 euler wfa  done in 22.6 min  exit 0
+[2026-11-06 14:47:12] workload tm  starting  cpu_load=2% processes=318
+[2026-11-06 15:03:45] workload tm  done in 16.5 min  exit 0
+[2026-11-06 15:03:46] workload moe  starting  cpu_load=6% processes=319
+[2026-11-06 15:03:47] workload moe  done in 0.0 min  exit 1
+[2026-11-06 15:03:48] workload radix_scale  starting  cpu_load=3% processes=319
+[2026-11-06 15:08:46] workload radix_scale  done in 5.0 min  exit 0
+[2026-11-06 15:08:46] === all campaigns finished in 13.95 hours ===
+[2026-11-06 15:08:46] FAILED: 1 step(s), see FAILED.txt

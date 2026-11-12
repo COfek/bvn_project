@@ -1,0 +1,13 @@
+[2026-11-05 14:00:25] [INFO] [__main__] Run directory: run\rerun_2026_11\sweep1\radix\heavy\20261105_140025 |  Engine: heavy | Bases: [2, 4, 8, 16]
+[2026-11-05 14:00:25] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-11-05 14:00:25] [INFO] [src.runner] Starting Experiment | n=256, matrices=1000, parallel=False
+[2026-11-05 14:03:11] [INFO] [src.runner] Progress: 50/1000 matrices processed (5%)
+[2026-11-05 14:05:51] [INFO] [src.runner] Progress: 100/1000 matrices processed (10%)
+[2026-11-05 14:08:32] [INFO] [src.runner] Progress: 150/1000 matrices processed (15%)
+[2026-11-05 14:11:13] [INFO] [src.runner] Progress: 200/1000 matrices processed (20%)
+[2026-11-05 14:13:53] [INFO] [src.runner] Progress: 250/1000 matrices processed (25%)
+[2026-11-05 14:16:32] [INFO] [src.runner] Progress: 300/1000 matrices processed (30%)
+[2026-11-05 14:19:13] [INFO] [src.runner] Progress: 350/1000 matrices processed (35%)
+[2026-11-05 14:21:56] [INFO] [src.runner] Progress: 400/1000 matrices processed (40%)
+[2026-11-05 14:24:38] [INFO] [src.runner] Progress: 450/1000 matrices processed (45%)
+[2026-11-05 14:27:20] [INFO] [src.runner] Progress: 500/1000 matrices processed (50%)
