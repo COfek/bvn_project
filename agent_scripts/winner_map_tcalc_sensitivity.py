@@ -92,31 +92,31 @@ remap = {w: i for i, w in enumerate(winners_all)}
 cmap = ListedColormap([color_of(labels[w]) for w in winners_all])
 norm = BoundaryNorm(np.arange(-0.5, len(winners_all)+0.5), cmap.N)
 
-fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharex=True, sharey=True)
+# stacked, one column wide, so the figure fits the column under its subsection heading
+fig, axes = plt.subplots(3, 1, figsize=(3.4, 4.1), sharex=True, sharey=True)
 for ax, w, (s, ttl) in zip(axes, wins, SCALES):
     ax.pcolormesh(TC, R, np.vectorize(remap.get)(w), cmap=cmap, norm=norm, shading="auto")
     label_regions(ax, np.vectorize(remap.get)(w), TC, R,
-                  {remap[x]: labels[x] for x in winners_all}, fontsize=10, min_share=0.015)
-    ax.axhline(10, color="k", ls="--", lw=1.1)
+                  {remap[x]: labels[x] for x in winners_all}, fontsize=4.6, min_share=0.015)
+    ax.axhline(10, color="k", ls="--", lw=0.8)
     ax.set_xscale("log"); ax.set_yscale("log")
     ax.xaxis.set_major_formatter(TFMT)
+    ax.tick_params(labelsize=5.5, pad=1)
     bvn_pct = (w == bvn_i).mean() * 100
-    ax.set_title(f"{ttl}\nHungarian BvN wins {bvn_pct:.0f}%", fontsize=10.5,
+    ax.set_title(f"{ttl}: Hungarian BvN wins {bvn_pct:.0f}%", fontsize=6.5, pad=3,
                  color="black",
                  fontweight=("bold" if bvn_pct > 0.5 else "normal"))
-axes[0].set_ylabel("ratio  $r = T_{unit}/T_{config}$")
-for ax in axes:
-    ax.set_xlabel("$T_{config}$")
-handles = [Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_all] \
-        + [plt.Line2D([], [], color="k", ls="--", lw=1.1, label="$r=10$")]
-fig.legend(handles=handles, title="Winning configuration", ncol=min(len(handles), 5),
-           loc="lower center", fontsize=9, title_fontsize=10, framealpha=0.95,
-           bbox_to_anchor=(0.5, -0.02))
+    ax.set_ylabel("$r = T_{unit}/T_{config}$", fontsize=6, labelpad=1)
+axes[-1].set_xlabel("$T_{config}$", fontsize=6, labelpad=1)
+handles = [Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_all]         + [plt.Line2D([], [], color="k", ls="--", lw=0.8, label="$r=10$")]
+fig.legend(handles=handles, title="Winning configuration", ncol=2,
+           loc="lower center", fontsize=5.2, title_fontsize=5.8, frameon=False,
+           bbox_to_anchor=(0.5, 0.0), handlelength=1.4, columnspacing=1.0, borderpad=0.1, labelspacing=0.25)
 # [point 27] title moved to caption: fig.suptitle("Winner map vs the computation-time budget ($T_{config}$: 1$\\mu$s--1ms, $r\\geq5$) --- "
 # [point 27] title moved to caption: "the plain Hungarian BvN region emerges gradually as $T_{compute}$ shrinks\n"
 # [point 27] title moved to caption: "Dense, n=256, k=256, $W_{max}$=64; BvN cycle-consistent with Euler (same run, $C=S$)",
 # [point 27] title moved to caption: fontsize=13, y=1.005)
-fig.tight_layout(rect=[0, 0.1, 1, 0.99])
+fig.tight_layout(rect=[0, 0.155, 1, 1], h_pad=0.4)
 fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.pdf", bbox_inches="tight")
 fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.png", dpi=140, bbox_inches="tight")
 print("saved winner_map_tcalc_sensitivity")
