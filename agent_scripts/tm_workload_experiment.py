@@ -45,7 +45,8 @@ REGIMES = [("TM sparse", "tm", 64),
            ("TM dense", "tm", 512),
            ("Uniform (thesis)", "uniform", 256)]
 ENGINES = [("Hungarian", "maximum"), ("WFA", "wfa"),
-           ("GW Dynamic", "heavy"), ("GW Static", "heavy_static")]
+           ("GW Dynamic", "heavy"), ("GW Static", "heavy_static"),
+           ("WWFA", "wwfa")]
 BASES = [16, 8, 4, 2]
 DEPTHS = [1, 2, 3, 4]
 

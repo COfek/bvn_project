@@ -57,7 +57,8 @@ TRACES = os.path.join(ROOT, "paper_traces")
 OUTDIR = os.path.join(ROOT, os.environ.get("BVN_RUN_ROOT", "run"), "moe_workload")
 
 ENGINES = [("Hungarian", "maximum"), ("WFA", "wfa"),
-           ("GW Dynamic", "heavy"), ("GW Static", "heavy_static")]
+           ("GW Dynamic", "heavy"), ("GW Static", "heavy_static"),
+           ("WWFA", "wwfa")]
 BASES = [16, 8, 4, 2]
 REPEATS = 9          # timed runs per configuration
 WARMUP = 4           # leading runs discarded (Numba JIT + cache warm-up)

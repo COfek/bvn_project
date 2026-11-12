@@ -38,7 +38,8 @@ N = 256
 N_MATRICES = 4
 BASES = [16, 8, 4, 2]
 ENGINES = [("Hungarian", "maximum"), ("WFA", "wfa"),
-           ("GW Dynamic", "heavy"), ("GW Static", "heavy_static")]
+           ("GW Dynamic", "heavy"), ("GW Static", "heavy_static"),
+           ("WWFA", "wwfa")]
 REGIMES = [("TM dense", "tm", 512), ("Uniform", "uniform", 256)]
 
 
