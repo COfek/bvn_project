@@ -26,10 +26,13 @@ plt.rcParams.update({"font.family": "serif", "font.size": 11, "axes.linewidth": 
 ROOT = str(REPO)
 PLOTS = str(PLOTS)
 PAPER = str(PAPER)
-SUM = os.path.join(ROOT, "run", "tm_workload", "tm_summary.csv")
+RUN = os.environ.get("BVN_RUN_ROOT", "run")   # a rerun of the workload campaigns
+SUM = os.path.join(ROOT, RUN, "tm_workload", "tm_summary.csv")
 
 ENG = [("Hungarian", "#0072B2", "o"), ("GW Dynamic", "#D55E00", "s"),
        ("GW Static", "#009E73", "^"), ("WFA", "#CC79A7", "D")]
+if os.environ.get("BVN_CAMPAIGN", "variance_2026") != "variance_2026":   # WWFA in place of WFA
+    ENG = [("WWFA", c, m) if n == "WFA" else (n, c, m) for n, c, m in ENG]
 BASES = [16, 8, 4, 2]
 DEPTHS = [1, 2, 3, 4]
 RADIX_ORDER = ["BvN"] + [f"B{b}" for b in BASES]
@@ -43,7 +46,8 @@ def _tfmt(v, _p):
     return f"{v*1e6:g} ns"
 TFMT = FuncFormatter(_tfmt)
 
-df = correct_summary(pd.read_csv(SUM), "tm")   # charge Radix's digit extraction
+# a rerun (BVN_RUN_ROOT) times the digit extraction itself; only run/ needs it added
+df = correct_summary(pd.read_csv(SUM), "tm") if RUN == "run" else pd.read_csv(SUM)
 
 
 def sub(regime, engine):

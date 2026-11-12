@@ -48,7 +48,10 @@ def _style(ax, xlab, ylab, logx=False, logy=True):
 
 
 # ============================== RADIX (scaled) ==============================
-res = correct_scale_results(pd.read_csv(os.path.join(ROOT, RUN, "radix_scale", "scale_results.csv")))  # charge Radix's digit extraction
+# a rerun (BVN_RUN_ROOT) times the digit extraction itself; only run/ needs it added
+res = pd.read_csv(os.path.join(ROOT, RUN, "radix_scale", "scale_results.csv"))
+if RUN == "run":
+    res = correct_scale_results(res)
 res["S_original"] = res.S_scaled / res.scale
 res["C_orig"] = res.C_over_S * res.S_original
 bvn = pd.read_csv(os.path.join(ROOT, RUN, "tm_workload", "tm_summary.csv"))

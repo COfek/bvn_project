@@ -28,10 +28,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = str(PAPER / "moe_tab_summary.tex")
 
 ENGINES = ["Hungarian", "GW Dynamic", "GW Static", "WFA"]
+if os.environ.get("BVN_CAMPAIGN", "variance_2026") != "variance_2026":   # WWFA in place of WFA
+    ENGINES = ["WWFA" if e == "WFA" else e for e in ENGINES]
+RUN = os.environ.get("BVN_RUN_ROOT", "run")   # a rerun of the workload campaigns
 REG = [("MoE throughput", "Thr."), ("MoE mmlu", "MMLU")]
 RADIX = ["B16", "B8", "B4", "B2"]   # NB: not startswith("B") -- that matches "BvN"
 
-s = correct_summary(pd.read_csv(os.path.join(ROOT, "run", "moe_workload", "moe_summary.csv")), "moe")  # charge Radix's digit extraction
+# a rerun (BVN_RUN_ROOT) times the digit extraction itself; only run/ needs it added
+s = pd.read_csv(os.path.join(ROOT, RUN, "moe_workload", "moe_summary.csv"))
+if RUN == "run":
+    s = correct_summary(s, "moe")
 
 
 def num(x, dec=0):
