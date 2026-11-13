@@ -80,8 +80,18 @@ function ProcessTree($root) {
 }
 
 function InWindow {
-    $now = (Get-Date).TimeOfDay
-    return ($now -ge [timespan]::Parse($From)) -and ($now -le [timespan]::Parse($Until))
+    # <Root>/window_overrides.txt, read at every check, may replace the window for one date:
+    # lines "yyyy-MM-dd HH:mm HH:mm" (date, first start, last start); "#" starts a comment.
+    $now = Get-Date
+    $f, $u = $From, $Until
+    $ov = "$Root/window_overrides.txt"
+    if (Test-Path $ov) {
+        foreach ($l in Get-Content $ov) {
+            $w = ($l -replace '#.*$', '').Trim() -split '\s+'
+            if ($w.Count -eq 3 -and $w[0] -eq $now.ToString('yyyy-MM-dd')) { $f, $u = $w[1], $w[2] }
+        }
+    }
+    return ($now.TimeOfDay -ge [timespan]::Parse($f)) -and ($now.TimeOfDay -le [timespan]::Parse($u))
 }
 
 function WaitUntilFree {
