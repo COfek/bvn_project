@@ -14,7 +14,7 @@ Outputs (paper/plots_pdf/):
   dct_3d_surfaces.pdf      : two-surface crossover + minimum-DCT surface
 """
 from __future__ import annotations
-from _paths import PLOTS, REPO  # repository-relative paths
+from _paths import PAPER, PLOTS, REPO  # repository-relative paths
 import glob, numpy as np, pandas as pd
 import sys, os as _os
 _os.sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
@@ -192,6 +192,80 @@ figW.tight_layout()
 figW.savefig(f"{OUT}/dct_winner_map.pdf", bbox_inches="tight")
 figW.savefig(f"{OUT}/dct_winner_map.png", dpi=200, bbox_inches="tight")
 print("saved dct_winner_map (single column)")
+
+# ===== Figure 5 option for Chen (note N26, meeting of 2026-11-12), not in the paper =====
+# The same winner map, but colour = engine (the colours of Figures 3 and 4) and white diagonal
+# strokes = Euler splitting (a plain region is Radix), so that the two dominant choices,
+# Hungarian and Euler, show at a glance. A thin black line separates neighbouring regions, and
+# each region carries its depth or base. Text set by LaTeX in the paper's font at 9 pt.
+# Written to PAPER/figure_options/figure5/ (copied into the paper repository for Chen).
+from matplotlib.patches import Patch as _Patch
+from matplotlib.lines import Line2D as _L2
+ENGCOL = {"Hungarian": "#0072B2", "GW Dynamic": "#D55E00", "GW Static": "#009E73",
+          "WWFA": "#CC79A7"}
+
+
+def _engine_and_rest(lab):
+    for e in ENGCOL:
+        if lab.startswith(e):
+            return e, lab[len(e):].strip()
+    return lab, ""
+
+
+OPT = PAPER / "figure_options" / "figure5"
+OPT.mkdir(parents=True, exist_ok=True)
+with plt.rc_context({"text.usetex": True, "font.family": "serif", "font.size": 9,
+                     "text.latex.preamble": r"\usepackage[T1]{fontenc}\usepackage{libertine}"
+                                            r"\usepackage[libertine]{newtxmath}",
+                     "hatch.linewidth": 0.8, "hatch.color": "white"}):
+    codes = np.vectorize(remap_r.get)(winr)
+    names = {remap_r[w]: labels[w] for w in winners_r}
+    engs = sorted({_engine_and_rest(n)[0] for n in names.values()}, key=list(ENGCOL).index)
+    ecode = np.zeros(codes.shape)
+    euler = np.zeros(codes.shape)
+    for i, n in names.items():
+        ecode[codes == i] = engs.index(_engine_and_rest(n)[0])
+        euler[codes == i] = "Euler" in n
+    fig5, ax5 = plt.subplots(figsize=(3.33, 2.5))
+    ax5.pcolormesh(TCr, R, ecode, cmap=ListedColormap([ENGCOL[e] for e in engs]),
+                   norm=BoundaryNorm(np.arange(-0.5, len(engs) + 0.5), len(engs)), shading="auto")
+    ax5.contourf(TCr, R, euler, levels=[0.5, 1.5], colors="none", hatches=["///"])
+    for i in names:
+        ax5.contour(TCr, R, (codes == i).astype(float), levels=[0.5], colors="k", linewidths=0.6)
+    lx, ly = np.log10(TCr), np.log10(R)
+    for i, n in names.items():
+        m = codes == i
+        if m.mean() < 0.015:      # too small for a label (GW Static B4, the sliver at the tip)
+            continue
+        fx = (lx[m] - lx.min()) / (lx.max() - lx.min())
+        fy = (ly[m] - ly.min()) / (ly.max() - ly.min())
+        k = np.argmin((fx - fx.mean()) ** 2 + (fy - fy.mean()) ** 2)
+        small = m.mean() < 0.03
+        ax5.text(fx.min() + 0.01 if small else fx[k], fy[k] if small else 0.6,
+                 _engine_and_rest(n)[1].replace("Euler ", ""), transform=ax5.transAxes,
+                 ha="left" if small else "center", va="center",
+                 bbox=dict(fc="white", ec="none", pad=1.2, alpha=0.9))
+    ax5.axhline(10, color="k", ls="--", lw=1.0)
+    ax5.set_xscale("log"); ax5.set_yscale("log")
+    ax5.set_xlabel(r"$T_{\mathrm{config}}$")
+    ax5.set_ylabel(r"ratio $r = T_{\mathrm{unit}}/T_{\mathrm{config}}$")
+    ax5.set_xlim(tcfgr.min(), tcfgr.max()); ax5.set_ylim(rgrid.min(), rgrid.max())
+    ax5.xaxis.set_major_formatter(FuncFormatter(
+        lambda v, _: {1e-3: r"1\,$\mu$s", 1e-2: r"10\,$\mu$s", 1e-1: r"100\,$\mu$s",
+                      1.0: "1 ms"}.get(round(v, 6), "")))
+    h = [_Patch(color=ENGCOL[e], label=e) for e in engs]
+    h += [_Patch(facecolor="#888888", hatch="///", edgecolor="white", label="Euler splitting"),
+          _Patch(facecolor="#888888", label="Radix"),
+          _L2([], [], color="k", ls="--", lw=1.0,
+              label=r"$T_{\mathrm{unit}}=10\,T_{\mathrm{config}}$")]
+    ax5.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=2,
+               frameon=False, handlelength=1.6, columnspacing=1.2)
+    fig5.tight_layout(pad=0.2)
+    fig5.savefig(OPT / "winner_map_engine_colour_euler_strokes.pdf", bbox_inches="tight")
+    fig5.savefig(OPT / "winner_map_engine_colour_euler_strokes.png", dpi=200,
+                 bbox_inches="tight")
+    plt.close(fig5)
+print("saved figure_options/figure5 (N26 option)")
 
 
 # ================= FIGURE 2: 3-D surfaces =================
