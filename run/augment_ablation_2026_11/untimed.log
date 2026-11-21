@@ -1,0 +1,27 @@
+matrix 5 done
+matrix 55 done
+matrix 105 done
+matrix 155 done
+matrix 205 done
+matrix 255 done
+matrix 305 done
+matrix 355 done
+matrix 405 done
+matrix 455 done
+matrix 505 done
+matrix 555 done
+matrix 605 done
+matrix 655 done
+matrix 705 done
+matrix 755 done
+matrix 805 done
+matrix 855 done
+matrix 905 done
+matrix 955 done
+                           N                     C                 C_over_S              
+                        mean   min   max      mean     min     max     mean    min    max
+engine                                                                                   
+heavy_static        7644.014  6916  8453  8210.583  7370.0  9139.0    1.000  1.000  1.000
+heavy_static_noaug  7765.727  7042  8557  8354.816  7505.0  9300.0    1.018  1.014  1.029
+heavy               1123.307  1074  1181  8210.583  7370.0  9139.0    1.000  1.000  1.000
+heavy_noaug         1126.632  1058  1262  8364.040  7501.0  9281.0    1.019  1.012  1.031
