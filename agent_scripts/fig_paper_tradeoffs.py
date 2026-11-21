@@ -144,10 +144,11 @@ axes[0].annotate("$S$", (S0, 0), xycoords=("data", "axes fraction"), xytext=(3, 
 axes[2].axhline(S0, color="gray", ls=":", lw=1.0)
 axes[2].annotate("$S$", (0.62, S0), xycoords=("axes fraction", "data"), xytext=(0, 2),
                  textcoords="offset points", color="gray", ha="center")
-# The base of every point. Where the same base of several engines falls at nearly the same
-# place (closer than 6% of the panel), one label in dark grey stands for all of them.
-for ax, labs in zip(axes, BASE_LABELS):
-    placed = []   # (axes-fraction position, base, annotation)
+def place_labels(ax, labs):
+    """Label each point (x, y, text, colour, offset). Where the same text of several engines
+    falls at nearly the same place (closer than 6% of the panel), one label in dark grey
+    stands for all of them."""
+    placed = []   # (axes-fraction position, text, annotation)
     toax = ax.transAxes.inverted()
     for x, y, t, col, off in labs:
         q = toax.transform(ax.transData.transform((x, y)))
@@ -158,6 +159,11 @@ for ax, labs in zip(axes, BASE_LABELS):
         placed.append((q, t, ax.annotate(
             t, (x, y), xytext=off, textcoords="offset points", fontsize=FS, color=col,
             path_effects=[patheffects.withStroke(linewidth=2, foreground="white")])))
+
+
+# the base of every point
+for ax, labs in zip(axes, BASE_LABELS):
+    place_labels(ax, labs)
 # legend in the empty upper right of (c), clear of every point and label
 axes[2].legend(framealpha=.95, loc="upper right")
 for (fig, _), tag in zip(figs, "abc"):
@@ -165,9 +171,6 @@ for (fig, _), tag in zip(figs, "abc"):
     for e in ("pdf", "png"):
         fig.savefig(os.path.join(PLOTS, f"scaled_tradeoff_{tag}.{e}"), dpi=200)
     plt.close(fig)
-plt.rcParams.update(plt.rcParamsDefault)
-plt.rcParams.update({"font.family": "serif"})
-matplotlib.use("Agg")
 print("saved scaled_tradeoff_a/b/c (three panels, one column wide each)")
 
 # ============================== EULER ==============================
@@ -180,8 +183,18 @@ MK = {n: m for n, _, m in ENG}
 if CAMPAIGN != "variance_2026":
     KEYS = [("WWFA", "wwfa", "wwfa") if k[1] == "wfa" else k for k in KEYS]
 
-fig, axes = plt.subplots(1, 2, figsize=(3.4, 1.8))
-fig.subplots_adjust(wspace=0.35, bottom=0.25)
+# Two separate panels, euler_tradeoff_{a,b}.pdf, one column wide, set as LaTeX subfigures; text
+# as in Figure 3 (LaTeX, Linux Libertine, 9 pt). Every point carries its depth (BvN, 1-4). In (b)
+# the three strong engines sit on the line C = S at overlapping heights, so there only WWFA's
+# points are labelled; the strong engines' depths are read from (a), at the same height.
+DLABELS = ["BvN"] + [str(d) for d in DEPTHS]
+# (panel, engine, depth) -> offset in points, where the default (3, 3) hits a point or a line
+# GW Static's points in (a) stand just left of WWFA's, so its labels go on the left
+DEPTH_OFFSET = {(0, "GW Static", "BvN"): (-21, -3)}
+DEPTH_OFFSET.update({(0, "GW Static", str(d)): (-9, -3) for d in DEPTHS})
+efigs = [plt.subplots(figsize=(3.33, 2.05)) for _ in range(2)]
+eaxes = [ax for _, ax in efigs]
+DEPTH_LABELS = [[], []]
 S_ref = None
 for name, re_, pre in KEYS:
     de = euler_frame(pre)
@@ -192,18 +205,30 @@ for name, re_, pre in KEYS:
          + de[f"euler_heuristic_ruined_depth{d}_split"].mean())*1000 for d in DEPTHS]
     if name == "Hungarian":
         S_ref = C[0]
-    for ax, xs in ((axes[0], N), (axes[1], C)):
+    for k, (ax, xs) in enumerate(((eaxes[0], N), (eaxes[1], C))):
         ax.plot(xs, T, "-", color=COL[name], lw=1.3, alpha=.95)
-        ax.plot(xs, T, MK[name], color=COL[name], ms=4.5,
+        ax.plot(xs, T, MK[name], color=COL[name], ms=5,
                 markeredgecolor="white", markeredgewidth=.5, label=name)
-_style(axes[0], "permutation count $N$", "$T_{compute}$ [ms]", logx=True)
-_style(axes[1], "cycle length $C$", "$T_{compute}$ [ms]")
-axes[1].axvline(S_ref, color="gray", ls=":", lw=1.0)
-axes[0].set_title("(a) against perms", fontsize=6)
-axes[1].set_title("(b) against cycle", fontsize=6)
-axes[1].legend(fontsize=4.5, framealpha=.95, loc="lower right")
-fig.tight_layout(pad=0.2)
-for e in ("pdf", "png"):
-    fig.savefig(os.path.join(PLOTS, f"euler_tradeoff_paper.{e}"), dpi=200, bbox_inches="tight")
-plt.close(fig)
-print(f"saved euler_tradeoff_paper (single column, 2 panels)  C=S={S_ref:.0f}")
+        if k == 0 or name == "WWFA":
+            for x, y, t in zip(xs, T, DLABELS):
+                DEPTH_LABELS[k].append((x, y, t, COL[name], DEPTH_OFFSET.get((k, name, t), (3, 3))))
+_style9(eaxes[0], NC, r"$T_{\mathrm{compute}}$ [ms]", logx=True)
+_style9(eaxes[1], "cycle length $C$", r"$T_{\mathrm{compute}}$ [ms]")
+lo, hi = eaxes[0].get_xlim()
+eaxes[0].xaxis.set_major_locator(FixedLocator([t for t in N_TICKS + [10000] if lo <= t <= hi]))
+eaxes[0].xaxis.set_minor_locator(NullLocator())
+eaxes[0].xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+for ax in eaxes:
+    ax.set_ylim(top=ax.get_ylim()[1] * 1.5)
+eaxes[1].axvline(S_ref, color="gray", ls=":", lw=1.0)
+eaxes[1].annotate("$S$", (S_ref, 1), xycoords=("data", "axes fraction"), xytext=(3, -12),
+                  textcoords="offset points", color="gray")
+for ax, labs in zip(eaxes, DEPTH_LABELS):
+    place_labels(ax, labs)
+eaxes[1].legend(framealpha=.95, loc="upper right")
+for (fig, _), tag in zip(efigs, "ab"):
+    fig.tight_layout(pad=0.2)
+    for e in ("pdf", "png"):
+        fig.savefig(os.path.join(PLOTS, f"euler_tradeoff_{tag}.{e}"), dpi=200)
+    plt.close(fig)
+print(f"saved euler_tradeoff_a/b (two panels, one column wide each)  C=S={S_ref:.0f}")
