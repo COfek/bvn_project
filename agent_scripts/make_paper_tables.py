@@ -305,8 +305,8 @@ def table_evr() -> str:
             out.append(f"{lab:<20s} & {units:<3d} & {unit:5.1f} & {sp:<7s} & "
                        f"{tot:<15s} & {rat:<15s} & {per} \\\\")
         if depth == 4:
-            out.append(r"Radix (none)         & --- & ---   & ---     & --- "
-                       r"           & ---            & --- \\")
+            out.append(r"Radix (none)         & -- & --   & --     & -- "
+                       r"           & --            & -- \\")
         out.append(r"\midrule" if j < len(pairs) - 1 else r"\bottomrule")
 
     out.append(r"\end{tabular}")
