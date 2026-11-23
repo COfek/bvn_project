@@ -21,7 +21,7 @@ review (2026-08-29):
   so they match Phase 1 then Phase 2 as the introduction presents them.
 - **Every equation gets a "where var is X" clause.** Every symbol used must be defined.
 - **First person, telling the research story**: "we consider", "we tested", "we claim".
-- **Never write the Introduction or the Abstract** — reserved for Ofek and Chen, written last.
+- **Introduction and Abstract:** the Introduction and the Abstract are written with Ofek, from his notes and comments, one change at a time with his approval (the earlier rule "never write them" was lifted on 2026-11-23).
 - **All figures must be vector PDF**, regenerated from a script in `agent_scripts/`.
 - **Do not over-claim**; cite or measure everything. Do not introduce a new term when one
   is already defined.

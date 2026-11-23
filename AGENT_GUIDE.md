@@ -207,8 +207,9 @@ subsection, show it, wait for a reaction. A dump of five sections will be reject
 wholesale. The one exception is when the author explicitly says "generate the
 whole chapter".
 
-**Never write the Introduction or the Abstract.** They are reserved for the author
-and Chen Avin, last.
+**The Introduction and the Abstract** are written with the author, from his notes and
+comments, one change at a time with his approval (the rule "never write them" was lifted on
+2026-11-23).
 
 **Every figure in the paper must be a vector PDF.** This is stated as a standard.
 Generate `.pdf` (a matching `.png` alongside is fine for preview). Never

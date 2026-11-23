@@ -11,8 +11,8 @@ metadata:
 `bvn_project/AGENT_GUIDE.md` (written 2026-08-16) is the canonical onboarding file
 for agents helping with the paper. It records which .tex files are live vs stale,
 the section-by-section status, which CSVs back which results, and the author's
-stated working rules (write one subsection at a time; never write the Introduction
-or Abstract; all figures must be vector PDF; do not over-claim).
+stated working rules (write one subsection at a time; the Introduction and Abstract
+only with Ofek; all figures must be vector PDF; do not over-claim).
 
 **Why:** several paper files in `Thesis/paper/` are superseded or corrupt, and
 agents kept editing the wrong one or re-proposing already-rejected wording.
