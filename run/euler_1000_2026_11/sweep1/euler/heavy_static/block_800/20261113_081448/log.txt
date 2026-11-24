@@ -1,0 +1,35 @@
+[2026-11-13 08:14:48] [INFO] [__main__] Run directory: run\euler_1000_2026_11\sweep1\euler\heavy_static\block_800\20261113_081448 |  Engine: euler_bvn | Bases: []
+[2026-11-13 08:14:48] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-11-13 08:14:48] [INFO] [src.runner] Starting Experiment | n=256, matrices=55, parallel=False
+[2026-11-13 08:15:04] [INFO] [src.runner] Progress: 2/55 matrices processed (4%)
+[2026-11-13 08:15:16] [INFO] [src.runner] Progress: 4/55 matrices processed (7%)
+[2026-11-13 08:15:28] [INFO] [src.runner] Progress: 6/55 matrices processed (11%)
+[2026-11-13 08:15:41] [INFO] [src.runner] Progress: 8/55 matrices processed (15%)
+[2026-11-13 08:15:53] [INFO] [src.runner] Progress: 10/55 matrices processed (18%)
+[2026-11-13 08:16:06] [INFO] [src.runner] Progress: 12/55 matrices processed (22%)
+[2026-11-13 08:16:18] [INFO] [src.runner] Progress: 14/55 matrices processed (25%)
+[2026-11-13 08:16:31] [INFO] [src.runner] Progress: 16/55 matrices processed (29%)
+[2026-11-13 08:16:44] [INFO] [src.runner] Progress: 18/55 matrices processed (33%)
+[2026-11-13 08:16:56] [INFO] [src.runner] Progress: 20/55 matrices processed (36%)
+[2026-11-13 08:17:08] [INFO] [src.runner] Progress: 22/55 matrices processed (40%)
+[2026-11-13 08:17:20] [INFO] [src.runner] Progress: 24/55 matrices processed (44%)
+[2026-11-13 08:17:33] [INFO] [src.runner] Progress: 26/55 matrices processed (47%)
+[2026-11-13 08:17:45] [INFO] [src.runner] Progress: 28/55 matrices processed (51%)
+[2026-11-13 08:17:58] [INFO] [src.runner] Progress: 30/55 matrices processed (55%)
+[2026-11-13 08:18:10] [INFO] [src.runner] Progress: 32/55 matrices processed (58%)
+[2026-11-13 08:18:23] [INFO] [src.runner] Progress: 34/55 matrices processed (62%)
+[2026-11-13 08:18:35] [INFO] [src.runner] Progress: 36/55 matrices processed (65%)
+[2026-11-13 08:18:47] [INFO] [src.runner] Progress: 38/55 matrices processed (69%)
+[2026-11-13 08:18:59] [INFO] [src.runner] Progress: 40/55 matrices processed (73%)
+[2026-11-13 08:19:11] [INFO] [src.runner] Progress: 42/55 matrices processed (76%)
+[2026-11-13 08:19:23] [INFO] [src.runner] Progress: 44/55 matrices processed (80%)
+[2026-11-13 08:19:35] [INFO] [src.runner] Progress: 46/55 matrices processed (84%)
+[2026-11-13 08:19:47] [INFO] [src.runner] Progress: 48/55 matrices processed (87%)
+[2026-11-13 08:19:59] [INFO] [src.runner] Progress: 50/55 matrices processed (91%)
+[2026-11-13 08:20:11] [INFO] [src.runner] Progress: 52/55 matrices processed (95%)
+[2026-11-13 08:20:23] [INFO] [src.runner] Progress: 54/55 matrices processed (98%)
+[2026-11-13 08:20:29] [INFO] [src.runner] Progress: 55/55 matrices processed (100%)
+[2026-11-13 08:20:29] [INFO] [src.runner] Experiment completed successfully.
+[2026-11-13 08:20:29] [INFO] [bvn.timer] [bold green]Finished:[/bold green] Running Decomposition Experiment in [cyan]340.662[/cyan] seconds
+[2026-11-13 08:20:29] [INFO] [__main__] Saved CSV: run\euler_1000_2026_11\sweep1\euler\heavy_static\block_800\20261113_081448\results_stats.csv
+[2026-11-13 08:20:29] [INFO] [__main__] Saved comparison summary: run\euler_1000_2026_11\sweep1\euler\heavy_static\block_800\20261113_081448\euler_comparison_summary.txt

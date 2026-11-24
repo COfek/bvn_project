@@ -1,0 +1,7 @@
+# date, first block start, last block start (a block may run ~10 min past it)
+2026-11-14 05:00 11:50   # Ofek busy until about 05:00; was 03:00-08:45
+2026-11-23 10:55 23:59  # Ofek: start now (10:55), was 11:00
+2026-11-24 09:00 12:00   # Ofek: computer free now (09:00), 5 wwfa blocks left
+2026-11-24 12:12 14:30   # replaces 09:00-12:00 above (set late, it was already past 12:00)
+2026-11-24 00:00 00:01   # Ofek stopped the run at 12:50 (wwfa 900 and 950 left); no more blocks today
+2026-11-24 14:30 23:59   # Ofek: resume now; replaces the stop line above

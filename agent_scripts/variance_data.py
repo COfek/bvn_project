@@ -51,14 +51,20 @@ def campaign_dir(sweep: int, kind: str, engine: str) -> str:
 
     For 2026_11:
       Radix Hungarian (and its baseline)  rerun_2026_11c, sweeps 1-3 (bvn.py's rule)
-      WWFA, every step                    sweep 1 rerun_2026_11c, sweeps 2-3 wwfa_2026_11
-      Euler, the other engines            rerun_2026_11b, sweeps 1-3 (four tiers)
+      Euler, every engine                 euler_1000_2026_11, sweeps 1-3, <engine>/merged/ (1000
+                                          matrices; until 2026-11-24 rerun_2026_11b, 100)
+      WWFA, Radix and baseline            sweep 1 rerun_2026_11c, sweeps 2-3 wwfa_2026_11
       Radix and baseline, GW and WFA      sweeps 1-2 rerun_2026_11, sweep 3 rerun_2026_11b
     """
     if CAMPAIGN == "variance_2026":
         root = "run/variance_2026"
     elif CAMPAIGN == "2026_11":
-        if engine == "wwfa":
+        if kind == "euler":
+            # all 1000 matrices, run block-wise (run_euler_1000.ps1, finished 2026-11-24) and
+            # merged by merge_euler_blocks.py into <engine>/merged/; replaces rerun_2026_11b
+            # (Euler, 100 matrices) and the Euler part of the WWFA runs
+            root = "run/euler_1000_2026_11"
+        elif engine == "wwfa":
             root = "run/rerun_2026_11c" if sweep == 1 else "run/wwfa_2026_11"
         elif kind == "radix" and engine == "max":
             root = "run/rerun_2026_11c"

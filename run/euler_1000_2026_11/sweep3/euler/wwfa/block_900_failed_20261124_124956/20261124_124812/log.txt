@@ -1,0 +1,7 @@
+[2026-11-24 12:48:12] [INFO] [__main__] Run directory: run\euler_1000_2026_11\sweep3\euler\wwfa\block_900\20261124_124812 |  Engine: euler_bvn | Bases: []
+[2026-11-24 12:48:12] [INFO] [bvn.timer] [bold green]Starting:[/bold green] Running Decomposition Experiment
+[2026-11-24 12:48:12] [INFO] [src.runner] Starting Experiment | n=256, matrices=55, parallel=False
+[2026-11-24 12:48:34] [INFO] [src.runner] Progress: 2/55 matrices processed (4%)
+[2026-11-24 12:48:56] [INFO] [src.runner] Progress: 4/55 matrices processed (7%)
+[2026-11-24 12:49:18] [INFO] [src.runner] Progress: 6/55 matrices processed (11%)
+[2026-11-24 12:49:40] [INFO] [src.runner] Progress: 8/55 matrices processed (15%)

@@ -1,0 +1,66 @@
+Logging configured. Log file: 
+run\euler_1000_2026_11\sweep3\euler\wwfa\block_600\20261124_081608\log.txt
+──────────────────────── BvN-Arbiter Benchmark Started ────────────────────────
+[11/24/26 08:16:08] INFO     Run directory:                                    
+                             run\euler_1000_2026_11\sweep3\euler\wwfa\block_600
+                             \20261124_081608 |  Engine: euler_bvn | Bases: [] 
+                    INFO     Starting: Running Decomposition Experiment        
+                    INFO     Starting Experiment | n=256, matrices=55,         
+                             parallel=False                                    
+[11/24/26 08:16:30] INFO     Progress: 2/55 matrices processed (4%)            
+[11/24/26 08:16:52] INFO     Progress: 4/55 matrices processed (7%)            
+[11/24/26 08:17:14] INFO     Progress: 6/55 matrices processed (11%)           
+[11/24/26 08:17:36] INFO     Progress: 8/55 matrices processed (15%)           
+[11/24/26 08:17:58] INFO     Progress: 10/55 matrices processed (18%)          
+[11/24/26 08:18:20] INFO     Progress: 12/55 matrices processed (22%)          
+[11/24/26 08:18:41] INFO     Progress: 14/55 matrices processed (25%)          
+[11/24/26 08:19:04] INFO     Progress: 16/55 matrices processed (29%)          
+[11/24/26 08:19:26] INFO     Progress: 18/55 matrices processed (33%)          
+[11/24/26 08:19:49] INFO     Progress: 20/55 matrices processed (36%)          
+[11/24/26 08:20:10] INFO     Progress: 22/55 matrices processed (40%)          
+[11/24/26 08:20:33] INFO     Progress: 24/55 matrices processed (44%)          
+[11/24/26 08:20:55] INFO     Progress: 26/55 matrices processed (47%)          
+[11/24/26 08:21:17] INFO     Progress: 28/55 matrices processed (51%)          
+[11/24/26 08:21:40] INFO     Progress: 30/55 matrices processed (55%)          
+[11/24/26 08:22:01] INFO     Progress: 32/55 matrices processed (58%)          
+[11/24/26 08:22:23] INFO     Progress: 34/55 matrices processed (62%)          
+[11/24/26 08:22:44] INFO     Progress: 36/55 matrices processed (65%)          
+[11/24/26 08:23:06] INFO     Progress: 38/55 matrices processed (69%)          
+[11/24/26 08:23:28] INFO     Progress: 40/55 matrices processed (73%)          
+[11/24/26 08:23:51] INFO     Progress: 42/55 matrices processed (76%)          
+[11/24/26 08:24:12] INFO     Progress: 44/55 matrices processed (80%)          
+[11/24/26 08:24:34] INFO     Progress: 46/55 matrices processed (84%)          
+[11/24/26 08:24:56] INFO     Progress: 48/55 matrices processed (87%)          
+[11/24/26 08:25:19] INFO     Progress: 50/55 matrices processed (91%)          
+[11/24/26 08:25:40] INFO     Progress: 52/55 matrices processed (95%)          
+[11/24/26 08:26:01] INFO     Progress: 54/55 matrices processed (98%)          
+[11/24/26 08:26:12] INFO     Progress: 55/55 matrices processed (100%)         
+                    INFO     Experiment completed successfully.                
+                    INFO     Finished: Running Decomposition Experiment in     
+                             604.530 seconds                                   
+                    INFO     Saved CSV:                                        
+                             run\euler_1000_2026_11\sweep3\euler\wwfa\block_600
+                             \20261124_081608\results_stats.csv                
+==============================================================================
+Euler framework comparison summary  (50 matrices, first 5 dropped as warm-up)
+==============================================================================
+
+[1] Matching-extraction time vs. BvN baseline (same engine, same matrices)
+    'max-leaf' = slowest single leaf (simulated parallel extraction);
+    'split' = splitting phase (sum over levels of the slowest split), reported separately.
+
+config                        units  split ms max-leaf ms vs baseline   vs lvl     cycle   perms
+------------------------------------------------------------------------------------------------
+bvn_baseline (depth 0)            1         -      850.20       1.000        -      8532    8230
+euler_heuristic_ruined_depth1    2.0     16.11      469.08       0.552    0.552      8712    8400
+euler_heuristic_ruined_depth2    4.0     23.86      263.77       0.310    0.562      8975    8641
+euler_heuristic_ruined_depth3    8.0     28.25      150.80       0.177    0.572      9390    9007
+euler_heuristic_ruined_depth4   16.0     30.75       87.88       0.103    0.583      9999    9557
+
+    Halving hypothesis: 'vs lvl' ~= 0.5 means each split level halves the
+    max-leaf extraction time (geometric per-level ratio when depths skip).
+
+                    INFO     Saved comparison summary:                         
+                             run\euler_1000_2026_11\sweep3\euler\wwfa\block_600
+                             \20261124_081608\euler_comparison_summary.txt     
+───────────────────────────── Benchmark Complete! ─────────────────────────────

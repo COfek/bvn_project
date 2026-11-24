@@ -173,15 +173,21 @@ def table_radix() -> str:
 # --------------------------------------------------------------------------
 def table_euler() -> str:
     sources, rows, n = [], [], None
-    for _dir_key, col_key, name in ENGINES:
-        sources.append((name, f"sweep{{1,2,3}}/euler/{col_key}/"))
+    for dir_key, col_key, name in ENGINES:
+        # The BvN baseline row is Table 2's (the Radix campaign's baseline run): since the Euler
+        # campaign covers the same 995 matrices (2026-11-24), one baseline is printed for both
+        # tables. Its time is not added to the spread again (table_radix() already recorded it).
+        bsrc = baseline_source(dir_key)
+        sources.append((name, f"sweep{{1,2,3}}/euler/{col_key}/; baseline as Table 2"))
         n = len(frame(1, "euler", col_key))
-        times = [across("euler", col_key, "bvn_runtime") * 1000] + \
+        assert n == len(frame(1, "radix", dir_key)), "Euler and Radix must cover the same matrices"
+        base_t = sum(frame(s, bsrc, dir_key)["bvn_runtime"].mean() for s in SWEEPS) / len(SWEEPS)
+        times = [base_t * 1000] + \
                 [across("euler", col_key, f"euler_heuristic_ruined_depth{k}_time") * 1000
                  for k in DEPTHS]
-        cycles = [fixed("euler", col_key, "bvn_cycle")] + \
+        cycles = [fixed(bsrc, dir_key, "bvn_cycle")] + \
                  [fixed("euler", col_key, f"euler_heuristic_ruined_depth{k}_cycle") for k in DEPTHS]
-        perms = [fixed("euler", col_key, "bvn_perms")] + \
+        perms = [fixed(bsrc, dir_key, "bvn_perms")] + \
                 [fixed("euler", col_key, f"euler_heuristic_ruined_depth{k}_perms") for k in DEPTHS]
         labels = ["BvN baseline"] + [f"depth {k}" for k in DEPTHS]
         rows.append((name, labels, bold_min(times, f1),
