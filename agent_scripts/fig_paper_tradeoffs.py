@@ -4,7 +4,8 @@ Both are single-column (not figure*) so LaTeX can place them inside the subsecti
 Each has two side-by-side panels giving computation time against BOTH other metrics,
 scaled to fit within a single column horizontally.
 
-  scaled_tradeoff.pdf       Radix(B,c), scaled only  -- for "Radix across engines"
+  scaled_tradeoff_{a,b,c}.pdf  Radix across engines, the data of Table 2, unscaled (Figure 3;
+                               the file name is historical: the scale was removed on 2026-11-24)
   euler_tradeoff_paper.pdf  Euler depths             -- for "Euler splitting across engines"
 """
 from __future__ import annotations
@@ -47,16 +48,12 @@ def _style(ax, xlab, ylab, logx=False, logy=True):
     ax.grid(True, which="both", ls=":", lw=.35, alpha=.6)
 
 
-# ============================== RADIX (scaled) ==============================
-# a rerun (BVN_RUN_ROOT) times the digit extraction itself; only run/ needs it added
-res = pd.read_csv(os.path.join(ROOT, RUN, "radix_scale", "scale_results.csv"))
-if RUN == "run":
-    res = correct_scale_results(res)
-res["S_original"] = res.S_scaled / res.scale
-res["C_orig"] = res.C_over_S * res.S_original
-bvn = pd.read_csv(os.path.join(ROOT, RUN, "tm_workload", "tm_summary.csv"))
-r = res[res.regime == "Uniform"]
-b = bvn[bvn.regime == "Uniform (thesis)"]
+# ============================== RADIX ==============================
+# Figure 3 draws Table 2: the main Radix campaign (all matrices, mean over the three sweeps),
+# unscaled, every engine from its BvN baseline down to B=2 (Ofek, 2026-11-24: the scale is
+# removed from the paper). Same frames as make_paper_tables.py table_radix().
+RADIX_KEYS = {"Hungarian": ("max", "maximum"), "WWFA": ("wwfa", "wwfa"), "WFA": ("wfa", "wfa"),
+              "GW Dynamic": ("heavy", "heavy"), "GW Static": ("heavy_static", "heavy_static")}
 
 # Three separate panels, scaled_tradeoff_{a,b,c}.pdf, each one column wide, so the paper sets the
 # panel labels (a)-(c) as LaTeX subcaptions below each panel. All text is the paper's body font
@@ -86,19 +83,16 @@ plt.rcParams.update(rc)
 figs = [plt.subplots(figsize=(3.33, 2.05)) for _ in range(3)]
 axes = [ax for _, ax in figs]
 BASE_LABELS = [[], [], []]   # (x, y, base, colour, offset) per panel, placed after the axes
-# C = S line at the mean demand of the matrices the Radix points average over
-S0 = float(r.groupby("matrix").S_original.first().mean())
+S_ALL = []
 for name, col, mk in ENG:
-    # The tight scale depends on the matrix's largest entry, so each matrix has its own: pick,
-    # per matrix, the scale with the shortest cycle (c=1 or one of the two tight scales), then
-    # average over the matrices, so every point uses all of them.
-    e = r[r.engine == name]
-    best = e.loc[e.groupby(["base", "matrix"]).C_over_S.idxmin()]
-    tu = (best.groupby("base")
-          .agg(C=("C_orig", "mean"), N=("N", "mean"), T=("runtime_ms", "mean")).reindex(BASES))
-    bv = b[(b.engine == name) & (b.config == "BvN")]
-    bC, bN, bT = float(bv.C.iloc[0]), float(bv.N.iloc[0]), float(bv.runtime_ms.iloc[0])
-    Cs, Ns, Ts = [bC] + tu.C.tolist(), [bN] + tu.N.tolist(), [bT] + tu["T"].tolist()
+    key, pre = RADIX_KEYS[name]
+    d = radix_frame(key)
+    Cs = [d["bvn_cycle"].mean()] + [d[f"{pre}_{B}_cycle"].mean() for B in BASES]
+    Ns = [d["bvn_perms"].mean()] + [d[f"{pre}_{B}_perms"].mean() for B in BASES]
+    Ts = [d["bvn_runtime"].mean() * 1000] + [d[f"{pre}_{B}_time"].mean() * 1000 for B in BASES]
+    if name != "WWFA":                       # the strong engines' baseline cycle is S
+        S_ALL.append(Cs[0])
+    print(name, [f"{x:.1f}" for x in Ts], [f"{x:.0f}" for x in Cs], [f"{x:.0f}" for x in Ns])
     # (a) time against cycle, (b) time against N, (c) cycle against N
     for k, (ax, xs, ys) in enumerate(((axes[0], Cs, Ts), (axes[1], Ns, Ts), (axes[2], Ns, Cs))):
         ax.plot(xs, ys, "-", color=col, lw=1.3, alpha=.95)
@@ -106,13 +100,8 @@ for name, col, mk in ENG:
                 markeredgewidth=.5, label=name)
         for x, y, t in zip(xs, ys, LABELS):   # the base of each point, labelled below
             BASE_LABELS[k].append((x, y, t, col, LABEL_OFFSET.get((k, name, t), (3, 3))))
-    # the unscaled counterpart, scale = 1, drawn faint and dashed
-    gu = (r[(r.engine == name) & (r.scale == 1)].groupby('base')
-          .agg(C=('C_orig', 'mean'), N=('N', 'mean'), T=('runtime_ms', 'mean'))
-          .reindex(BASES))
-    Cu, Nu, Tu_ = [bC] + gu.C.tolist(), [bN] + gu.N.tolist(), [bT] + gu['T'].tolist()
-    for ax, xs_, ys_ in ((axes[0], Cu, Tu_), (axes[1], Nu, Tu_), (axes[2], Nu, Cu)):
-        ax.plot(xs_, ys_, '--', color=col, lw=0.9, alpha=.35, zorder=1)
+# C = S line: the strong engines' baseline cycle, S of the campaign's matrices
+S0 = float(np.mean(S_ALL))
 
 
 def _style9(ax, xlab, ylab, logx=False, logy=True):
@@ -135,6 +124,8 @@ for ax in (axes[1], axes[2]):   # labelled ticks on the N axis
     ax.xaxis.set_major_locator(FixedLocator([t for t in N_TICKS if lo <= t <= hi]))
     ax.xaxis.set_minor_locator(NullLocator())
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+# cycle-length ticks every 1000: a label at 11500 would stand past the right edge of (a)
+axes[0].xaxis.set_major_locator(FixedLocator([9000, 10000, 11000]))
 for ax in (axes[0], axes[1]):   # headroom, so the labels of the top points stay inside the frame
     ax.set_ylim(top=ax.get_ylim()[1] * 1.5)
 # the dotted line C = S, labelled S
