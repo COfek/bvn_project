@@ -174,8 +174,19 @@ print("saved dct_param_space_ratio")
 # ===== FIGURE 1c: the winner map alone, sized for a single column =====
 # Same data as the right-hand panel above. The ratio panel is dropped: it compares
 # one pair of configurations, which the winner map already subsumes.
+# Drawn on a finer grid than the 240 x 240 one the shares are computed on: at 240 cells the
+# boundaries showed as steps and the cell seams as faint white lines when zoomed in (Ofek, Chen
+# K15). The fine grid is drawn as one raster image, without antialiasing between cells.
+FINE = 1200
+TCf, Rf = np.meshgrid(np.logspace(-3, 0, FINE), np.logspace(np.log10(5), 3, FINE))
+winf = np.stack([NCT[i, 2] + TCf * (NCT[i, 0] + NCT[i, 1] * Rf)
+                 for i in range(len(labels))]).argmin(axis=0)
+assert set(winf.ravel().tolist()) <= set(winners_r), "the fine grid finds a winner the 240 grid misses"
+print("fine grid (drawing only):", {labels[w]: f"{(winf == w).mean() * 100:.1f}%"
+                                    for w in sorted(set(winf.ravel().tolist()))})
 figW, axW = plt.subplots(figsize=(3.4, 2.7))
-axW.pcolormesh(TCr, R, np.vectorize(remap_r.get)(winr), cmap=cmap_r, norm=norm_r, shading="auto")
+axW.pcolormesh(TCf, Rf, np.vectorize(remap_r.get)(winf), cmap=cmap_r, norm=norm_r,
+               shading="auto", rasterized=True, antialiased=False, linewidth=0)
 label_regions(axW, np.vectorize(remap_r.get)(winr), TCr, R,
               {remap_r[w]: labels[w] for w in winners_r}, fontsize=5, min_share=0.015)
 axW.axhline(10, color="k", ls="--", lw=1.0)
@@ -189,7 +200,7 @@ axW.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in w
                   + [Line2D([], [], color="k", ls="--", lw=1.0, label="$T_{unit}=10\\,T_{config}$")],
            fontsize=5.2, loc="upper center", bbox_to_anchor=(0.5, -0.24), ncol=3, frameon=False, handlelength=1.4, columnspacing=1.0)
 figW.tight_layout()
-figW.savefig(f"{OUT}/dct_winner_map.pdf", bbox_inches="tight")
+figW.savefig(f"{OUT}/dct_winner_map.pdf", bbox_inches="tight", dpi=600)
 figW.savefig(f"{OUT}/dct_winner_map.png", dpi=200, bbox_inches="tight")
 print("saved dct_winner_map (single column)")
 

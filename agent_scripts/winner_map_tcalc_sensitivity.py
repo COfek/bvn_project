@@ -93,9 +93,20 @@ cmap = ListedColormap([color_of(labels[w]) for w in winners_all])
 norm = BoundaryNorm(np.arange(-0.5, len(winners_all)+0.5), cmap.N)
 
 # stacked, one column wide, so the figure fits the column under its subsection heading
+# Drawn on a finer grid than the 220 x 220 one the shares are computed on, as one raster image
+# without antialiasing between cells: at 220 cells the boundaries showed as steps and the cell
+# seams as faint white lines when zoomed in (Ofek, Chen K15).
+FINE = 1200
+TCf, Rf = np.meshgrid(np.logspace(-3, 0, FINE), np.logspace(np.log10(5), 3, FINE))
 fig, axes = plt.subplots(3, 1, figsize=(3.4, 4.1), sharex=True, sharey=True)
 for ax, w, (s, ttl) in zip(axes, wins, SCALES):
-    ax.pcolormesh(TC, R, np.vectorize(remap.get)(w), cmap=cmap, norm=norm, shading="auto")
+    wf = np.stack([NCT[i, 2]*s + TCf*(NCT[i, 0] + NCT[i, 1]*Rf)
+                   for i in range(len(labels))]).argmin(axis=0)
+    assert set(wf.ravel().tolist()) <= set(winners_all), "the fine grid finds another winner"
+    print("fine grid (drawing only)", ttl, {labels[x]: f"{(wf == x).mean()*100:.1f}%"
+                                            for x in sorted(set(wf.ravel().tolist()))})
+    ax.pcolormesh(TCf, Rf, np.vectorize(remap.get)(wf), cmap=cmap, norm=norm, shading="auto",
+                  rasterized=True, antialiased=False, linewidth=0)
     label_regions(ax, np.vectorize(remap.get)(w), TC, R,
                   {remap[x]: labels[x] for x in winners_all}, fontsize=4.6, min_share=0.015)
     ax.axhline(10, color="k", ls="--", lw=0.8)
@@ -117,6 +128,6 @@ fig.legend(handles=handles, title="Winning configuration", ncol=2,
 # [point 27] title moved to caption: "Dense, n=256, k=256, $W_{max}$=64; BvN cycle-consistent with Euler (same run, $C=S$)",
 # [point 27] title moved to caption: fontsize=13, y=1.005)
 fig.tight_layout(rect=[0, 0.155, 1, 1], h_pad=0.4)
-fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.pdf", bbox_inches="tight")
+fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.pdf", bbox_inches="tight", dpi=600)
 fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.png", dpi=140, bbox_inches="tight")
 print("saved winner_map_tcalc_sensitivity")
