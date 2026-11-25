@@ -198,14 +198,16 @@ if CAMPAIGN != "variance_2026":
     KEYS = [("WWFA", "wwfa", "wwfa") if k[1] == "wfa" else k for k in KEYS]
 
 # Two separate panels, euler_tradeoff_{a,b}.pdf, one column wide, set as LaTeX subfigures; text
-# as in Figure 3 (LaTeX, Linux Libertine, 9 pt). Every point carries its depth (BvN, 1-4). In (b)
-# the three strong engines sit on the line C = S at overlapping heights, so there only WWFA's
-# points are labelled; the strong engines' depths are read from (a), at the same height.
+# as in Figure 3 (LaTeX, Linux Libertine, 9 pt), and in Figure 3's order (Chen K9): (a) time
+# against cycle length, (b) time against N. Every point in (b) carries its depth (unsplit, 1-4).
+# In (a) the three strong engines sit on the line C = S at overlapping heights, so there only
+# WWFA's points are labelled; the strong engines' depths are read from (b), at the same height.
 DLABELS = ["unsplit"] + [str(d) for d in DEPTHS]
 # (panel, engine, depth) -> offset in points, where the default (3, 3) hits a point or a line
-# GW Static's points in (a) stand just left of WWFA's, so its labels go on the left
-DEPTH_OFFSET = {(0, "GW Static", "unsplit"): (-4, 0, "r")}
-DEPTH_OFFSET.update({(0, "GW Static", str(d)): (-9, -3) for d in DEPTHS})
+# GW Static's points in (b) stand just left of WWFA's, so its labels go on the left
+DEPTH_OFFSET = {(1, "GW Static", "unsplit"): (-4, 0, "r"),
+                (1, "WWFA", "unsplit"): (-5, 0, "r")}   # inside the right edge
+DEPTH_OFFSET.update({(1, "GW Static", str(d)): (-9, -3) for d in DEPTHS})
 efigs = [plt.subplots(figsize=(3.33, 2.05)) for _ in range(2)]
 eaxes = [ax for _, ax in efigs]
 DEPTH_LABELS = [[], []]
@@ -219,33 +221,40 @@ for name, re_, pre in KEYS:
          + de[f"euler_heuristic_ruined_depth{d}_split"].mean())*1000 for d in DEPTHS]
     if name == "Hungarian":
         S_ref = C[0]
-    for k, (ax, xs) in enumerate(((eaxes[0], N), (eaxes[1], C))):
+    for k, (ax, xs) in enumerate(((eaxes[0], C), (eaxes[1], N))):
         ax.plot(xs, T, "-", color=COL[name], lw=1.3, alpha=.95)
         ax.plot(xs, T, MK[name], color=COL[name], ms=5,
                 markeredgecolor="white", markeredgewidth=.5, label=name)
-        if k == 0 or name == "WWFA":
+        if k == 1 or name == "WWFA":
             for x, y, t in zip(xs, T, DLABELS):
                 DEPTH_LABELS[k].append((x, y, t, COL[name], DEPTH_OFFSET.get((k, name, t), (3, 3))))
-_style9(eaxes[0], NC, r"$T_{\mathrm{parallel}}$ [ms]", logx=True)
-_style9(eaxes[1], "cycle length $C$", r"$T_{\mathrm{parallel}}$ [ms]")
-lo, hi = eaxes[0].get_xlim()
-eaxes[0].xaxis.set_major_locator(FixedLocator([t for t in N_TICKS + [10000] if lo <= t <= hi]))
-eaxes[0].xaxis.set_minor_locator(NullLocator())
-eaxes[0].xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+_style9(eaxes[0], "cycle length $C$", r"$T_{\mathrm{parallel}}$ [ms]")
+_style9(eaxes[1], NC, r"$T_{\mathrm{parallel}}$ [ms]", logx=True)
+lo, hi = eaxes[1].get_xlim()
+eaxes[1].xaxis.set_major_locator(FixedLocator([t for t in N_TICKS + [10000] if lo <= t <= hi]))
+eaxes[1].xaxis.set_minor_locator(NullLocator())
+eaxes[1].xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
 for ax in eaxes:
     ax.set_ylim(top=ax.get_ylim()[1] * 1.5)
     lo, hi = ax.get_ylim()   # the same plain-ms time ticks as Figure 3 (Chen K3)
     ax.yaxis.set_major_locator(FixedLocator([v for v in T_TICKS if lo <= v <= hi]))
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
     ax.yaxis.set_minor_formatter(NullFormatter())
-eaxes[1].axvline(S_ref, color="gray", ls=":", lw=1.0)
-eaxes[1].annotate("$S$", (S_ref, 1), xycoords=("data", "axes fraction"), xytext=(3, -12),
+eaxes[0].axvline(S_ref, color="gray", ls=":", lw=1.0)
+eaxes[0].annotate("$S$", (S_ref, 1), xycoords=("data", "axes fraction"), xytext=(3, -12),
                   textcoords="offset points", color="gray")
 for ax, labs in zip(eaxes, DEPTH_LABELS):
     place_labels(ax, labs)
-eaxes[1].legend(framealpha=.95, loc="upper right")
+# legend in one row above (a) and the same fixed margins as Figure 3, so the panels of both
+# figures line up (Chen K9)
+efigs[0][0].set_size_inches(3.33, 2.05 + LEG_H)
+efigs[0][0].legend(*eaxes[0].get_legend_handles_labels(), loc="upper center",
+                   bbox_to_anchor=(0.5, 1.0), ncol=4, frameon=False, handlelength=0.8,
+                   handletextpad=0.25, columnspacing=0.7, borderaxespad=0.1)
 for (fig, _), tag in zip(efigs, "ab"):
-    fig.tight_layout(pad=0.2)
+    w, h = fig.get_size_inches()
+    top = MT + (LEG_H if tag == "a" else 0)
+    fig.subplots_adjust(left=ML / w, right=1 - MR / w, bottom=MB / h, top=1 - top / h)
     for e in ("pdf", "png"):
         fig.savefig(os.path.join(PLOTS, f"euler_tradeoff_{tag}.{e}"), dpi=200)
     plt.close(fig)
