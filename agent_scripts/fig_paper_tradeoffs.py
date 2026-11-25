@@ -60,7 +60,7 @@ RADIX_KEYS = {"Hungarian": ("max", "maximum"), "WWFA": ("wwfa", "wwfa"), "WFA": 
 # (Linux Libertine, 9 pt) at the size it is printed: the PDF is as wide as the column (3.33 in),
 # so \includegraphics[width=\columnwidth] does not rescale it.
 from matplotlib import patheffects
-from matplotlib.ticker import FixedLocator, NullLocator, FuncFormatter
+from matplotlib.ticker import FixedLocator, NullLocator, FuncFormatter, NullFormatter
 FS = 9
 # Text is set by LaTeX with the fonts acmart uses (Linux Libertine, newtxmath), so it is the
 # paper's own font. (Matplotlib draws the Libertine OpenType outlines wrongly.)
@@ -69,7 +69,8 @@ rc = {"font.size": FS, "axes.labelsize": FS, "xtick.labelsize": FS, "ytick.label
       "text.latex.preamble": r"\usepackage[T1]{fontenc}\usepackage{libertine}"
                              r"\usepackage[libertine]{newtxmath}"}
 LABELS = ["unsplit"] + [str(B) for B in BASES]
-N_TICKS = [500, 1000, 1500, 5000]
+N_TICKS = [500, 700, 1000, 1500, 3000, 5000]   # Chen K3: more numbers on the axes
+T_TICKS = [20, 50, 100, 200, 500, 1000]        # ms
 # where a base label sits, in points from its marker, when the default (3, 3) would hit a point,
 # a line or another label: (panel 0-2, engine, base) -> offset
 # a third element "r" sets the label right-aligned and centred on its marker, to its left
@@ -77,6 +78,7 @@ LABEL_OFFSET = {(0, "Hungarian", "unsplit"): (-4, 0, "r"), (0, "GW Static", "uns
                 (0, "GW Dynamic", "unsplit"): (-4, 0, "r"),
                 (0, "WWFA", "unsplit"): (-4, 0, "r"), (0, "Hungarian", "8"): (3, -11),
                 (0, "Hungarian", "4"): (4, -11),
+                (1, "WWFA", "unsplit"): (-4, 3, "r"), (1, "GW Static", "unsplit"): (0, -5, "c"),
                 (1, "Hungarian", "8"): (-11, -2), (1, "Hungarian", "4"): (-11, -2),
                 (1, "Hungarian", "2"): (-10, -2),
                 (2, "Hungarian", "unsplit"): (-6, 6), (2, "Hungarian", "2"): (6, -4),
@@ -127,11 +129,16 @@ for ax in (axes[1], axes[2]):   # labelled ticks on the N axis
     ax.xaxis.set_minor_locator(NullLocator())
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
 # cycle-length ticks every 1000: a label at 11500 would stand past the right edge of (a)
-axes[0].xaxis.set_major_locator(FixedLocator([9000, 10000, 11000]))
+axes[0].xaxis.set_major_locator(FixedLocator([8000, 9000, 10000, 11000]))
 # room left of C = S for the unsplit labels, which sit to the left of their markers
-axes[0].set_xlim(left=7800)
+axes[0].set_xlim(left=7650)
 for ax in (axes[0], axes[1]):   # headroom, so the labels of the top points stay inside the frame
     ax.set_ylim(top=ax.get_ylim()[1] * 1.5)
+for ax in (axes[0], axes[1]):   # labelled time ticks in plain ms, not only the decades (Chen K3)
+    lo, hi = ax.get_ylim()
+    ax.yaxis.set_major_locator(FixedLocator([v for v in T_TICKS if lo <= v <= hi]))
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+    ax.yaxis.set_minor_formatter(NullFormatter())
 # the dotted line C = S, labelled S
 axes[0].axvline(S0, color="gray", ls=":", lw=1.0)
 axes[0].annotate("$S$", (S0, 0), xycoords=("data", "axes fraction"), xytext=(3, 3),
@@ -151,20 +158,30 @@ def place_labels(ax, labs):
         if near:
             near[0].set_color("0.25")
             continue
-        left = len(off) == 3   # to the left of the marker, centred on it
+        mode = off[2] if len(off) == 3 else ""   # "r": left of the marker; "c": centred below it
         placed.append((q, t, ax.annotate(
             t, (x, y), xytext=off[:2], textcoords="offset points", fontsize=FS, color=col,
-            ha="right" if left else "left", va="center" if left else "baseline",
+            ha={"r": "right", "c": "center"}.get(mode, "left"), va="center" if mode == "r" else ("top" if mode == "c" else "baseline"),
             path_effects=[patheffects.withStroke(linewidth=2, foreground="white")])))
 
 
 # the base of every point
 for ax, labs in zip(axes, BASE_LABELS):
     place_labels(ax, labs)
-# legend in the empty upper right of (c), clear of every point and label
-axes[2].legend(framealpha=.95, loc="upper right")
+# legend in one row above (a) (Chen K2); panel (c) is no longer in the paper (Chen K8, Ofek
+# 2026-11-25: dropped rather than added to Figure 4 as well), but is still written
+LEG_H = 0.30                                   # inches added on top of (a) for the legend
+figs[0][0].set_size_inches(3.33, 2.05 + LEG_H)
+figs[0][0].legend(*axes[0].get_legend_handles_labels(), loc="upper center",
+                  bbox_to_anchor=(0.5, 1.0), ncol=4, frameon=False, handlelength=0.8,
+                  handletextpad=0.25, columnspacing=0.7, borderaxespad=0.1)
+# the same margins in inches for every panel, so the plotting areas of (a) and (b) line up
+# when stacked (tight_layout fitted each panel to its own tick labels, and they did not)
+ML, MR, MB, MT = 0.50, 0.06, 0.40, 0.06
 for (fig, _), tag in zip(figs, "abc"):
-    fig.tight_layout(pad=0.2)
+    w, h = fig.get_size_inches()
+    top = MT + (LEG_H if tag == "a" else 0)
+    fig.subplots_adjust(left=ML / w, right=1 - MR / w, bottom=MB / h, top=1 - top / h)
     for e in ("pdf", "png"):
         fig.savefig(os.path.join(PLOTS, f"scaled_tradeoff_{tag}.{e}"), dpi=200)
     plt.close(fig)
@@ -217,6 +234,10 @@ eaxes[0].xaxis.set_minor_locator(NullLocator())
 eaxes[0].xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
 for ax in eaxes:
     ax.set_ylim(top=ax.get_ylim()[1] * 1.5)
+    lo, hi = ax.get_ylim()   # the same plain-ms time ticks as Figure 3 (Chen K3)
+    ax.yaxis.set_major_locator(FixedLocator([v for v in T_TICKS if lo <= v <= hi]))
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+    ax.yaxis.set_minor_formatter(NullFormatter())
 eaxes[1].axvline(S_ref, color="gray", ls=":", lw=1.0)
 eaxes[1].annotate("$S$", (S_ref, 1), xycoords=("data", "axes fraction"), xytext=(3, -12),
                   textcoords="offset points", color="gray")
