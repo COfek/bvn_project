@@ -94,11 +94,19 @@ for name, col, mk in ENG:
     Cs = [d["bvn_cycle"].mean()] + [d[f"{pre}_{B}_cycle"].mean() for B in BASES]
     Ns = [d["bvn_perms"].mean()] + [d[f"{pre}_{B}_perms"].mean() for B in BASES]
     Ts = [d["bvn_runtime"].mean() * 1000] + [d[f"{pre}_{B}_time"].mean() * 1000 for B in BASES]
+    # standard deviation across the matrices: dashed lines at T +- sd, the band between them
+    # shaded at 15% (Chen K10, Ofek 2026-11-26)
+    Tsd = [d["bvn_runtime"].std() * 1000] + [d[f"{pre}_{B}_time"].std() * 1000 for B in BASES]
     if name != "WWFA":                       # the strong engines' baseline cycle is S
         S_ALL.append(Cs[0])
     print(name, [f"{x:.1f}" for x in Ts], [f"{x:.0f}" for x in Cs], [f"{x:.0f}" for x in Ns])
     # (a) time against cycle, (b) time against N, (c) cycle against N
     for k, (ax, xs, ys) in enumerate(((axes[0], Cs, Ts), (axes[1], Ns, Ts), (axes[2], Ns, Cs))):
+        if k < 2:
+            up, lo = [y + s for y, s in zip(Ts, Tsd)], [y - s for y, s in zip(Ts, Tsd)]
+            ax.fill(list(xs) + list(xs)[::-1], up + lo[::-1], color=col, alpha=.15, lw=0)
+            for ys_ in (up, lo):
+                ax.plot(xs, ys_, "--", color=col, lw=.7, alpha=.8, dashes=(3, 2))
         ax.plot(xs, ys, "-", color=col, lw=1.3, alpha=.95)
         ax.plot(xs, ys, mk, color=col, ms=5, markeredgecolor="white",
                 markeredgewidth=.5, label=name)
@@ -219,9 +227,17 @@ for name, re_, pre in KEYS:
     T = [de["bvn_runtime"].mean()*1000] + [
         (de[f"euler_heuristic_ruined_depth{d}_time"].mean()
          + de[f"euler_heuristic_ruined_depth{d}_split"].mean())*1000 for d in DEPTHS]
+    # standard deviation across the matrices of split + slowest component (Chen K10)
+    Tsd = [de["bvn_runtime"].std()*1000] + [
+        (de[f"euler_heuristic_ruined_depth{d}_time"]
+         + de[f"euler_heuristic_ruined_depth{d}_split"]).std()*1000 for d in DEPTHS]
     if name == "Hungarian":
         S_ref = C[0]
     for k, (ax, xs) in enumerate(((eaxes[0], C), (eaxes[1], N))):
+        up, lo = [y + s for y, s in zip(T, Tsd)], [y - s for y, s in zip(T, Tsd)]
+        ax.fill(list(xs) + list(xs)[::-1], up + lo[::-1], color=COL[name], alpha=.15, lw=0)
+        for ys_ in (up, lo):
+            ax.plot(xs, ys_, "--", color=COL[name], lw=.7, alpha=.8, dashes=(3, 2))
         ax.plot(xs, T, "-", color=COL[name], lw=1.3, alpha=.95)
         ax.plot(xs, T, MK[name], color=COL[name], ms=5,
                 markeredgecolor="white", markeredgewidth=.5, label=name)
