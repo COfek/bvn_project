@@ -118,8 +118,8 @@ def _style9(ax, xlab, ylab, logx=False, logy=True):
 
 
 NC = "number of configurations $N$"
-_style9(axes[0], "cycle length $C$", r"$T_{\mathrm{compute}}$ [ms]")
-_style9(axes[1], NC, r"$T_{\mathrm{compute}}$ [ms]", logx=True)
+_style9(axes[0], "cycle length $C$", r"$T_{\mathrm{parallel}}$ [ms]")
+_style9(axes[1], NC, r"$T_{\mathrm{parallel}}$ [ms]", logx=True)
 _style9(axes[2], NC, "cycle length $C$", logx=True, logy=False)
 for ax in (axes[1], axes[2]):   # labelled ticks on the N axis
     lo, hi = ax.get_xlim()
@@ -209,8 +209,8 @@ for name, re_, pre in KEYS:
         if k == 0 or name == "WWFA":
             for x, y, t in zip(xs, T, DLABELS):
                 DEPTH_LABELS[k].append((x, y, t, COL[name], DEPTH_OFFSET.get((k, name, t), (3, 3))))
-_style9(eaxes[0], NC, r"$T_{\mathrm{compute}}$ [ms]", logx=True)
-_style9(eaxes[1], "cycle length $C$", r"$T_{\mathrm{compute}}$ [ms]")
+_style9(eaxes[0], NC, r"$T_{\mathrm{parallel}}$ [ms]", logx=True)
+_style9(eaxes[1], "cycle length $C$", r"$T_{\mathrm{parallel}}$ [ms]")
 lo, hi = eaxes[0].get_xlim()
 eaxes[0].xaxis.set_major_locator(FixedLocator([t for t in N_TICKS + [10000] if lo <= t <= hi]))
 eaxes[0].xaxis.set_minor_locator(NullLocator())

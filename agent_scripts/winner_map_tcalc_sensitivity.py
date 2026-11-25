@@ -60,14 +60,14 @@ TC, R = np.meshgrid(tcfg, rgrid)
 # are printed so the shares quoted in the text can be checked.
 PANELS = (1.0, 0.125, 1/64.)
 SCALES = [
-    (1.0,     r"$T_{compute}$ (full)"),
-    (0.25,    r"$T_{compute}/4$"),
-    (0.125,   r"$T_{compute}/8$"),
-    (1/16.,   r"$T_{compute}/16$"),
-    (1/32.,   r"$T_{compute}/32$"),
-    (1/64.,   r"$T_{compute}/64$"),
-    (1/128.,  r"$T_{compute}/128$"),
-    (0.0,     r"$T_{compute}=0$ (prescheduled)"),
+    (1.0,     r"$T_{\mathrm{parallel}}$ (full)"),
+    (0.25,    r"$T_{\mathrm{parallel}}/4$"),
+    (0.125,   r"$T_{\mathrm{parallel}}/8$"),
+    (1/16.,   r"$T_{\mathrm{parallel}}/16$"),
+    (1/32.,   r"$T_{\mathrm{parallel}}/32$"),
+    (1/64.,   r"$T_{\mathrm{parallel}}/64$"),
+    (1/128.,  r"$T_{\mathrm{parallel}}/128$"),
+    (0.0,     r"$T_{\mathrm{parallel}}=0$ (prescheduled)"),
 ]
 bvn_i = labels.index("Hungarian unsplit")
 wins = []

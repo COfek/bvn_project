@@ -386,7 +386,7 @@ def tab_euler_vs_radix(regime, fname="tm_tab_euler_vs_radix.tex"):
 
 def tab_compare(a=PRIMARY, b=BASELINE, fname="tm_tab_comparison.tex"):
     L = [r"\begin{tabular}{ll rr rr rr}", r"\toprule",
-         r"& & \multicolumn{2}{c}{$\Tc$ (ms)} & \multicolumn{2}{c}{$N$}"
+         r"& & \multicolumn{2}{c}{$\TPc$ (ms)} & \multicolumn{2}{c}{$N$}"
          r" & \multicolumn{2}{c}{$C/S$} \\",
          r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
          r"\textbf{Engine} & \textbf{Splitting} & TM & Unif. & TM & Unif. & TM & Unif. \\",

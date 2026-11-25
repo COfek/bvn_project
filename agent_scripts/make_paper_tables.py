@@ -156,7 +156,7 @@ def table_radix() -> str:
 
     out = [header("Radix across engines, dense generated workload", sources, n),
            r"\begin{tabular}{llrrr}", r"\toprule",
-           r"\textbf{Engine} & \textbf{Splitting} & \textbf{$\Tc$ (ms)} & "
+           r"\textbf{Engine} & \textbf{Splitting} & \textbf{$\TPc$ (ms)} & "
            r"$C$ & $N$ \\",
            r"\midrule"]
     for i, (name, labels, tc, tl, tp) in enumerate(rows):
