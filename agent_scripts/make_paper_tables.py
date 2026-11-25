@@ -89,6 +89,15 @@ def across(kind: str, engine: str, column: str, rows: int | None = None) -> floa
     return sum(per) / len(per)
 
 
+def across_sum(kind: str, engine: str, columns: list[str]) -> float:
+    """Mean over the three sweeps of the sum of several columns (e.g. T_parallel = split +
+    slowest component), recording the spread of that sum between the sweeps."""
+    per = [sum(frame(s, kind, engine)[c].mean() for c in columns) for s in SWEEPS]
+    if per[0] and max(per) > 0:
+        spreads.append((max(per) - min(per)) / (sum(per) / len(per)) * 100)
+    return sum(per) / len(per)
+
+
 def fixed(kind: str, engine: str, column: str, rows: int | None = None) -> float:
     """A deterministic quantity: identical across sweeps, and checked to be."""
     per = [frame(s, kind, engine, rows)[column].mean() for s in SWEEPS]
@@ -183,8 +192,9 @@ def table_euler() -> str:
         assert n == len(frame(1, "radix", dir_key)), "Euler and Radix must cover the same matrices"
         base_t = sum(frame(s, bsrc, dir_key)["bvn_runtime"].mean() for s in SWEEPS) / len(SWEEPS)
         times = [base_t * 1000] + \
-                [across("euler", col_key, f"euler_heuristic_ruined_depth{k}_time") * 1000
-                 for k in DEPTHS]
+                [across_sum("euler", col_key, [f"euler_heuristic_ruined_depth{k}_time",
+                                               f"euler_heuristic_ruined_depth{k}_split"]) * 1000
+                 for k in DEPTHS]   # T_parallel: the split plus the slowest component (K13)
         cycles = [fixed(bsrc, dir_key, "bvn_cycle")] + \
                  [fixed("euler", col_key, f"euler_heuristic_ruined_depth{k}_cycle") for k in DEPTHS]
         perms = [fixed(bsrc, dir_key, "bvn_perms")] + \
@@ -195,7 +205,7 @@ def table_euler() -> str:
 
     out = [header("Euler splitting across engines, dense generated workload", sources, n),
            r"\begin{tabular}{llrrr}", r"\toprule",
-           r"\textbf{Engine} & \textbf{Splitting} & \textbf{$\max_k \Tc(D_k)$ (ms)} & "
+           r"\textbf{Engine} & \textbf{Splitting} & \textbf{$\TPc$ (ms)} & "
            r"$C$ & $N$ \\", r"\midrule"]
     for i, (name, labels, tc, tl, tp) in enumerate(rows):
         out.append(r"\multirow{5}{*}{" + name + "}")
