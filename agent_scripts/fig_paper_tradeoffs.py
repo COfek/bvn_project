@@ -68,16 +68,18 @@ rc = {"font.size": FS, "axes.labelsize": FS, "xtick.labelsize": FS, "ytick.label
       "legend.fontsize": FS, "text.usetex": True, "font.family": "serif",
       "text.latex.preamble": r"\usepackage[T1]{fontenc}\usepackage{libertine}"
                              r"\usepackage[libertine]{newtxmath}"}
-LABELS = ["BvN"] + [str(B) for B in BASES]
+LABELS = ["unsplit"] + [str(B) for B in BASES]
 N_TICKS = [500, 1000, 1500, 5000]
 # where a base label sits, in points from its marker, when the default (3, 3) would hit a point,
 # a line or another label: (panel 0-2, engine, base) -> offset
-LABEL_OFFSET = {(0, "Hungarian", "BvN"): (3, -12), (0, "GW Static", "BvN"): (-8, -13),
-                (0, "WWFA", "BvN"): (-2, 7), (0, "Hungarian", "8"): (3, -11),
+# a third element "r" sets the label right-aligned and centred on its marker, to its left
+LABEL_OFFSET = {(0, "Hungarian", "unsplit"): (-4, 0, "r"), (0, "GW Static", "unsplit"): (-4, 0, "r"),
+                (0, "GW Dynamic", "unsplit"): (-4, 0, "r"),
+                (0, "WWFA", "unsplit"): (-4, 0, "r"), (0, "Hungarian", "8"): (3, -11),
                 (0, "Hungarian", "4"): (4, -11),
                 (1, "Hungarian", "8"): (-11, -2), (1, "Hungarian", "4"): (-11, -2),
                 (1, "Hungarian", "2"): (-10, -2),
-                (2, "Hungarian", "BvN"): (-6, 6), (2, "Hungarian", "2"): (6, -4),
+                (2, "Hungarian", "unsplit"): (-6, 6), (2, "Hungarian", "2"): (6, -4),
                 (2, "GW Dynamic", "8"): (5, -12), (2, "GW Dynamic", "16"): (3, -11)}
 plt.rcParams.update(rc)
 figs = [plt.subplots(figsize=(3.33, 2.05)) for _ in range(3)]
@@ -126,6 +128,8 @@ for ax in (axes[1], axes[2]):   # labelled ticks on the N axis
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
 # cycle-length ticks every 1000: a label at 11500 would stand past the right edge of (a)
 axes[0].xaxis.set_major_locator(FixedLocator([9000, 10000, 11000]))
+# room left of C = S for the unsplit labels, which sit to the left of their markers
+axes[0].set_xlim(left=7800)
 for ax in (axes[0], axes[1]):   # headroom, so the labels of the top points stay inside the frame
     ax.set_ylim(top=ax.get_ylim()[1] * 1.5)
 # the dotted line C = S, labelled S
@@ -147,8 +151,10 @@ def place_labels(ax, labs):
         if near:
             near[0].set_color("0.25")
             continue
+        left = len(off) == 3   # to the left of the marker, centred on it
         placed.append((q, t, ax.annotate(
-            t, (x, y), xytext=off, textcoords="offset points", fontsize=FS, color=col,
+            t, (x, y), xytext=off[:2], textcoords="offset points", fontsize=FS, color=col,
+            ha="right" if left else "left", va="center" if left else "baseline",
             path_effects=[patheffects.withStroke(linewidth=2, foreground="white")])))
 
 
@@ -178,10 +184,10 @@ if CAMPAIGN != "variance_2026":
 # as in Figure 3 (LaTeX, Linux Libertine, 9 pt). Every point carries its depth (BvN, 1-4). In (b)
 # the three strong engines sit on the line C = S at overlapping heights, so there only WWFA's
 # points are labelled; the strong engines' depths are read from (a), at the same height.
-DLABELS = ["BvN"] + [str(d) for d in DEPTHS]
+DLABELS = ["unsplit"] + [str(d) for d in DEPTHS]
 # (panel, engine, depth) -> offset in points, where the default (3, 3) hits a point or a line
 # GW Static's points in (a) stand just left of WWFA's, so its labels go on the left
-DEPTH_OFFSET = {(0, "GW Static", "BvN"): (-21, -3)}
+DEPTH_OFFSET = {(0, "GW Static", "unsplit"): (-4, 0, "r")}
 DEPTH_OFFSET.update({(0, "GW Static", str(d)): (-9, -3) for d in DEPTHS})
 efigs = [plt.subplots(figsize=(3.33, 2.05)) for _ in range(2)]
 eaxes = [ax for _, ax in efigs]

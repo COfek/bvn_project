@@ -150,7 +150,7 @@ def table_radix() -> str:
                  [fixed("radix", dir_key, f"{col_key}_{b}_cycle") for b in BASES]
         perms = [fixed(bsrc, dir_key, "bvn_perms")] + \
                 [fixed("radix", dir_key, f"{col_key}_{b}_perms") for b in BASES]
-        labels = ["BvN baseline"] + [f"Radix $B={b}$" for b in BASES]
+        labels = ["Unsplit"] + [f"Radix $B={b}$" for b in BASES]
         rows.append((name, labels, bold_min(times, f1),
                      bold_min(cycles, f0), bold_min(perms, f0)))
 
@@ -189,7 +189,7 @@ def table_euler() -> str:
                  [fixed("euler", col_key, f"euler_heuristic_ruined_depth{k}_cycle") for k in DEPTHS]
         perms = [fixed(bsrc, dir_key, "bvn_perms")] + \
                 [fixed("euler", col_key, f"euler_heuristic_ruined_depth{k}_perms") for k in DEPTHS]
-        labels = ["BvN baseline"] + [f"depth {k}" for k in DEPTHS]
+        labels = ["Unsplit"] + [f"depth {k}" for k in DEPTHS]
         rows.append((name, labels, bold_min(times, f1),
                      bold_min(cycles, f0), bold_min(perms, f0)))
 

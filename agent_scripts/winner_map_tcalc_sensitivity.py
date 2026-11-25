@@ -45,7 +45,7 @@ for name, re_, pre in ENG:
         configs[f"{name} B{b}"] = (dr[f"{pre}_{b}_perms"].mean(), dr[f"{pre}_{b}_cycle"].mean(), dr[f"{pre}_{b}_time"].mean()*1000)
     de = euler_frame(pre)
     # BvN from the SAME run as Euler (same matrices) so BvN-vs-Euler is artifact-free
-    configs[f"{name} BvN"] = (de["bvn_perms"].mean(), de["bvn_cycle"].mean(), de["bvn_runtime"].mean()*1000)
+    configs[f"{name} unsplit"] = (de["bvn_perms"].mean(), de["bvn_cycle"].mean(), de["bvn_runtime"].mean()*1000)
     for d in [1, 2, 3, 4]:
         tc = (de[f"euler_heuristic_ruined_depth{d}_time"].mean() + de[f"euler_heuristic_ruined_depth{d}_split"].mean())*1000
         configs[f"{name} Euler d{d}"] = (de[f"euler_heuristic_ruined_depth{d}_perms"].mean(), de[f"euler_heuristic_ruined_depth{d}_cycle"].mean(), tc)
@@ -69,7 +69,7 @@ SCALES = [
     (1/128.,  r"$T_{compute}/128$"),
     (0.0,     r"$T_{compute}=0$ (prescheduled)"),
 ]
-bvn_i = labels.index("Hungarian BvN")
+bvn_i = labels.index("Hungarian unsplit")
 wins = []
 for s, _ in SCALES:
     allD = np.stack([NCT[i, 2]*s + TC*(NCT[i, 0] + NCT[i, 1]*R) for i in range(len(labels))])
@@ -103,7 +103,7 @@ for ax, w, (s, ttl) in zip(axes, wins, SCALES):
     ax.xaxis.set_major_formatter(TFMT)
     ax.tick_params(labelsize=5.5, pad=1)
     bvn_pct = (w == bvn_i).mean() * 100
-    ax.set_title(f"{ttl}: Hungarian BvN wins {bvn_pct:.0f}%", fontsize=6.5, pad=3,
+    ax.set_title(f"{ttl}: Hungarian unsplit wins {bvn_pct:.0f}%", fontsize=6.5, pad=3,
                  color="black",
                  fontweight=("bold" if bvn_pct > 0.5 else "normal"))
     ax.set_ylabel("$r = T_{unit}/T_{config}$", fontsize=6, labelpad=1)

@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 
 COLORS = {
-    "Hungarian BvN":        "#DDDDDD",
+    "Hungarian unsplit":       "#DDDDDD",
     "Hungarian Euler d1":   "#99DDFF",
     "Hungarian Euler d2":   "#CC79A7",
     "Hungarian Euler d3":   "#F0E442",

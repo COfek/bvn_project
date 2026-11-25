@@ -159,7 +159,7 @@ def fig_design(regime):
     leg = [Line2D([], [], color=c, marker="*", ls="", ms=12, label=n) for n, c, _ in ENG]
     leg += [Line2D([], [], color="gray", ls="-", marker="o", label="Radix (B16→B2)"),
             Line2D([], [], color="gray", ls="--", marker="^", label="Euler (d1→d4)"),
-            Line2D([], [], color="gray", marker="*", ls="", ms=12, label="BvN baseline")]
+            Line2D([], [], color="gray", marker="*", ls="", ms=12, label="Unsplit")]
     axes[0].legend(handles=leg, fontsize=8, loc="upper left", framealpha=.95)
     fig.suptitle(f"Design space $(N, C, T_{{compute}})$ — TM workload ({regime}, n=256)",
                  fontsize=12.5, y=1.02)
@@ -178,7 +178,7 @@ def configs_of(regime):
         for c in RADIX_ORDER + EULER_ORDER[1:]:
             if c in d.index:
                 r = d.loc[c]
-                cfg[f"{name} {c}"] = (r.N, r.C, r.runtime_ms)
+                cfg[f"{name} {'unsplit' if c == 'BvN' else c}"] = (r.N, r.C, r.runtime_ms)
     return cfg
 
 
@@ -237,7 +237,7 @@ def fig_sensitivity(regime):
                       for i in range(len(labels))]).argmin(axis=0) for s, _ in SC]
     ws = sorted(set(np.concatenate([w.ravel() for w in wins]).tolist()))
     remap = {w: i for i, w in enumerate(ws)}
-    bvn_i = labels.index("Hungarian BvN")
+    bvn_i = labels.index("Hungarian unsplit")
     fig, axes = plt.subplots(2, 4, figsize=(18, 9), sharex=True, sharey=True)
     for ax, w, (s, t) in zip(axes.ravel(), wins, SC):
         ax.pcolormesh(TC, R, np.vectorize(remap.get)(w),
@@ -247,7 +247,7 @@ def fig_sensitivity(regime):
         ax.set_xscale("log"); ax.set_yscale("log")
         ax.xaxis.set_major_formatter(TFMT)
         p = (w == bvn_i).mean()*100
-        ax.set_title(f"{t}\nHungarian BvN wins {p:.0f}%", fontsize=10.5,
+        ax.set_title(f"{t}\nHungarian unsplit wins {p:.0f}%", fontsize=10.5,
                      color="#0072B2" if p > .5 else "black",
                      fontweight="bold" if p > .5 else "normal")
         print(f"  [{t}] " + ", ".join(f"{labels[x]} {(w==x).mean()*100:.0f}%"
@@ -310,7 +310,7 @@ def fig_compare(a=PRIMARY, b=BASELINE):
         ax.grid(True, which="both", ls=":", lw=.4, alpha=.6)
         ax.legend(fontsize=8, loc="upper left", framealpha=.95)
     h = [Line2D([], [], color=c, marker="s", ls="", label=n) for n, c, _ in ENG]
-    h += [Line2D([], [], color="gray", marker="*", ls="", ms=12, label="BvN"),
+    h += [Line2D([], [], color="gray", marker="*", ls="", ms=12, label="Unsplit"),
           Line2D([], [], color="gray", marker="o", ls="", label="Radix"),
           Line2D([], [], color="gray", marker="^", ls="", label="Euler")]
     fig.legend(handles=h, ncol=7, loc="lower center", fontsize=9,
@@ -341,7 +341,7 @@ def tab_framework(regime, order, fname, unit_col="Runtime (ms)"):
         best_rt, best_c, best_n = d.runtime_ms.min(), d.C.min(), d.N.min()
         L.append(r"\multirow{%d}{*}{%s}" % (len(d), name))
         for cfg, r in d.iterrows():
-            lbl = "BvN baseline" if cfg == "BvN" else (
+            lbl = "Unsplit" if cfg == "BvN" else (
                 f"Radix $B={cfg[1:]}$" if cfg.startswith("B") else
                 cfg.replace("Euler d", "depth "))
             rt = _fmt(r.runtime_ms, 1); cc = _fmt(r.C); nn = _fmt(r.N)
@@ -397,7 +397,7 @@ def tab_compare(a=PRIMARY, b=BASELINE, fname="tm_tab_comparison.tex"):
         L.append(r"\multirow{3}{*}{%s}" % name)
         for c in key:
             ra, rb = da.loc[c], db.loc[c]
-            lbl = c if c != "Euler d4" else "Euler d4"
+            lbl = "Unsplit" if c == "BvN" else c
             L.append(f"  & {lbl} & {_fmt(ra.runtime_ms,1)} & {_fmt(rb.runtime_ms,1)} & "
                      f"{_fmt(ra.N)} & {_fmt(rb.N)} & {ra.C/S_of(a):.3f} & "
                      f"{rb.C/S_of(b):.3f} " + r"\\")

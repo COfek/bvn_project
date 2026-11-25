@@ -57,7 +57,7 @@ for eng in ENGINES:
     block = []
     for cfg in cfgs:
         cells = []
-        label = cfg
+        label = "Unsplit" if cfg == "BvN" else cfg
         for reg, _ in REG:
             c = best_base[reg] if cfg is None else cfg
             r = s[(s.regime == reg) & (s.engine == eng) & (s.config == c)].iloc[0]

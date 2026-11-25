@@ -48,7 +48,7 @@ EULER_DEPTHS = [1, 2, 3, 4]
 configs = {}
 for name, re, pre in ENG:
     dr = radix_frame(re, rows=EULER_WINDOW)
-    configs[f"{name} BvN"] = (dr["bvn_perms"].mean(), dr["bvn_cycle"].mean(), dr["bvn_runtime"].mean()*1000)
+    configs[f"{name} unsplit"] = (dr["bvn_perms"].mean(), dr["bvn_cycle"].mean(), dr["bvn_runtime"].mean()*1000)
     for b in [16, 8, 4, 2]:
         configs[f"{name} B{b}"] = (dr[f"{pre}_{b}_perms"].mean(), dr[f"{pre}_{b}_cycle"].mean(), dr[f"{pre}_{b}_time"].mean()*1000)
     de = euler_frame(pre)
@@ -317,7 +317,7 @@ configs_c = {}
 for _name, _re, _pre in ENG:
     _dr = radix_frame(_re, rows=EULER_WINDOW)
     _de = euler_frame(_pre)
-    configs_c[f"{_name} BvN"] = (_de["bvn_perms"].mean(), _de["bvn_cycle"].mean(), _de["bvn_runtime"].mean()*1000)
+    configs_c[f"{_name} unsplit"] = (_de["bvn_perms"].mean(), _de["bvn_cycle"].mean(), _de["bvn_runtime"].mean()*1000)
     for _b in [16, 8, 4, 2]:
         configs_c[f"{_name} B{_b}"] = (_dr[f"{_pre}_{_b}_perms"].mean(), _dr[f"{_pre}_{_b}_cycle"].mean(), _dr[f"{_pre}_{_b}_time"].mean()*1000)
     for _d in EULER_DEPTHS:
@@ -338,9 +338,9 @@ winners_e = sorted(set(wine.ravel().tolist()))
 print("\nExtended plane (T_config up to ~50 ms) winners [cycle-consistent BvN]:")
 for w in winners_e:
     print(f"  {labels[w]:24s}  wins {(wine==w).mean()*100:5.1f}%")
-bvn_idx = labels.index("Hungarian BvN")
+bvn_idx = labels.index("Hungarian unsplit")
 if (wine == bvn_idx).any():
-    # smallest T_config (column) at which Hungarian BvN wins anywhere in the column
+    # smallest T_config (column) at which Hungarian unsplit wins anywhere in the column
     cols = np.where((wine == bvn_idx).any(axis=0))[0]
     tc_first = tcfg_ext[cols.min()]
     print(f"Hungarian BvN first wins at T_config = {tc_first*1e3:.0f} us "
