@@ -67,23 +67,16 @@ def ticks(axis, values, lo, hi):
 
 
 def place_labels(ax, labs):
-    """As in Figure 3: where the same text of several engines falls closer than 6% of the panel,
-    one dark-grey label stands for all of them. Offset mode "r": left of the marker, "c":
-    centred below it, "c+": centred above it."""
-    placed = []
-    toax = ax.transAxes.inverted()
+    """Label every point (x, y, text, colour, offset) in its engine's colour, as Figure 3 (no
+    merged grey labels since 2026-11-26). Offset mode "r": left of the marker, "c": centred below
+    it, "c+": centred above it."""
     for x, y, t, col, off in labs:
-        q = toax.transform(ax.transData.transform((x, y)))
-        near = [a for p_, t_, a in placed if t_ == t and np.hypot(*(q - p_)) < 0.06]
-        if near:
-            near[0].set_color("0.25")
-            continue
         mode = off[2] if len(off) == 3 else ""
-        placed.append((q, t, ax.annotate(
+        ax.annotate(
             t, (x, y), xytext=off[:2], textcoords="offset points", fontsize=FS, color=col,
             ha={"r": "right", "c": "center", "c+": "center"}.get(mode, "left"),
             va={"r": "center", "c": "top", "c+": "bottom"}.get(mode, "baseline"),
-            path_effects=[patheffects.withStroke(linewidth=2, foreground="white")])))
+            path_effects=[patheffects.withStroke(linewidth=2, foreground="white")])
 
 
 def figure(branch, tag, offsets, label_a, n_ticks):
@@ -142,7 +135,12 @@ RADIX_OFFSET = {(0, "Hungarian", "unsplit"): (-4, 0, "r"), (0, "GW Static", "uns
                 (0, "GW Dynamic", "unsplit"): (-4, 0, "r"), (0, "WWFA", "unsplit"): (-4, 0, "r"),
                 (0, "Hungarian", "4"): (3, -9), (0, "GW Static", "16"): (-4, 4, "r"),
                 (0, "WWFA", "8"): (-4, 0, "r"),
-                (1, "GW Static", "unsplit"): (-4, -6, "r"), (1, "WWFA", "unsplit"): (0, 5, "c+")}
+                (1, "GW Static", "unsplit"): (-4, -6, "r"), (1, "WWFA", "unsplit"): (0, 5, "c+"),
+                # GW Static and WWFA nearly coincide from B = 16 down: GW Static's labels go
+                # below, WWFA's keep the default (no merged grey labels, Ofek 2026-11-26)
+                (0, "GW Static", "2"): (-4, -6, "r"), (0, "WWFA", "2"): (-4, 5, "r"),
+                (1, "GW Static", "16"): (4, -9), (1, "GW Static", "8"): (4, -9),
+                (1, "GW Static", "4"): (4, -9), (1, "GW Static", "2"): (5, -4)}
 EULER_OFFSET = {(0, "WWFA", "unsplit"): (-4, 0, "r"), (0, "WWFA", "4"): (0, -6, "c"),
                 (1, "GW Static", "unsplit"): (-4, 0, "r"), (1, "WWFA", "unsplit"): (-4, 0, "r"),
                 (1, "GW Static", "1"): (-4, 0, "r"), (1, "GW Static", "2"): (-4, 0, "r"),

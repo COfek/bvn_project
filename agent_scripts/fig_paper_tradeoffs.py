@@ -81,6 +81,13 @@ LABEL_OFFSET = {(0, "Hungarian", "unsplit"): (-4, 0, "r"), (0, "GW Static", "uns
                 (1, "WWFA", "unsplit"): (-4, 3, "r"), (1, "GW Static", "unsplit"): (0, -5, "c"),
                 (1, "Hungarian", "8"): (-11, -2), (1, "Hungarian", "4"): (-11, -2),
                 (1, "Hungarian", "2"): (-10, -2),
+                # GW Static and WWFA nearly coincide from B = 16 down: GW Static's labels go
+                # below or left, WWFA's keep the default, so both are read (Ofek 2026-11-26)
+                (0, "Hungarian", "16"): (3, -10), (0, "GW Static", "16"): (0, -6, "c"),
+                (0, "GW Static", "8"): (-4, -6, "r"), (0, "GW Static", "4"): (-4, -6, "r"),
+                (0, "GW Static", "2"): (-4, -4, "r"),
+                (1, "GW Static", "16"): (4, -9), (1, "GW Static", "8"): (4, -9),
+                (1, "GW Static", "4"): (4, -9), (1, "GW Static", "2"): (5, -3),
                 (2, "Hungarian", "unsplit"): (-6, 6), (2, "Hungarian", "2"): (6, -4),
                 (2, "GW Dynamic", "8"): (5, -12), (2, "GW Dynamic", "16"): (3, -11)}
 plt.rcParams.update(rc)
@@ -155,22 +162,15 @@ axes[2].axhline(S0, color="gray", ls=":", lw=1.0)
 axes[2].annotate("$S$", (0.62, S0), xycoords=("axes fraction", "data"), xytext=(0, 2),
                  textcoords="offset points", color="gray", ha="center")
 def place_labels(ax, labs):
-    """Label each point (x, y, text, colour, offset). Where the same text of several engines
-    falls at nearly the same place (closer than 6% of the panel), one label in dark grey
-    stands for all of them."""
-    placed = []   # (axes-fraction position, text, annotation)
-    toax = ax.transAxes.inverted()
+    """Label each point (x, y, text, colour, offset) in its engine's colour. (Until 2026-11-26,
+    the same text of several engines close together became one dark-grey label; Ofek: those
+    could not be told apart, so every point now has its own.)"""
     for x, y, t, col, off in labs:
-        q = toax.transform(ax.transData.transform((x, y)))
-        near = [a for p_, t_, a in placed if t_ == t and np.hypot(*(q - p_)) < 0.06]
-        if near:
-            near[0].set_color("0.25")
-            continue
         mode = off[2] if len(off) == 3 else ""   # "r": left of the marker; "c": centred below it
-        placed.append((q, t, ax.annotate(
+        ax.annotate(
             t, (x, y), xytext=off[:2], textcoords="offset points", fontsize=FS, color=col,
             ha={"r": "right", "c": "center"}.get(mode, "left"), va="center" if mode == "r" else ("top" if mode == "c" else "baseline"),
-            path_effects=[patheffects.withStroke(linewidth=2, foreground="white")])))
+            path_effects=[patheffects.withStroke(linewidth=2, foreground="white")])
 
 
 # the base of every point
