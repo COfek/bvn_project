@@ -57,7 +57,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-__all__ = ["MoETrace", "load_trace", "load_all", "regularize", "coarsen"]
+__all__ = ["MoETrace", "load_trace", "load_all", "regularize", "coarsen", "upsample"]
 
 
 @dataclass(frozen=True)
@@ -175,3 +175,27 @@ def coarsen(matrix: NDArray[np.int64], S_target: int) -> tuple[NDArray[np.int64]
     scaled = (matrix * S_target) // S
     padded, S_actual, _ = regularize(scaled)
     return padded, S_actual
+
+
+def upsample(matrix: NDArray[np.int64], factor: int,
+             rng: np.random.Generator) -> NDArray[np.int64]:
+    """A (factor*n) x (factor*n) matrix sampled from an n x n trace (Chen K18, reading 1).
+
+    The trace, divided by its row sums, is taken as a distribution over destinations. Each rank
+    a of the trace becomes `factor` ranks, and each of them sends exactly the trace's row total
+    of rank a. Every one of those tokens picks a destination independently, as a router would:
+    rank group b with probability M[a, b] / sum_j M[a, j], then one of the `factor` ranks of
+    that group uniformly. So the traffic between rank groups keeps the measured proportions in
+    expectation, and only the split inside a group, which the trace does not record, is even.
+    Row sums are exact; column sums, like the trace's, are not equal.
+    """
+    matrix = np.asarray(matrix, dtype=np.int64)
+    n = matrix.shape[0]
+    out = np.zeros((n * factor, n * factor), dtype=np.int64)
+    for a in range(n):
+        total = int(matrix[a].sum())
+        if total == 0:
+            continue
+        p = np.repeat(matrix[a] / total / factor, factor)
+        out[a * factor:(a + 1) * factor] = rng.multinomial(total, p / p.sum(), size=factor)
+    return out
