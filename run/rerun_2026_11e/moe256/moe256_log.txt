@@ -1,0 +1,79 @@
+warm-up matrix (discarded) ...
+[1/36] MoE throughput Mixtral-8x22B / throughput / L1 sample 0: S=19841 (55 s, total 1.9 min)
+[2/36] MoE throughput Mixtral-8x22B / throughput / L1 sample 1: S=19926 (54 s, total 2.8 min)
+[3/36] MoE throughput Mixtral-8x22B / throughput / L1 sample 2: S=19933 (54 s, total 3.7 min)
+[4/36] MoE throughput Mixtral-8x22B / throughput / L5 sample 0: S=22431 (72 s, total 4.9 min)
+[5/36] MoE throughput Mixtral-8x22B / throughput / L5 sample 1: S=22452 (72 s, total 6.1 min)
+[6/36] MoE throughput Mixtral-8x22B / throughput / L5 sample 2: S=22496 (71 s, total 7.3 min)
+[7/36] MoE mmlu Mixtral-8x22B / mmlu / L1 sample 0: S=2250 (19 s, total 7.6 min)
+[8/36] MoE mmlu Mixtral-8x22B / mmlu / L1 sample 1: S=2250 (20 s, total 7.9 min)
+[9/36] MoE mmlu Mixtral-8x22B / mmlu / L1 sample 2: S=2250 (19 s, total 8.3 min)
+[10/36] MoE mmlu Mixtral-8x22B / mmlu / L5 sample 0: S=2250 (22 s, total 8.6 min)
+[11/36] MoE mmlu Mixtral-8x22B / mmlu / L5 sample 1: S=2250 (22 s, total 9.0 min)
+[12/36] MoE mmlu Mixtral-8x22B / mmlu / L5 sample 2: S=2250 (22 s, total 9.4 min)
+[13/36] MoE throughput Mixtral-8x7B / throughput / L1 sample 0: S=16384 (39 s, total 10.0 min)
+[14/36] MoE throughput Mixtral-8x7B / throughput / L1 sample 1: S=16384 (39 s, total 10.7 min)
+[15/36] MoE throughput Mixtral-8x7B / throughput / L1 sample 2: S=16384 (39 s, total 11.3 min)
+[16/36] MoE throughput Mixtral-8x7B / throughput / L5 sample 0: S=16384 (37 s, total 11.9 min)
+[17/36] MoE throughput Mixtral-8x7B / throughput / L5 sample 1: S=16384 (37 s, total 12.5 min)
+[18/36] MoE throughput Mixtral-8x7B / throughput / L5 sample 2: S=16384 (37 s, total 13.2 min)
+[19/36] MoE mmlu Mixtral-8x7B / mmlu / L1 sample 0: S=2537 (22 s, total 13.5 min)
+[20/36] MoE mmlu Mixtral-8x7B / mmlu / L1 sample 1: S=2510 (21 s, total 13.9 min)
+[21/36] MoE mmlu Mixtral-8x7B / mmlu / L1 sample 2: S=2602 (21 s, total 14.2 min)
+[22/36] MoE mmlu Mixtral-8x7B / mmlu / L5 sample 0: S=2498 (20 s, total 14.6 min)
+[23/36] MoE mmlu Mixtral-8x7B / mmlu / L5 sample 1: S=2498 (19 s, total 14.9 min)
+[24/36] MoE mmlu Mixtral-8x7B / mmlu / L5 sample 2: S=2498 (20 s, total 15.2 min)
+[25/36] MoE throughput deepseek-moe-16b-chat / throughput / L1 sample 0: S=36831 (95 s, total 16.8 min)
+[26/36] MoE throughput deepseek-moe-16b-chat / throughput / L1 sample 1: S=36831 (100 s, total 18.5 min)
+[27/36] MoE throughput deepseek-moe-16b-chat / throughput / L1 sample 2: S=36831 (100 s, total 20.1 min)
+[28/36] MoE throughput deepseek-moe-16b-chat / throughput / L5 sample 0: S=39201 (76 s, total 21.4 min)
+[29/36] MoE throughput deepseek-moe-16b-chat / throughput / L5 sample 1: S=39201 (76 s, total 22.7 min)
+[30/36] MoE throughput deepseek-moe-16b-chat / throughput / L5 sample 2: S=39201 (77 s, total 24.0 min)
+[31/36] MoE mmlu deepseek-moe-16b-chat / mmlu / L1 sample 0: S=8652 (29 s, total 24.4 min)
+[32/36] MoE mmlu deepseek-moe-16b-chat / mmlu / L1 sample 1: S=8652 (28 s, total 24.9 min)
+[33/36] MoE mmlu deepseek-moe-16b-chat / mmlu / L1 sample 2: S=8652 (28 s, total 25.4 min)
+[34/36] MoE mmlu deepseek-moe-16b-chat / mmlu / L5 sample 0: S=9119 (28 s, total 25.8 min)
+[35/36] MoE mmlu deepseek-moe-16b-chat / mmlu / L5 sample 1: S=9119 (27 s, total 26.3 min)
+[36/36] MoE mmlu deepseek-moe-16b-chat / mmlu / L5 sample 2: S=9119 (27 s, total 26.7 min)
+max reconstruction error: 0
+        regime     engine config         S         N         C  C_over_S  runtime_ms  units
+MoE throughput  Hungarian    BvN 25193.278  6008.167 25351.444     1.009    8692.298  1.000
+MoE throughput  Hungarian    B16 25193.278  2041.833 25942.389     1.038    1087.825  2.000
+MoE throughput  Hungarian     B8 25193.278  1771.167 30943.000     1.265     780.303  3.000
+MoE throughput  Hungarian     B4 25193.278  1435.000 31260.611     1.282     291.330  4.000
+MoE throughput  Hungarian     B2 25193.278  1315.833 36958.389     1.452      98.137  7.444
+MoE throughput GW Dynamic    BvN 25193.278  8914.556 25201.944     1.001   11838.465  1.000
+MoE throughput GW Dynamic    B16 25193.278  2799.778 25664.056     1.023    1578.809  2.000
+MoE throughput GW Dynamic     B8 25193.278  2220.056 29812.333     1.208    1268.862  3.000
+MoE throughput GW Dynamic     B4 25193.278  1696.444 30101.778     1.224     533.039  4.000
+MoE throughput GW Dynamic     B2 25193.278  1286.556 35009.056     1.370     184.931  7.444
+MoE throughput  GW Static    BvN 25193.278 21052.056 25777.667     1.024    6902.016  1.000
+MoE throughput  GW Static    B16 25193.278  3651.167 25959.167     1.035     489.764  2.000
+MoE throughput  GW Static     B8 25193.278  2464.833 29652.778     1.199     813.011  3.000
+MoE throughput  GW Static     B4 25193.278  1728.333 29946.222     1.214     316.569  4.000
+MoE throughput  GW Static     B2 25193.278  1286.611 34905.056     1.363     102.414  7.444
+MoE throughput       WWFA    BvN 25193.278 15559.667 25605.389     1.015    1376.994  1.000
+MoE throughput       WWFA    B16 25193.278  3558.833 26046.333     1.036     227.521  2.000
+MoE throughput       WWFA     B8 25193.278  2470.833 29488.778     1.191     118.877  3.000
+MoE throughput       WWFA     B4 25193.278  1726.278 29773.444     1.206      55.579  4.000
+MoE throughput       WWFA     B2 25193.278  1276.833 34483.722     1.346      29.088  7.444
+      MoE mmlu  Hungarian    BvN  4553.111  2169.833  4567.222     1.004    2606.671  1.000
+      MoE mmlu  Hungarian    B16  4553.111  1631.056  5106.056     1.135    1470.416  2.000
+      MoE mmlu  Hungarian     B8  4553.111  1148.333  4903.167     1.112     755.435  2.278
+      MoE mmlu  Hungarian     B4  4553.111   943.000  5235.944     1.171     227.584  3.278
+      MoE mmlu  Hungarian     B2  4553.111   843.444  6550.333     1.383      88.780  5.722
+      MoE mmlu GW Dynamic    BvN  4553.111  2539.222  4555.167     1.001    2234.980  1.000
+      MoE mmlu GW Dynamic    B16  4553.111  1729.778  4924.222     1.114    1391.674  2.000
+      MoE mmlu GW Dynamic     B8  4553.111  1295.833  4774.222     1.065    1094.766  2.278
+      MoE mmlu GW Dynamic     B4  4553.111   997.167  5007.944     1.137     328.554  3.278
+      MoE mmlu GW Dynamic     B2  4553.111   788.167  5991.333     1.289     117.908  5.722
+      MoE mmlu  GW Static    BvN  4553.111  4494.500  4582.611     1.004     964.032  1.000
+      MoE mmlu  GW Static    B16  4553.111  2321.611  4926.000     1.115     506.075  2.000
+      MoE mmlu  GW Static     B8  4553.111  1479.167  4777.778     1.065     787.642  2.278
+      MoE mmlu  GW Static     B4  4553.111  1051.333  4999.833     1.133     141.796  3.278
+      MoE mmlu  GW Static     B2  4553.111   785.944  5973.000     1.287      84.561  5.722
+      MoE mmlu       WWFA    BvN  4553.111  3768.444  4776.389     1.052     349.883  1.000
+      MoE mmlu       WWFA    B16  4553.111  2324.500  5040.667     1.129     205.137  2.000
+      MoE mmlu       WWFA     B8  4553.111  1481.500  4890.333     1.086     104.507  2.278
+      MoE mmlu       WWFA     B4  4553.111  1060.167  5121.111     1.151      48.213  3.278
+      MoE mmlu       WWFA     B2  4553.111   775.889  5894.278     1.274      25.041  5.722
