@@ -273,6 +273,11 @@ def extraction_mean_ms(base: int, rows: int) -> float:
     return sum(ext[(i, base)] for i in idx) / len(idx)
 
 
+# The hardware point of Table 4's DCT column (Chen K14): on Figure 5's line T_unit = 10 T_config,
+# in the middle of the map's main region. DCT = T_parallel + N T_config + C T_unit, in ms.
+EVR_TCFG_MS, EVR_TUNIT_MS = 0.010, 0.100
+
+
 def table_evr() -> str:
     n = len(frame(1, "euler", "maximum"))
 
@@ -291,9 +296,10 @@ def table_evr() -> str:
                   [("Euler", "sweep{1,2,3}/euler/maximum/"),
                    ("Radix", f"sweep{{1,2,3}}/radix/max/ (first {n} matrices, "
                              f"the window the Euler campaign covers)")], n),
-           r"\begin{tabular}{lrrrrrr}", r"\toprule",
+           r"\begin{tabular}{lrrrrrrr}", r"\toprule",
            r"\textbf{Splitting} & $K$ & \textbf{$\max_k \Tc$ (ms)} & "
-           r"\textbf{$T_{\mathrm{split}}$ (ms)} & \textbf{$\TPc$ (ms)} & $C/S$ & $N$ \\",
+           r"\textbf{$T_{\mathrm{split}}$ (ms)} & \textbf{$\TPc$ (ms)} & $C/S$ & $N$ & "
+           r"\textbf{DCT (ms)} \\",
            r"\midrule"]
 
     for j, (depth, bases) in enumerate(pairs):
@@ -315,14 +321,22 @@ def table_evr() -> str:
         totals = bold_min([r[4] for r in block], f1)
         ratios = bold_min([r[5] for r in block], lambda v: f"{v:.3f}")
         perms = bold_min([r[6] for r in block], f0)
-        for (lab, units, unit, split, _t, _c, _p), tot, rat, per in zip(
-                block, totals, ratios, perms):
+        # DCT at the hardware point above, from the mean C (= C/S times S) and the mean N
+        S_blk = [S_e] + [S_r] * len(bases)
+        dcts = [r[4] + r[6] * EVR_TCFG_MS + r[5] * s * EVR_TUNIT_MS for r, s in zip(block, S_blk)]
+        for r, v in zip(block, dcts):
+            print(f"  Table 4 DCT  {r[0]:<16s} {v:8.1f} ms")
+        if bases:   # how much higher the best Radix base's DCT is than Euler's (quoted in 6.4)
+            print(f"  Table 4 DCT  best Radix above Euler by {(min(dcts[1:]) / dcts[0] - 1) * 100:.1f}%")
+        dcts = bold_min(dcts, f0)
+        for (lab, units, unit, split, _t, _c, _p), tot, rat, per, dc in zip(
+                block, totals, ratios, perms, dcts):
             sp = r"$\sim$0" if split is None else f"{split:.1f}"
             out.append(f"{lab:<20s} & {units:<3d} & {unit:5.1f} & {sp:<7s} & "
-                       f"{tot:<15s} & {rat:<15s} & {per} \\\\")
+                       f"{tot:<15s} & {rat:<15s} & {per:<14s} & {dc} \\\\")
         if depth == 4:
             out.append(r"Radix (none)         & -- & --   & --     & -- "
-                       r"           & --            & -- \\")
+                       r"           & --            & --             & -- \\")
         out.append(r"\midrule" if j < len(pairs) - 1 else r"\bottomrule")
 
     out.append(r"\end{tabular}")
