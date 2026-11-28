@@ -98,7 +98,21 @@ norm = BoundaryNorm(np.arange(-0.5, len(winners_all)+0.5), cmap.N)
 # seams as faint white lines when zoomed in (Ofek, Chen K15).
 FINE = 1200
 TCf, Rf = np.meshgrid(np.logspace(-3, 0, FINE), np.logspace(np.log10(5), 3, FINE))
-fig, axes = plt.subplots(3, 1, figsize=(3.4, 4.1), sharex=True, sharey=True)
+# In the style of Figures 3-7 and 8 (2026-11-28, Ofek: every figure in the same format): LaTeX
+# text in the paper's font at 9 pt, printed at its own size (3.33 in wide, fixed margins, no bbox
+# cropping), setups named as the paper names them, titles all in the same weight.
+from winner_colors import PAPER_RC, paper_name, tex_time, COLORS
+plt.rcParams.update(PAPER_RC)
+SCALES = [(s, {1.0: r"measured $T_{\mathrm{parallel}}$", 0.125: r"$T_{\mathrm{parallel}}/8$",
+               1/64.: r"$T_{\mathrm{parallel}}/64$"}[s]) for s, _ in SCALES]
+W_IN, L_IN, R_IN, MAP_H, GAP_IN, TOP_IN, BOT_IN = 3.33, 0.62, 0.16, 1.2, 0.33, 0.28, 0.42
+H_IN = TOP_IN + 3 * MAP_H + 2 * GAP_IN + BOT_IN
+fig = plt.figure(figsize=(W_IN, H_IN))
+axes = []
+for j in range(3):
+    b = BOT_IN + (2 - j) * (MAP_H + GAP_IN)
+    axes.append(fig.add_axes([L_IN / W_IN, b / H_IN, (W_IN - L_IN - R_IN) / W_IN, MAP_H / H_IN],
+                             sharex=axes[0] if axes else None, sharey=axes[0] if axes else None))
 for ax, w, (s, ttl) in zip(axes, wins, SCALES):
     wf = np.stack([NCT[i, 2]*s + TCf*(NCT[i, 0] + NCT[i, 1]*Rf)
                    for i in range(len(labels))]).argmin(axis=0)
@@ -108,26 +122,24 @@ for ax, w, (s, ttl) in zip(axes, wins, SCALES):
     ax.pcolormesh(TCf, Rf, np.vectorize(remap.get)(wf), cmap=cmap, norm=norm, shading="auto",
                   rasterized=True, antialiased=False, linewidth=0)
     label_regions(ax, np.vectorize(remap.get)(w), TC, R,
-                  {remap[x]: labels[x] for x in winners_all}, fontsize=4.6, min_share=0.015)
-    ax.axhline(10, color="k", ls="--", lw=0.8)
+                  {remap[x]: labels[x] for x in winners_all}, fontsize=6.5, min_share=0.015,
+                  short=paper_name)
+    ax.axhline(10, color="k", ls="--", lw=1.0)
     ax.set_xscale("log"); ax.set_yscale("log")
-    ax.xaxis.set_major_formatter(TFMT)
-    ax.tick_params(labelsize=5.5, pad=1)
+    ax.xaxis.set_major_formatter(FuncFormatter(tex_time))
+    ax.tick_params(pad=1.5)
+    if ax is not axes[-1]:
+        ax.tick_params(labelbottom=False)
     bvn_pct = (w == bvn_i).mean() * 100
-    ax.set_title(f"{ttl}: Hungarian unsplit wins {bvn_pct:.0f}%", fontsize=6.5, pad=3,
-                 color="black",
-                 fontweight=("bold" if bvn_pct > 0.5 else "normal"))
-    ax.set_ylabel("$r = T_{unit}/T_{config}$", fontsize=6, labelpad=1)
-axes[-1].set_xlabel("$T_{config}$", fontsize=6, labelpad=1)
-handles = [Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_all]         + [plt.Line2D([], [], color="k", ls="--", lw=0.8, label="$r=10$")]
-fig.legend(handles=handles, title="Winning configuration", ncol=2,
-           loc="lower center", fontsize=5.2, title_fontsize=5.8, frameon=False,
-           bbox_to_anchor=(0.5, 0.0), handlelength=1.4, columnspacing=1.0, borderpad=0.1, labelspacing=0.25)
+    ax.set_title(f"{ttl}: unsplit Hungarian wins {bvn_pct:.0f}\\%", pad=3)
+axes[-1].set_xlabel(r"$T_{\mathrm{config}}$", labelpad=1)
+fig.text(0.08 / W_IN, (BOT_IN + 1.5 * MAP_H + GAP_IN) / H_IN,
+         r"ratio $r = T_{\mathrm{unit}}/T_{\mathrm{config}}$", rotation=90, ha="left", va="center")
+# no legend: every region carries its setup's name, and the caption says what the dashed line is
 # [point 27] title moved to caption: fig.suptitle("Winner map vs the computation-time budget ($T_{config}$: 1$\\mu$s--1ms, $r\\geq5$) --- "
 # [point 27] title moved to caption: "the plain Hungarian BvN region emerges gradually as $T_{compute}$ shrinks\n"
 # [point 27] title moved to caption: "Dense, n=256, k=256, $W_{max}$=64; BvN cycle-consistent with Euler (same run, $C=S$)",
 # [point 27] title moved to caption: fontsize=13, y=1.005)
-fig.tight_layout(rect=[0, 0.155, 1, 1], h_pad=0.4)
-fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.pdf", bbox_inches="tight", dpi=600)
-fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.png", dpi=140, bbox_inches="tight")
+fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.pdf", dpi=600)
+fig.savefig(f"{OUT}/winner_map_tcalc_sensitivity.png", dpi=140)
 print("saved winner_map_tcalc_sensitivity")

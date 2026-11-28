@@ -65,3 +65,36 @@ def label_regions(ax, codes, X, Y, names, min_share=0.03, fontsize=6, short=None
                 va="center",
                 rotation=90 if tall else 0, fontsize=fontsize * (0.8 if small else 1),
                 color="white" if _dark(color_of(names[i])) else "black")
+
+
+def paper_name(label: str) -> str:
+    """The setup's name as the paper writes it: "Hungarian Euler d4" -> "Hungarian, Euler depth 4",
+    "GW Static B2" -> "GW Static, $B=2$", "Hungarian unsplit" -> "Hungarian, unsplit"."""
+    import re
+    m = re.match(r"(.+) Euler d(\d)$", label)
+    if m:
+        return f"{m.group(1)}, Euler depth {m.group(2)}"
+    m = re.match(r"(.+) B(\d+)$", label)
+    if m:
+        return f"{m.group(1)}, $B={m.group(2)}$"
+    m = re.match(r"(.+) unsplit$", label)
+    if m:
+        return f"{m.group(1)}, unsplit"
+    return label
+
+
+# The style of Figures 3-7 (fig_paper_tradeoffs.py): text set by LaTeX in the paper's own font
+# (Linux Libertine, 9 pt), at the size it is printed.
+PAPER_RC = {"font.size": 9, "axes.labelsize": 9, "xtick.labelsize": 9, "ytick.labelsize": 9,
+            "legend.fontsize": 9, "text.usetex": True, "font.family": "serif",
+            "text.latex.preamble": r"\usepackage[T1]{fontenc}\usepackage{libertine}"
+                                   r"\usepackage[libertine]{newtxmath}"}
+
+
+def tex_time(v, _p=None):
+    """Tick label for a time in ms, set in LaTeX: 1 ms, 10 $\mu$s."""
+    if v >= 1:
+        return f"{v:g}\,ms"
+    if v >= 1e-3:
+        return f"{v * 1e3:g}\,$\mu$s"
+    return f"{v * 1e6:g}\,ns"

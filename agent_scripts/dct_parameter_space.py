@@ -184,24 +184,30 @@ winf = np.stack([NCT[i, 2] + TCf * (NCT[i, 0] + NCT[i, 1] * Rf)
 assert set(winf.ravel().tolist()) <= set(winners_r), "the fine grid finds a winner the 240 grid misses"
 print("fine grid (drawing only):", {labels[w]: f"{(winf == w).mean() * 100:.1f}%"
                                     for w in sorted(set(winf.ravel().tolist()))})
-figW, axW = plt.subplots(figsize=(3.4, 2.7))
-axW.pcolormesh(TCf, Rf, np.vectorize(remap_r.get)(winf), cmap=cmap_r, norm=norm_r,
-               shading="auto", rasterized=True, antialiased=False, linewidth=0)
-label_regions(axW, np.vectorize(remap_r.get)(winr), TCr, R,
-              {remap_r[w]: labels[w] for w in winners_r}, fontsize=5, min_share=0.015)
-axW.axhline(10, color="k", ls="--", lw=1.0)
-axW.set_xscale("log"); axW.set_yscale("log")
-axW.set_xlabel("$T_{config}$", fontsize=7)
-axW.set_ylabel("ratio  $r = T_{unit}/T_{config}$", fontsize=7)
-axW.set_xlim(tcfgr.min(), tcfgr.max()); axW.set_ylim(rgrid.min(), rgrid.max())
-axW.xaxis.set_major_formatter(TFMT)
-axW.tick_params(labelsize=6)
-axW.legend(handles=[Patch(color=color_of(labels[w]), label=labels[w]) for w in winners_r]
-                  + [Line2D([], [], color="k", ls="--", lw=1.0, label="$T_{unit}=10\\,T_{config}$")],
-           fontsize=5.2, loc="upper center", bbox_to_anchor=(0.5, -0.24), ncol=3, frameon=False, handlelength=1.4, columnspacing=1.0)
-figW.tight_layout()
-figW.savefig(f"{OUT}/dct_winner_map.pdf", bbox_inches="tight", dpi=600)
-figW.savefig(f"{OUT}/dct_winner_map.png", dpi=200, bbox_inches="tight")
+# In the style of Figures 3-7 (2026-11-28, Ofek: every figure in the same format): LaTeX text in
+# the paper's font at 9 pt, printed at its own size (3.33 in wide, fixed margins, no bbox
+# cropping), setups named as the paper names them, and the same legend order as Figure 9.
+from winner_colors import PAPER_RC, paper_name, tex_time, COLORS
+with plt.rc_context(PAPER_RC):
+    W_IN, L_IN, R_IN, MAP_H, BOT_IN, TOP_IN = 3.33, 0.62, 0.16, 1.85, 0.42, 0.06
+    H_IN = TOP_IN + MAP_H + BOT_IN
+    figW = plt.figure(figsize=(W_IN, H_IN))
+    axW = figW.add_axes([L_IN / W_IN, BOT_IN / H_IN, (W_IN - L_IN - R_IN) / W_IN, MAP_H / H_IN])
+    axW.pcolormesh(TCf, Rf, np.vectorize(remap_r.get)(winf), cmap=cmap_r, norm=norm_r,
+                   shading="auto", rasterized=True, antialiased=False, linewidth=0)
+    label_regions(axW, np.vectorize(remap_r.get)(winr), TCr, R,
+                  {remap_r[w]: labels[w] for w in winners_r}, fontsize=7, min_share=0.015,
+                  short=paper_name)
+    axW.axhline(10, color="k", ls="--", lw=1.0)
+    axW.set_xscale("log"); axW.set_yscale("log")
+    axW.set_xlabel(r"$T_{\mathrm{config}}$", labelpad=1)
+    axW.set_ylabel(r"ratio $r = T_{\mathrm{unit}}/T_{\mathrm{config}}$", labelpad=1)
+    axW.set_xlim(tcfgr.min(), tcfgr.max()); axW.set_ylim(rgrid.min(), rgrid.max())
+    axW.xaxis.set_major_formatter(FuncFormatter(tex_time))
+    axW.tick_params(pad=1.5)
+    # no legend: every region carries its setup's name, and the caption says what the dashed line is
+    figW.savefig(f"{OUT}/dct_winner_map.pdf", dpi=600)
+    figW.savefig(f"{OUT}/dct_winner_map.png", dpi=200)
 print("saved dct_winner_map (single column)")
 
 # ===== Figure 5 option for Chen (note N26, meeting of 2026-11-12), not in the paper =====
